@@ -1,0 +1,5 @@
+*.swp
+*.o
+.syntastic_*
+Session.vim
+/test

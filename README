@@ -1,0 +1,27 @@
+A DNP3 parser implementation in Hammer 
+
+ * https://github.com/UpstandingHackers/hammer
+
+ * needs the 'h_bind' combinator as implemented in
+   https://github.com/pesco/hammer/tree/h_bind
+
+ * 'make' builds
+
+ * './test' runs the test suite (uses the Glib test framework)
+
+
+NOTES:
+
+ A) This implementation is based on IEEE Std. 1815-2012 and notably
+    AN2013-004b.
+
+ B) This is an application-oriented implementation of DNP3. Nonconforming
+    input is discarded immediately and not processed. The focus is on
+    recognizing expected input as opposed to inspecting erroneous input.
+   
+    In the same vein, semantic representation is relatively high-level and does
+    not insist on mirroring packet structure where details are irrelevant to a
+    user of the protocol.
+
+ C) Reserved bits are _required_ to be 0 unless the standard explicitly
+    allows them to be ignored.

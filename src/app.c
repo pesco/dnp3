@@ -8,6 +8,9 @@
 #include <inttypes.h> // PRIu32 etc.
 #include "util.h"
 #include "g1_binin.h"
+#include "g2_bininev.h"
+#include "g3_dblbitin.h"
+#include "g4_dblbitinev.h"
 #include "g120_auth.h"
 
 
@@ -413,9 +416,9 @@ static void init_odata(void)
     H_RULE (read_ohdr,  dnp3_p_objchoice(//dnp3_p_attr_rblock,   // device attributes
 
                                          dnp3_p_binin_rblock,    // binary inputs
-                                      //dnp3_p_bininev_rblock,
-                                      //dnp3_p_dblbitin_rblock,
-                                      //dnp3_p_dblbitinev_rblock,
+                                         dnp3_p_bininev_rblock,
+                                         dnp3_p_dblbitin_rblock,
+                                         dnp3_p_dblbitinev_rblock,
 
                                  //g10...,    // binary outputs
                                  //g11...,
@@ -585,6 +588,9 @@ void dnp3_p_init_app(void)
 
     // initialize object parsers
     dnp3_p_init_g1_binin();
+    dnp3_p_init_g2_bininev();
+    dnp3_p_init_g3_dblbitin();
+    dnp3_p_init_g4_dblbitinev();
 
     // initialize request-specific "object data" parsers
     init_odata();

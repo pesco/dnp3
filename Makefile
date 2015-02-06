@@ -1,6 +1,9 @@
 OBJS = src/app.o \
        src/dnp3.o \
        src/g1_binin.o \
+       src/g2_bininev.o \
+       src/g3_dblbitin.o \
+       src/g4_dblbitinev.o \
        src/g120_auth.o \
        src/hammer.o \
        src/util.o

@@ -175,6 +175,8 @@ static void test_req_read(void)
                                     "[0] READ {g1v0 qc=17}");
     check_parse(dnp3_p_app_request, "\x00\x01\x01\x00\x00\x03\x41",7,
                                     "[0] READ {g1v0 qc=00 #3..65}");
+    check_parse(dnp3_p_app_request, "\x00\x01\x02\x03\x00\x03\x41",7,
+                                    "[0] READ {g2v3 qc=00 #3..65}");
 }
 
 

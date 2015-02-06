@@ -409,16 +409,19 @@ static void init_odata(void)
 {
     H_RULE(confirm, h_epsilon_p());
 
-        // read_ohdr:
-        //   may use variation 0 (any)
-        //   may use group 60 (event class data)
-        //   may use range specifier 0x6 (all objects)
-    H_RULE (read_ohdr,  dnp3_p_objchoice(//dnp3_p_attr_rblock,   // device attributes
+    // read request object headers:
+    //   may use variation 0 (any)
+    //   may use group 60 (event class data)
+    //   may use range specifier 0x6 (all objects)
 
-                                         dnp3_p_binin_rblock,    // binary inputs
-                                         dnp3_p_bininev_rblock,
-                                         dnp3_p_dblbitin_rblock,
-                                         dnp3_p_dblbitinev_rblock,
+    // device attributes
+    //H_RULE(rblock_attr,     dnp3_p_attr_rblock);
+
+    // binary inputs
+    H_RULE(rblock_binin,    h_choice(dnp3_p_binin_rblock,
+                                     dnp3_p_bininev_rblock,
+                                     dnp3_p_dblbitin_rblock,
+                                     dnp3_p_dblbitinev_rblock, NULL));
 
                                  //g10...,    // binary outputs
                                  //g11...,
@@ -468,12 +471,15 @@ static void init_odata(void)
 //                                 g121...,   // security statistic
 //                                 g122...,
 
-                                 NULL));
-    H_RULE (read,       dnp3_p_many(read_ohdr));
+    H_RULE(read_ohdr,       dnp3_p_objchoice(//rblock_attr,
+                                             rblock_binin,
+                                             NULL));
+    H_RULE(read,            dnp3_p_many(read_ohdr));
     // XXX NB parsing pseudocode in AN2012-004b does NOT work for READ requests.
     //     it misses the case that a function code requires object headers
     //     but no objects. never mind that it might require an object with some
     //     variations but not others (e.g. g70v5 file transmission).
+
 
     odata[DNP3_CONFIRM] = ama(confirm);
     odata[DNP3_READ]    = ama(read);

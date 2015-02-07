@@ -97,6 +97,10 @@ typedef enum {
     DNP3_GROUP_BININEV = 2,
     DNP3_GROUP_DBLBITIN = 3,
     DNP3_GROUP_DBLBITINEV = 4,
+    DNP3_GROUP_BINOUT = 10,
+    DNP3_GROUP_BINOUTEV = 11,
+    DNP3_GROUP_CROB = 12,
+    DNP3_GROUP_PCB = 13,
     DNP3_GROUP_AUTH = 120,
 } DNP3_Group;
 
@@ -118,7 +122,20 @@ typedef enum {
 } DNP3_Variation;
 
 typedef union {
-    uint8_t bit:1;  // XXX
+    // g1v1, g10v1 (binary in- and outputs, packed format)
+    uint8_t bit:1;
+
+    // g1v2, g10v2 (binary in- and outputs, with flags)
+    struct {
+        uint8_t online:1;
+        uint8_t restart:1;
+        uint8_t comm_lost:1;
+        uint8_t remote_forced:1;
+        uint8_t local_forced:1;
+        uint8_t chatter_filter:1;
+        uint8_t state:1;
+    } flags;
+
 } DNP3_Object;
 
 typedef struct {

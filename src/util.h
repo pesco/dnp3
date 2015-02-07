@@ -4,6 +4,9 @@
 #define DNP3_UTIL_H_SEEN
 
 
+// pad with zero bits until the next byte boundary
+extern HParser *dnp3_p_pad;
+
 // parse n reserved bits; must be zero, ignored in sequences
 HParser *dnp3_p_reserved(size_t n);
 
@@ -18,6 +21,7 @@ HParser *dnp3_p_packet(HParser *p);
 
 #define ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)
 
+void dnp3_p_init_util(void);
 
 
 #endif  // DNP3_UTIL_H_SEEN

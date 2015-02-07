@@ -69,3 +69,16 @@ HParser *dnp3_p_packet(HParser *p)
 
     return pkt;
 }
+
+HParser *dnp3_p_pad;
+
+void dnp3_p_init_util(void)
+{
+    // byte-alignment (used in block())
+    H_RULE(zero,    dnp3_p_reserved(1));
+    H_RULE(pad,     h_indirect());
+    h_bind_indirect(pad,
+                    h_choice(h_aligned(8), h_right(zero, pad), NULL));
+
+    dnp3_p_pad = pad;
+}

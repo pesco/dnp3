@@ -2,8 +2,8 @@ A DNP3 parser implementation in Hammer
 
  * https://github.com/UpstandingHackers/hammer
 
- * needs the 'h_bind' combinator as implemented in
-   https://github.com/pesco/hammer/tree/h_bind
+ * needs the 'h_bind' and 'h_aligned' combinators as implemented in
+   https://github.com/pesco/hammer/
 
  * 'make' builds
 

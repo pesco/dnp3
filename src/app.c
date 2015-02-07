@@ -6,11 +6,14 @@
 #include <string.h>
 #include <stdlib.h> // malloc
 #include <inttypes.h> // PRIu32 etc.
+#include "app.h"
 #include "util.h"
+#include "binary.h"
 #include "g1_binin.h"
 #include "g2_bininev.h"
 #include "g3_dblbitin.h"
 #include "g4_dblbitinev.h"
+#include "g10_binout.h"
 #include "g120_auth.h"
 
 
@@ -94,6 +97,9 @@ static HParser *ohdr_count;
 static HParser *ohdr_count1;
 
 static HParser *rblock_;
+
+static HParser *get_rsc;
+static HParser *get_base;
 
 // prefix code
 static HParser *withpc(uint8_t x, HParser *p)
@@ -247,8 +253,34 @@ static HParser *prefixed_size(HParser *vfcnt, HParser *p, HParser *(*q)(size_t))
                     act_objects_only, NULL);
 }
 
+static HParser *oblock_range__(HParser *p)
+{
+    H_RULE(range,   h_choice(range_index, range_addr, NULL));
+        // XXX are address ranges really allowed with all types of objects or
+        //     only where the spec actually says so (g102, g110)?
+    H_RULE(objs,    h_action(h_length_value(range, p),
+                             act_objects_only, NULL));
 
-static HParser *oblock_index(HParser *p)
+    // this variant does not attach the prefix code, yet, so we can stick an
+    // endianness combinator in between for the packed variations (see below)
+    return objs;
+}
+
+static HParser *oblock_range_(HParser *p)
+{
+    return noprefix(oblock_range__(p));
+}
+
+static HParser *oblock_packed_(HParser *p)
+{
+    H_RULE(objs,        oblock_range__(p));
+    H_RULE(objs_pad,    h_left(objs, dnp3_p_pad));
+    H_RULE(objs_pad_le, h_with_endianness(BIT_LITTLE_ENDIAN, objs_pad));
+
+    return noprefix(objs_pad_le);
+}
+
+static HParser *oblock_index_(HParser *p)
 {
     return h_choice(withpc(1, prefixed_index(h_uint8(), p)), 
                     withpc(2, prefixed_index(h_uint16(), p)),
@@ -260,11 +292,6 @@ static HParser *oblock_vf_(HParser *cnt, HParser *(*p)(size_t))
     return h_choice(withpc(4, prefixed_size(cnt, h_uint8(), p)), 
                     withpc(5, prefixed_size(cnt, h_uint16(), p)),
                     withpc(6, prefixed_size(cnt, h_uint32(), p)), NULL);
-}
-
-static HParser *oblock_vf(HParser *(*p)(size_t))
-{
-    return oblock_vf_(range_vfcount, p);
 }
 
 static void init_oblock(void)
@@ -298,9 +325,13 @@ static void init_oblock(void)
     ohdr_all    = noprefix(range_none);
     ohdr_count  = noprefix(range_count);
 
-    H_RULE(rblock_index, oblock_index(NULL));
+    H_RULE(rblock_index, oblock_index_(NULL));
     rblock_ = h_choice(ohdr_irange, ohdr_arange, ohdr_all, ohdr_count,
                        rblock_index, NULL);
+
+    // parsers to fetch the saved range values (used in block())
+    get_rsc =   h_get_value("rsc");
+    get_base =  h_optional(h_get_value("range_base"));
 }
 
 HParser *group(DNP3_Group g)
@@ -342,6 +373,7 @@ static HParsedToken *act_block(const HParseResult *p, void *user)
 
     // objects and indexes
     tok = H_INDEX_TOKEN(p->ast, 2, 0, 1);
+        // tok corresponds to the block_ argument of block()
     if(tok->token_type == TT_SEQUENCE) {
         // tok = (count,idxs,objs)
         ob->count   = H_INDEX_UINT(tok, 0);
@@ -358,13 +390,10 @@ static HParsedToken *act_block(const HParseResult *p, void *user)
 // generic parser for object blocks
 static HParser *block(HParser *grp, HParser *var, HParser *block_)
 {
-    H_RULE (rsc,    h_get_value("rsc"));
-    H_RULE (base,   h_optional(h_get_value("range_base")));
-
     // the error propagation dance
     // we want a parse failure in group and variation to lead to failure and
     // one in the rest to yield PARAM_ERROR.
-    H_RULE (rest,   h_sequence(block_, rsc, base, NULL));
+    H_RULE (rest,   h_sequence(block_, dnp3_p_pad, get_rsc, get_base, NULL));
     H_RULE (e_rest, h_choice(rest, h_error(ERR_PARAM_ERROR), NULL));
     H_ARULE(block,  h_sequence(grp, var, e_rest, NULL));
 
@@ -405,11 +434,31 @@ HParser *dnp3_p_single_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t
     return block(group(g), variation(v), oblock_vf_(range_vfcount1, obj));
 }
 
+HParser *dnp3_p_oblock(DNP3_Group g, DNP3_Variation v, HParser *obj)
+{
+    H_RULE(oblock_, h_choice(oblock_index_(obj),
+                             oblock_range_(obj), NULL));
+
+    return block(group(g), variation(v), oblock_);
+}
+
+HParser *dnp3_p_oblock_packed(DNP3_Group g, DNP3_Variation v, HParser *obj)
+{
+    return block(group(g), variation(v), oblock_packed_(obj));
+}
+
+HParser *dnp3_p_oblock_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t))
+{
+    H_RULE(oblock_, oblock_vf_(range_vfcount, obj));
+
+    return block(group(g), variation(v), oblock_);
+}
+
 static void init_odata(void)
 {
     H_RULE(confirm, h_epsilon_p());
 
-    // read request object headers:
+    // read request object blocks:
     //   may use variation 0 (any)
     //   may use group 60 (event class data)
     //   may use range specifier 0x6 (all objects)
@@ -422,8 +471,16 @@ static void init_odata(void)
                                      dnp3_p_bininev_rblock,
                                      dnp3_p_dblbitin_rblock,
                                      dnp3_p_dblbitinev_rblock, NULL));
+    H_RULE(oblock_binin,    h_choice(dnp3_p_binin_oblock,
+//                                     dnp3_p_bininev_oblock,
+//                                     dnp3_p_dblbitin_oblock,
+//                                     dnp3_p_dblbitinev_oblock,
+                                     NULL));
 
-                                 //g10...,    // binary outputs
+    // binary outputs
+    H_RULE(rblock_binout,   h_choice(dnp3_p_binout_rblock, NULL));
+    H_RULE(oblock_binout,   h_choice(dnp3_p_binout_oblock, NULL));
+                                 //g10...,
                                  //g11...,
                                  //g13...,
 
@@ -471,25 +528,37 @@ static void init_odata(void)
 //                                 g121...,   // security statistic
 //                                 g122...,
 
-    H_RULE(read_ohdr,       dnp3_p_objchoice(//rblock_attr,
+    H_RULE(read_oblock,     dnp3_p_objchoice(//rblock_attr,
                                              rblock_binin,
+                                             rblock_binout,
                                              NULL));
-    H_RULE(read,            dnp3_p_many(read_ohdr));
+    H_RULE(read,            dnp3_p_many(read_oblock));
     // XXX NB parsing pseudocode in AN2012-004b does NOT work for READ requests.
     //     it misses the case that a function code requires object headers
     //     but no objects. never mind that it might require an object with some
     //     variations but not others (e.g. g70v5 file transmission).
 
+    H_RULE(wblock_binout,   dnp3_p_binout_wblock);
+    H_RULE(write_oblock,    dnp3_p_objchoice(//wblock_attr,
+                                             wblock_binout,
+                                             NULL));
+    H_RULE(write,           dnp3_p_many(write_oblock));
+
+    H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
+                                             oblock_binout,
+                                             NULL));
+    H_RULE(response,        dnp3_p_many(rsp_oblock));
+
 
     odata[DNP3_CONFIRM] = ama(confirm);
     odata[DNP3_READ]    = ama(read);
-    //odata[DNP3_WRITE]   = ama(write);
+    odata[DNP3_WRITE]   = ama(write);
 
         // read_rsp_object:
         //   may not use variation 0
         //   may not use group 60
         //   may not use range specifier 0x6
-    //odata [DNP3_RESPONSE] = ama(response);    // XXX ? or depend on req. fc?!
+    odata [DNP3_RESPONSE] = ama(response);    // XXX ? or depend on req. fc?!
 
     //odata[DNP3_AUTHENTICATE_REQ]    = authenticate_req;
     //odata[DNP3_AUTH_REQ_NO_ACK]     = auth_req_no_ack;
@@ -592,11 +661,15 @@ void dnp3_p_init_app(void)
     // initialize object block and associated parsers/combinators
     init_oblock();
 
+    // initialize object helper parser
+    dnp3_p_init_binary();
+
     // initialize object parsers
     dnp3_p_init_g1_binin();
     dnp3_p_init_g2_bininev();
     dnp3_p_init_g3_dblbitin();
     dnp3_p_init_g4_dblbitinev();
+    dnp3_p_init_g10_binout();
 
     // initialize request-specific "object data" parsers
     init_odata();
@@ -675,6 +748,34 @@ int appendf(char **s, size_t *size, const char *fmt, ...)
     return 0;
 }
 
+char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
+{
+    size_t size = 128;
+    char *res = malloc(size);
+    if(!res) return NULL;
+    res[0] = '\0';
+
+    switch(g) {
+    case G(BININ):
+    case G(BINOUT):
+        switch(v) {
+        case V(PACKED):
+            appendf(&res, &size, "%d", o.bit);
+            break;
+        case V(FLAGS):
+            // XXX output the flags
+            appendf(&res, &size, "%d", o.flags.state); break;
+            break;
+        }
+        break;
+    }
+
+    if(res[0] == '\0')
+        appendf(&res, &size, "?");
+
+    return res;
+}
+
 char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
 {
     size_t size = 128;
@@ -716,7 +817,11 @@ char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
                 if(x<0) goto err;
             }
             if(ob->objects) {
-                if(appendf(&res, &size, ".") < 0) goto err; // XXX
+                DNP3_Object o = ob->objects[i];
+                char *s = dnp3_format_object(ob->group, ob->variation, o);
+                x = appendf(&res, &size, "%s", s);
+                free(s);
+                if(x<0) goto err;
             }
         }
     }

@@ -20,5 +20,16 @@ HParser *dnp3_p_single(DNP3_Group g, DNP3_Variation v, HParser *obj);
 // parse an "oblock" of a single variable-format object of the given type.
 HParser *dnp3_p_single_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t));
 
+// parse an "oblock" of objects of the given type.
+HParser *dnp3_p_oblock(DNP3_Group g, DNP3_Variation v, HParser *obj);
+
+// like dnp3_p_oblock but only accept range formats, parse objects little-endian,
+// and pad with zero bits up to the next byte boundary
+HParser *dnp3_p_oblock_packed(DNP3_Group g, DNP3_Variation v, HParser *obj);
+
+// parse an "oblock" of variable-format objects of the given type.
+HParser *dnp3_p_oblock_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t));
+
+
 
 #endif  // DNP3_APP_H_SEEN

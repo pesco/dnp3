@@ -107,12 +107,14 @@ static void test_req_ac(void)
     // XXX is it correct to fail the parse on invalid AC flags?
     check_parse_fail(dnp3_p_app_request, "\xE0\x23",2); // (con) ???
     check_parse_fail(dnp3_p_app_request, "\xE0\x81",2); // (con) RESPONSE
-    check_parse_fail(dnp3_p_app_request, "\xD0\x23",2); // (uns) ???
-    check_parse_fail(dnp3_p_app_request, "\xD0\x81",2); // (uns) RESPONSE
+    check_parse(dnp3_p_app_request, "\xD0\x23",2, "FUNC_NOT_SUPP"); // (uns) ???
+    check_parse(dnp3_p_app_request, "\xD0\x81",2, "FUNC_NOT_SUPP"); // (uns) RESPONSE
+    check_parse_fail(dnp3_p_app_request, "\xE0\x23",2); // (con) ???
+    check_parse_fail(dnp3_p_app_request, "\x80\x23",2); // not (fir) ???
     check_parse_fail(dnp3_p_app_request, "\xD0\x01",2); // (uns) READ
     check_parse_fail(dnp3_p_app_request, "\x40\x00",2); // not (fin)
     check_parse_fail(dnp3_p_app_request, "\x80\x00",2); // not (fir)
-    check_parse_fail(dnp3_p_app_request, "\xE0\x00",2); // (con)
+    check_parse_fail(dnp3_p_app_request, "\xE0\x00",2); // (con) CONFIRM
     check_parse_fail(dnp3_p_app_request, "\xF0\x00",2); // (con,uns)
     check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fin,fir) CONFIRM");
 }
@@ -210,21 +212,39 @@ static void test_rsp_fail(void)
 static void test_rsp_ac(void)
 {
     check_parse(dnp3_p_app_response, "\x02\x81\x00\x00",4, "[2] RESPONSE");
-    check_parse(dnp3_p_app_response, "\x13\x81\x00\x00",4, "[3] (uns) RESPONSE");
     check_parse(dnp3_p_app_response, "\x22\x81\x00\x00",4, "[2] (con) RESPONSE");
-    check_parse(dnp3_p_app_response, "\x32\x81\x00\x00",4, "[2] (con,uns) RESPONSE");
-    check_parse(dnp3_p_app_response, "\x42\x81\x00\x00",4, "[2] (fir) RESPONSE");
-    check_parse(dnp3_p_app_response, "\x54\x81\x00\x00",4, "[4] (fir,uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x43\x81\x00\x00",4, "[3] (fir) RESPONSE");
     check_parse(dnp3_p_app_response, "\x62\x81\x00\x00",4, "[2] (fir,con) RESPONSE");
-    check_parse(dnp3_p_app_response, "\x72\x81\x00\x00",4, "[2] (fir,con,uns) RESPONSE");
     check_parse(dnp3_p_app_response, "\x82\x81\x00\x00",4, "[2] (fin) RESPONSE");
-    check_parse(dnp3_p_app_response, "\x9A\x81\x00\x00",4, "[10] (fin,uns) RESPONSE");
-    check_parse(dnp3_p_app_response, "\xA2\x81\x00\x00",4, "[2] (fin,con) RESPONSE");
-    check_parse(dnp3_p_app_response, "\xB2\x81\x00\x00",4, "[2] (fin,con,uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xA4\x81\x00\x00",4, "[4] (fin,con) RESPONSE");
     check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fin,fir) RESPONSE");
-    check_parse(dnp3_p_app_response, "\xD0\x81\x00\x00",4, "[0] (fin,fir,uns) RESPONSE");
     check_parse(dnp3_p_app_response, "\xE2\x81\x00\x00",4, "[2] (fin,fir,con) RESPONSE");
-    check_parse(dnp3_p_app_response, "\xF2\x81\x00\x00",4, "[2] (fin,fir,con,uns) RESPONSE");
+
+    check_parse(dnp3_p_app_response, "\x32\x82\x00\x00",4, "[2] (con,uns) UNSOLICITED_RESPONSE");
+    check_parse(dnp3_p_app_response, "\x72\x82\x00\x00",4, "[2] (fir,con,uns) UNSOLICITED_RESPONSE");
+    check_parse(dnp3_p_app_response, "\xB2\x82\x00\x00",4, "[2] (fin,con,uns) UNSOLICITED_RESPONSE");
+    check_parse(dnp3_p_app_response, "\xF2\x82\x00\x00",4, "[2] (fin,fir,con,uns) UNSOLICITED_RESPONSE");
+
+    // XXX should unsol. responses with con=0 really be discarded?
+    check_parse_fail(dnp3_p_app_response, "\x13\x82\x00\x00",4); // (uns)
+    check_parse_fail(dnp3_p_app_response, "\x54\x82\x00\x00",4); // (fir,uns)
+    check_parse_fail(dnp3_p_app_response, "\x9A\x82\x00\x00",4); // (fin,uns)
+    check_parse_fail(dnp3_p_app_response, "\xD0\x82\x00\x00",4); // (fin,fir,uns)
+
+    check_parse_fail(dnp3_p_app_response, "\x13\x81\x00\x00",4); // (uns)
+    check_parse_fail(dnp3_p_app_response, "\x32\x81\x00\x00",4); // (con,uns)
+    check_parse_fail(dnp3_p_app_response, "\x54\x81\x00\x00",4); // (fir,uns)
+    check_parse_fail(dnp3_p_app_response, "\x72\x81\x00\x00",4); // (fir,con,uns)
+    check_parse_fail(dnp3_p_app_response, "\x9A\x81\x00\x00",4); // (fin,uns)
+    check_parse_fail(dnp3_p_app_response, "\xB2\x81\x00\x00",4); // (fin,con,uns)
+    check_parse_fail(dnp3_p_app_response, "\xD0\x81\x00\x00",4); // (fin,fir,uns)
+    check_parse_fail(dnp3_p_app_response, "\xF2\x81\x00\x00",4); // (fin,fir,con,uns)
+}
+
+static void test_rsp_iin(void)
+{
+    check_parse(dnp3_p_app_response, "\x02\x81\x00\x00",4, "[2] RESPONSE");
+    // XXX test iin...
 }
 
 static void test_rsp_null(void)
@@ -249,6 +269,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/write", test_req_write);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
+    g_test_add_func("/app/rsp/ac", test_rsp_iin);
     g_test_add_func("/app/rsp/null", test_rsp_null);
 
     g_test_run();

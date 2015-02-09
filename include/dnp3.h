@@ -7,8 +7,8 @@
 /// TYPES ///
 
 typedef struct {
-    uint8_t fin:1;
-    uint8_t fir:1;
+    uint8_t fin:1;  // note: ignore on unsolicited responses (treat as 1)!
+    uint8_t fir:1;  // note: ignore on unsolicited responses (treat as 1)!
     uint8_t con:1;
     uint8_t uns:1;
     uint8_t seq:4;

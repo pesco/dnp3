@@ -102,10 +102,16 @@ static HParser *rblock_;
 static HParser *get_rsc;
 static HParser *get_base;
 
+// helper
+static HParser *int_exact(HParser *p, uint64_t x)
+{
+    return h_int_range(p, x, x);
+}
+
 // prefix code
 static HParser *withpc(uint8_t x, HParser *p)
 {
-    HParser *pc = h_int_range(h_right(dnp3_p_reserved(1), h_bits(3, 0)), x, x);
+    HParser *pc = int_exact(h_right(dnp3_p_reserved(1), h_bits(3, 0)), x);
 
     return h_sequence(pc, p, NULL);
 }
@@ -117,7 +123,7 @@ static HParser *noprefix(HParser *p)
 // range specifier code
 static HParser *rsc(uint8_t x)
 {
-    HParser *p = h_int_range(h_bits(4, 0), x, x);
+    HParser *p = int_exact(h_bits(4, 0), x);
 
     // funnel the rsc out via h_put_value so we can find and save it in the
     // DNP3_ObjectBlock struct later
@@ -550,6 +556,8 @@ static void init_odata(void)
                                              NULL));
     H_RULE(response,        dnp3_p_many(rsp_oblock));
 
+    H_RULE(unsolicited,     h_epsilon_p()); // XXX
+
 
     odata[DNP3_CONFIRM] = ama(confirm);
     odata[DNP3_READ]    = ama(read);
@@ -560,6 +568,7 @@ static void init_odata(void)
         //   may not use group 60
         //   may not use range specifier 0x6
     odata [DNP3_RESPONSE] = ama(response);    // XXX ? or depend on req. fc?!
+    odata [DNP3_UNSOLICITED_RESPONSE] = ama(unsolicited);
 
     //odata[DNP3_AUTHENTICATE_REQ]    = authenticate_req;
     //odata[DNP3_AUTH_REQ_NO_ACK]     = auth_req_no_ack;
@@ -692,6 +701,7 @@ static HParsedToken *act_ac(const HParseResult *p, void *user)
 
 #define act_reqac act_ac
 #define act_conac act_ac
+#define act_unsac act_ac
 #define act_rspac act_ac
 
 void dnp3_p_init_app(void)
@@ -699,7 +709,7 @@ void dnp3_p_init_app(void)
     // initialize object block and associated parsers/combinators
     init_oblock();
 
-    // initialize object helper parser
+    // initialize object helper parsers
     dnp3_p_init_binary();
 
     // initialize object parsers
@@ -713,31 +723,51 @@ void dnp3_p_init_app(void)
     init_odata();
 
     H_RULE (bit,    h_bits(1, false));
-    H_RULE (zro,    h_int_range(bit, 0, 0));
-    H_RULE (one,    h_int_range(bit, 1, 1));
-    H_RULE (fin,    bit);
-    H_RULE (fir,    bit);
-    H_RULE (con,    bit);
-    H_RULE (uns,    bit);
-    H_RULE (conflags, h_sequence(one,one,zro,uns, NULL));   // CONFIRM
-    H_RULE (reqflags, h_sequence(one,one,zro,zro, NULL));   // always (fin,fir)!
-    H_RULE (rspflags, h_sequence(fin,fir,con,uns, NULL));
+    H_RULE (zro,    int_exact(bit, 0));
+    H_RULE (one,    int_exact(bit, 1));
+    H_RULE (ign,    bit); // to be ignored
+
+                          /* --- fin,fir,con,uns --- */
+    H_RULE (conflags, h_sequence(one,one,zro,bit, NULL));   // CONFIRM
+    H_RULE (reqflags, h_sequence(one,one,zro,zro, NULL));   // always fin,fir!
+    H_RULE (unsflags, h_sequence(ign,ign,one,one, NULL));   // unsolicited
+    H_RULE (rspflags, h_sequence(bit,bit,bit,zro, NULL));
 
     H_RULE (seqno,  h_bits(4, false));
     H_ARULE(conac,  h_sequence(conflags, seqno, NULL));
     H_ARULE(reqac,  h_sequence(reqflags, seqno, NULL));
+    H_ARULE(unsac,  h_sequence(unsflags, seqno, NULL));
     H_ARULE(rspac,  h_sequence(rspflags, seqno, NULL));
-    H_ARULE(iin,    h_left(h_repeat_n(bit, 14), dnp3_p_reserved(2)));
+    H_ARULE(iin,    h_with_endianness(BIT_LITTLE_ENDIAN,
+                        h_left(h_repeat_n(bit, 14), dnp3_p_reserved(2))));
+
+    H_RULE (anyreqac, h_choice(conac, reqac, NULL));
+    H_RULE (anyrspac, h_choice(unsac, rspac, NULL));
 
     H_RULE (fc,     h_uint8());
-    H_RULE (errfc,  h_right(fc, h_error(ERR_FUNC_NOT_SUPP)));
-    H_RULE (confc,           h_int_range(fc, 0x00, 0x00));
-    H_RULE (reqfc,  h_choice(h_int_range(fc, 0x01, 0x21), errfc, NULL));
-    H_RULE (rspfc,  h_choice(h_int_range(fc, 0x81, 0x83), errfc, NULL));
+    H_RULE (fc_rsp, int_exact(fc, DNP3_RESPONSE));
+    H_RULE (fc_ur,  int_exact(fc, DNP3_UNSOLICITED_RESPONSE));
+    H_RULE (fc_ar,  int_exact(fc, DNP3_AUTHENTICATE_RESP));
+
+    H_RULE (confc,  int_exact(fc, DNP3_CONFIRM));
+    H_RULE (reqfc,  h_int_range(fc, 0x01, 0x21));
+    H_RULE (unsfc,  h_choice(fc_ur, fc_ar, NULL));
+    H_RULE (rspfc,  h_choice(fc_rsp, fc_ar, NULL));
+
+    H_RULE (anyreqfc,   h_choice(confc, reqfc, NULL));
+    H_RULE (anyrspfc,   h_choice(unsfc, rspfc, NULL));
+
+    H_RULE (notreqfc,   h_right(h_and(fc), h_not(anyreqfc)));
+    H_RULE (notrspfc,   h_right(h_and(fc), h_not(anyrspfc)));
+    H_RULE (ereqfc,     h_right(notreqfc, h_error(ERR_FUNC_NOT_SUPP)));
+    H_RULE (erspfc,     h_right(notrspfc, h_error(ERR_FUNC_NOT_SUPP)));
 
     H_RULE (req_header, h_choice(h_sequence(conac, confc, NULL),
-                                 h_sequence(reqac, reqfc, NULL), NULL));
-    H_RULE (rsp_header, h_sequence(rspac, rspfc, iin, NULL));
+                                 h_sequence(reqac, reqfc, NULL),
+                                 h_sequence(anyreqac, ereqfc, NULL), NULL));
+    H_RULE (rsp_header, h_choice(h_sequence(unsac, unsfc, iin, NULL),
+                                 h_sequence(rspac, rspfc, iin, NULL),
+                                 h_sequence(anyrspac, erspfc, iin, NULL), NULL));
 
     H_RULE (request,    h_bind(req_header, f_fragment, NULL));
     H_RULE (response,   h_bind(rsp_header, f_fragment, NULL));
@@ -949,9 +979,12 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
         blk = NULL;
     }
 
-    assert(frag->fc < sizeof(funcnames));
-    char *name = funcnames[frag->fc];
-    assert(name != NULL);
+    // function name
+    char *name = NULL;
+    if(frag->fc < sizeof(funcnames))
+        name = funcnames[frag->fc];
+    if(!name)
+        name = "???";
 
     size = 6 + strlen(flags) + strlen(name) + strlen(odata) + strlen(auth);
     res = malloc(size);

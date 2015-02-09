@@ -95,79 +95,84 @@ static void test_req_fail(void)
 {
     check_parse_fail(dnp3_p_app_request, "",0);
     check_parse_fail(dnp3_p_app_request, "\x00",1);
-    check_parse(dnp3_p_app_request, "\x00\x23",2, "FUNC_NOT_SUPP");
-    check_parse(dnp3_p_app_request, "\x00\x81",2, "FUNC_NOT_SUPP");
+    check_parse(dnp3_p_app_request, "\xC0\x23",2, "FUNC_NOT_SUPP");
+    check_parse(dnp3_p_app_request, "\xC0\x81",2, "FUNC_NOT_SUPP");
 }
 
 static void test_req_ac(void)
 {
-    check_parse(dnp3_p_app_request, "\x00\x00",2, "[0] CONFIRM");
-    check_parse(dnp3_p_app_request, "\x05\x00",2, "[5] CONFIRM");
-    check_parse(dnp3_p_app_request, "\x10\x00",2, "[0] (uns) CONFIRM");
-    check_parse_fail(dnp3_p_app_request, "\x10\x01",2); // (uns) READ
-    check_parse_fail(dnp3_p_app_request, "\x20\x00",2); // (con)
-    check_parse_fail(dnp3_p_app_request, "\x30\x00",2); // (con,uns)
-    check_parse(dnp3_p_app_request, "\x42\x00",2, "[2] (fir) CONFIRM");
-    check_parse(dnp3_p_app_request, "\x83\x00",2, "[3] (fin) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xC2\x00",2, "[2] (fin,fir) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xC5\x00",2, "[5] (fin,fir) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xD3\x00",2, "[3] (fin,fir,uns) CONFIRM");
+    check_parse_fail(dnp3_p_app_request, "\xE0\x23",2); // (con) ???
+    check_parse_fail(dnp3_p_app_request, "\xE0\x81",2); // (con) RESPONSE
+    check_parse_fail(dnp3_p_app_request, "\xD0\x23",2); // (uns) ???
+    check_parse_fail(dnp3_p_app_request, "\xD0\x81",2); // (uns) RESPONSE
+    check_parse_fail(dnp3_p_app_request, "\xD0\x01",2); // (uns) READ
+    check_parse_fail(dnp3_p_app_request, "\x40\x00",2); // not (fin)
+    check_parse_fail(dnp3_p_app_request, "\x80\x00",2); // not (fir)
+    check_parse_fail(dnp3_p_app_request, "\xE0\x00",2); // (con)
+    check_parse_fail(dnp3_p_app_request, "\xF0\x00",2); // (con,uns)
     check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fin,fir) CONFIRM");
 }
 
 static void test_req_ohdr(void)
 {
     // truncated (otherwise valid) object header
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x01",3);
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x01\x00",4);
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x01\x00\x17",5);
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x01\x00\x17\x01",6);
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x01\x00\x7A",5);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01",3);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00",4);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x17",5);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x01",6);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x7A",5);
 
     // truncated object header (invalid group)
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x05",3);
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x05\x00",4);
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x01\x00\x00\x03\x41\x58",8);
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x01\x00\x06\x05\x00",7);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x05",3);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x05\x00",4);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41\x58",8);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x06\x05\x00",7);
 
     // truncated object header (invalid variation)
-    check_parse_fail(dnp3_p_app_request, "\x00\x01\x32\x00",4);
+    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x32\x00",4);
 
     // invalid group / variation (complete header)
-    check_parse(dnp3_p_app_request, "\x00\x01\x05\x00\x00\x03\x41",7, "OBJ_UNKNOWN");
-    check_parse(dnp3_p_app_request, "\x00\x01\x32\x00\x06",5, "OBJ_UNKNOWN");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00\x00\x03\x41",7, "OBJ_UNKNOWN");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00\x06",5, "OBJ_UNKNOWN");
 }
 
 static void test_req_confirm(void)
 {
-    check_parse(dnp3_p_app_request, "\x00\x00",2, "[0] CONFIRM");
-    check_parse_fail(dnp3_p_app_request, "\x00\x00\x01\x00\x06",5);
+    check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fin,fir) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xD0\x00",2, "[0] (fin,fir,uns) CONFIRM");
+    check_parse_fail(dnp3_p_app_request, "\xC0\x00\x01\x00\x06",5);
 }
 
 static void test_req_read(void)
 {
-    check_parse(dnp3_p_app_request, "\x00\x01",2, "[0] READ");  // XXX null READ valid?
-    check_parse(dnp3_p_app_request, "\x00\x01\x01\x00\x17\x03\x41\x43\x42",9,
-                                    "[0] READ {g1v0 qc=17 #65 #67 #66}");
-    check_parse(dnp3_p_app_request, "\x00\x01\x01\x00\x17\x00",6,   // XXX is 0 a valid count?
-                                    "[0] READ {g1v0 qc=17}");
-    check_parse(dnp3_p_app_request, "\x00\x01\x01\x00\x00\x03\x41",7,
-                                    "[0] READ {g1v0 qc=00 #3..65}");
-    check_parse(dnp3_p_app_request, "\x00\x01\x02\x03\x00\x03\x41",7,
-                                    "[0] READ {g2v3 qc=00 #3..65}");
-    check_parse(dnp3_p_app_request, "\x00\x01\x0A\x01\x00\x03\x41",7,
-                                    "[0] READ {g10v1 qc=00 #3..65}");
+    check_parse(dnp3_p_app_request, "\xC0\x01",2, "[0] (fin,fir) READ");  // XXX null READ valid?
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x03\x41\x43\x42",9,
+                                    "[0] (fin,fir) READ {g1v0 qc=17 #65 #67 #66}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x00",6,   // XXX is 0 a valid count?
+                                    "[0] (fin,fir) READ {g1v0 qc=17}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41",7,
+                                    "[0] (fin,fir) READ {g1v0 qc=00 #3..65}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x02\x03\x00\x03\x41",7,
+                                    "[0] (fin,fir) READ {g2v3 qc=00 #3..65}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0A\x01\x00\x03\x41",7,
+                                    "[0] (fin,fir) READ {g10v1 qc=00 #3..65}");
 }
 
 static void test_req_write(void)
 {
-    check_parse(dnp3_p_app_request, "\x00\x02",2, "[0] WRITE"); // XXX null WRITE valid?
-    check_parse(dnp3_p_app_request, "\x01\x02\x0A\x00\x00\x03\x06",7, "OBJ_UNKNOWN");
+    check_parse(dnp3_p_app_request, "\xC0\x02",2, "[0] (fin,fir) WRITE"); // XXX null WRITE valid?
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x00\x00\x03\x06",7, "OBJ_UNKNOWN");
         // (variation 0 ("any") specified - not valid for writes)
-    check_parse(dnp3_p_app_request, "\x01\x02\x0A\x01\x00\x03\x06\x0E",8,
-                                    "[1] WRITE {g10v1 qc=00 #3..6: 0 1 1 1}");
-    check_parse(dnp3_p_app_request, "\x01\x02\x0A\x01\x00\x00\x08\x5E\x01",9,
-                                    "[1] WRITE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x03\x06\x0E",8,
+                                    "[1] (fin,fir) WRITE {g10v1 qc=00 #3..6: 0 1 1 1}");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x01",9,
+                                    "[1] (fin,fir) WRITE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
     check_parse_fail(dnp3_p_app_request, "\x01\x02\x0A\x01\x17\x00",6);
         // XXX is qc=17 (index prefixes) valid for bit-packed variation? which encoding is correct?
-        //     e.g: "[1] WRITE {g10v1 qc=17 #1:0,#4:1,#8:1}" "\x01\x02\x0A\x01\x17\x03...
+        //     e.g: "[1] (fin,fir) WRITE {g10v1 qc=17 #1:0,#4:1,#8:1}" "\x01\x02\x0A\x01\x17\x03...
         //     little-on-little
         //       00000001 0000100|0 001000|10 00000|100
         //       ...\x01\x08\x22\x04"
@@ -180,13 +185,13 @@ static void test_req_write(void)
         //     big-on-big
         //       00000001 0|0000010 01|000010 001|00000
         //       ...\x01\x02\x42\x20"
-    check_parse_fail(dnp3_p_app_request, "\x01\x02\x0A\x01\x00\x00\x08\x5E\x02",9);
+    check_parse_fail(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9);
         // (an unused bit after the packed objects is not zero)
 }
 
 static void test_rsp_null(void)
 {
-    //check_parse(dnp3_p_app_response, "\x02\x81\x00",2, "[2] RESPONSE");
+    //check_parse(dnp3_p_app_response, "\xC2\x81\x00",2, "[2] RESPONSE");
 }
 
 

@@ -654,6 +654,7 @@ static HParsedToken *act_ac(const HParseResult *p, void *user)
 }
 
 #define act_reqac act_ac
+#define act_conac act_ac
 #define act_rspac act_ac
 
 void dnp3_p_init_app(void)
@@ -676,24 +677,29 @@ void dnp3_p_init_app(void)
 
     H_RULE (bit,    h_bits(1, false));
     H_RULE (zro,    h_int_range(bit, 0, 0));
+    H_RULE (one,    h_int_range(bit, 1, 1));
     H_RULE (fin,    bit);
     H_RULE (fir,    bit);
     H_RULE (con,    bit);
     H_RULE (uns,    bit);
-    H_RULE (reqflags, h_sequence(fin,fir,zro,zro, NULL));
+    H_RULE (conflags, h_sequence(one,one,zro,uns, NULL));   // CONFIRM
+    H_RULE (reqflags, h_sequence(one,one,zro,zro, NULL));   // always (fin,fir)!
     H_RULE (rspflags, h_sequence(fin,fir,con,uns, NULL));
 
     H_RULE (seqno,  h_bits(4, false));
+    H_ARULE(conac,  h_sequence(conflags, seqno, NULL));
     H_ARULE(reqac,  h_sequence(reqflags, seqno, NULL));
     H_ARULE(rspac,  h_sequence(rspflags, seqno, NULL));
     H_RULE (iin,    h_sequence(h_bits(14, false), dnp3_p_reserved(2), NULL)); // XXX individual bits?
 
     H_RULE (fc,     h_uint8());
     H_RULE (errfc,  h_right(fc, h_error(ERR_FUNC_NOT_SUPP)));
-    H_RULE (reqfc,  h_choice(h_int_range(fc, 0x00, 0x21), errfc, NULL));
+    H_RULE (confc,           h_int_range(fc, 0x00, 0x00));
+    H_RULE (reqfc,  h_choice(h_int_range(fc, 0x01, 0x21), errfc, NULL));
     H_RULE (rspfc,  h_choice(h_int_range(fc, 0x81, 0x83), errfc, NULL));
 
-    H_RULE (req_header, h_sequence(reqac, reqfc, NULL));
+    H_RULE (req_header, h_choice(h_sequence(conac, confc, NULL),
+                                 h_sequence(reqac, reqfc, NULL), NULL));
     H_RULE (rsp_header, h_sequence(rspac, rspfc, iin, NULL));
 
     H_RULE (request, h_bind(req_header, f_app_request, NULL));

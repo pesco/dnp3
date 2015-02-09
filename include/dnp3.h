@@ -40,12 +40,8 @@ typedef enum {
     ERR_PARAM_ERROR
 } DNP3_ParseError;
 
-// request function codes: 0x00-0x21
 typedef enum {
-    DNP3_NO_REQUEST = -1,       // XXX still needed? dummy value used as an argument to the
-                                // response parser when there is no outstanding
-                                // request
-
+    // request function codes: 0x00-0x21
     DNP3_CONFIRM    = 0x00,     // confirmation is nominally a request because
                                 // it's a master-to-outstation message
     DNP3_READ       = 0x01,
@@ -80,15 +76,13 @@ typedef enum {
     DNP3_ABORT_FILE             = 0x1E,
     DNP3_ACTIVATE_CONFIG        = 0x1F,
     DNP3_AUTHENTICATE_REQ       = 0x20,
-    DNP3_AUTH_REQ_NO_ACK        = 0x21
-} DNP3_RequestFunc;
+    DNP3_AUTH_REQ_NO_ACK        = 0x21,
 
-// response function codes: 0x81-0x83
-typedef enum {
+    // response function codes: 0x81-0x83
     DNP3_RESPONSE               = 0x81,
     DNP3_UNSOLICITED_RESPONSE   = 0x82,
     DNP3_AUTHENTICATE_RESP      = 0x83
-} DNP3_ResponseFunc;
+} DNP3_FunctionCode;
 
 // group numbers
 typedef enum {
@@ -156,36 +150,27 @@ typedef struct {
 } DNP3_AuthData; // XXX
 
 // requests are messages from master to outstation.
-typedef struct {
-    DNP3_AppControl     ac;     // application control octet
-    DNP3_RequestFunc    fc;     // function code
-
-    DNP3_AuthData       *auth;  // aggressive-mode authentication; optional
-
-    size_t              nblocks;    // number of elements in odata array
-    DNP3_ObjectBlock    **odata;
-} DNP3_Request;
-
 // responses (solicited or unsolicited) are messages from outstation to master.
+// they have different parsers but use the same data structure representation:
 typedef struct {
     DNP3_AppControl     ac;     // application control octet
-    DNP3_ResponseFunc   fc;     // function code
-    DNP3_IntIndications iin;    // internal indications
+    DNP3_FunctionCode   fc;     // function code
+    DNP3_IntIndications iin;    // internal indications (response only)
 
-    // XXX auth?
+    DNP3_AuthData       *auth;  // aggressive-mode authentication (optional)
 
     size_t              nblocks;    // number of elements in odata array
     DNP3_ObjectBlock    **odata;
-} DNP3_Response;
+} DNP3_Fragment;
 
 
 /// PARSERS ///
 
 enum DNP3_TokenType {
     // TT_USER remains the generic (void pointer) case
-    TT_DNP3_Request = TT_USER+1,
-    TT_DNP3_Response,
+    TT_DNP3_Fragment = TT_USER+1,
     TT_DNP3_AppControl,
+    TT_DNP3_IntIndications,
     TT_DNP3_ObjectBlock,
     TT_DNP3_AuthData,
     TT_DNP3_Object
@@ -193,12 +178,14 @@ enum DNP3_TokenType {
 };
 
 extern HParser *dnp3_p_app_request;
+extern HParser *dnp3_p_app_response;
 
 void dnp3_p_init(void);
 
 // formatting for human-readable output - caller must free result!
+char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o);
 char *dnp3_format_oblock(const DNP3_ObjectBlock *ob);
-char *dnp3_format_request(const DNP3_Request *req);
+char *dnp3_format_fragment(const DNP3_Fragment *req);
 
 
 #endif // DNP3_H_SEEN

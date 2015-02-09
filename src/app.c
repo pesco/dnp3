@@ -24,21 +24,21 @@
 
 static HParsedToken *act_with_ama(const HParseResult *p, void *env)
 {
-    DNP3_Request *r = H_ALLOC(DNP3_Request);
+    DNP3_Fragment *frag = H_ALLOC(DNP3_Fragment);
     DNP3_AuthData *a = H_ALLOC(DNP3_AuthData);
 
-    // XXX this is wrong; the incoming objects are raw, not yet a DNP3_Request
-    //     leave all this to act_req_odata!?
+    // XXX this is wrong; the incoming objects are raw, not yet a DNP3_Fragment
+    //     leave all this to act_fragment!?
 
-    // input is a sequence: (auth_aggr, request, auth_mac)
-    *r = *H_FIELD(DNP3_Request, 1);
+    // input is a sequence: (auth_aggr, fragment, auth_mac)
+    *frag = *H_FIELD(DNP3_Fragment, 1);
 
     // XXX fill AuthData from H_FIELD(..., 0) and H_FIELD(..., 2)
     // a->xxx = H_FIELD(..., 1)->xxx;
     // a->mac = H_FIELD(..., 2);
-    r->auth = a;
+    frag->auth = a;
 
-    return H_MAKE(DNP3_Request, r);
+    return H_MAKE(DNP3_Fragment, frag);
 }
 
 // combinator: allow aggresive-mode auth objects around base parser
@@ -81,6 +81,7 @@ static HParser *odata[256] = {NULL};
 // dnp3_p_objchoice combinator to abstract that.
 
 HParser *dnp3_p_app_request;
+HParser *dnp3_p_app_response;
 
 static HParser *range_index;
 static HParser *range_addr;
@@ -355,7 +356,7 @@ static HParsedToken *act_block(const HParseResult *p, void *user)
     //   | (grp,var,error)
 
     // propagate TT_ERR on the third place
-    if(ISERR(H_INDEX_TOKEN(p->ast, 2)->token_type))
+    if(H_ISERR(H_INDEX_TOKEN(p->ast, 2)->token_type))
         return H_INDEX_TOKEN(p->ast, 2);
 
     ob->group = H_FIELD_UINT(0);
@@ -567,20 +568,27 @@ static void init_odata(void)
 
 /// APPLICATION LAYER FRAGMENTS ///
 
-// combine header, auth, and object data into final DNP3_Request
-static HParsedToken *act_req_odata(const HParseResult *p, void *user)
+// combine header, auth, and object data into final DNP3_Fragment
+static HParsedToken *act_fragment(const HParseResult *p, void *user)
 {
-    const HParsedToken *hdr = user; // hdr = (ac, fc)
+    const HParsedToken *hdr = user;
+    // hdr = (ac, fc)
+    //     | (ac, fc, iin)
+
+    // extract the application header
+    DNP3_Fragment *frag = H_ALLOC(DNP3_Fragment);
+    frag->ac = *H_INDEX(DNP3_AppControl, hdr, 0);
+    frag->fc = H_INDEX_UINT(hdr, 1);
+    if(h_seq_len(hdr) > 2)
+        frag->iin = *H_INDEX(DNP3_IntIndications, hdr, 2);
 
     // propagate TT_ERR on objects
-    if(p->ast && ISERR(p->ast->token_type)) {
-        return p->ast;  // XXX copy?
+    if(p->ast && H_ISERR(p->ast->token_type)) {
+        // we use (XXX abuse?) the user field on our TT_ERR token to report the
+        // application header (as a DNP3_Fragment structure without objects),
+        // so that an outstation can generate a correct response to requests.
+        return h_make_err(p->arena, p->ast->token_type, frag);
     }
-
-    DNP3_Request *req = H_ALLOC(DNP3_Request);
-    req->ac = *H_INDEX(DNP3_AppControl, hdr, 0);
-    req->fc = H_INDEX_UINT(hdr, 1);
-    req->auth = NULL;
 
     // copy object data. form of AST expected:
     //  (authdata, (oblock...))
@@ -597,37 +605,37 @@ static HParsedToken *act_req_odata(const HParseResult *p, void *user)
           && od->seq->used > 0
           && od->seq->elements[0]->token_type == TT_DNP3_AuthData)
     {
-        req->auth = H_INDEX(DNP3_AuthData, od, 0);
+        frag->auth = H_INDEX(DNP3_AuthData, od, 0);
         od = H_INDEX_TOKEN(od, 1);
     }
 
     if(od == NULL) {
         // empty case (no odata)
-        req->odata = NULL;
+        frag->odata = NULL;
     } else if(od->token_type == TT_SEQUENCE) {
         // extract object blocks
         size_t n = od->seq->used;
-        req->nblocks = n;
-        req->odata = h_arena_malloc(p->arena, sizeof(DNP3_ObjectBlock *) * n);
-        for(size_t i=0; i<req->nblocks; i++) {
-            req->odata[i] = H_INDEX(DNP3_ObjectBlock, od, i);
+        frag->nblocks = n;
+        frag->odata = h_arena_malloc(p->arena, sizeof(DNP3_ObjectBlock *) * n);
+        for(size_t i=0; i<frag->nblocks; i++) {
+            frag->odata[i] = H_INDEX(DNP3_ObjectBlock, od, i);
         }
     } else {
         // single-oblock case
-        req->nblocks = 1;
-        req->odata = H_ALLOC(DNP3_ObjectBlock *);
-        req->odata[0] = H_CAST(DNP3_ObjectBlock, od);
+        frag->nblocks = 1;
+        frag->odata = H_ALLOC(DNP3_ObjectBlock *);
+        frag->odata[0] = H_CAST(DNP3_ObjectBlock, od);
     }
 
-    return H_MAKE(DNP3_Request, req);
+    return H_MAKE(DNP3_Fragment, frag);
 }
 
-// parse the rest of a request, after the application header
-static HParser *f_app_request(const HParsedToken *hdr, void *env)
+// parse the rest of a fragment, after the application header
+static HParser *f_fragment(const HParsedToken *hdr, void *env)
 {
     // propagate TT_ERR on function code
     HParsedToken *fc_ = H_INDEX_TOKEN(hdr, 1);
-    if(ISERR(H_INDEX_TOKEN(hdr, 1)->token_type)) {
+    if(H_ISERR(H_INDEX_TOKEN(hdr, 1)->token_type)) {
         return h_unit(fc_);
     }
 
@@ -637,7 +645,36 @@ static HParser *f_app_request(const HParsedToken *hdr, void *env)
     HParser *p = odata[fc];
     assert(p != NULL);
 
-    return h_action(p, act_req_odata, (void *)hdr);
+    // odata must always parse the entire rest of the fragment
+    p = dnp3_p_packet(p);
+
+    // any unspecific parse failure on odata should yield PARAM_ERROR
+    p = h_choice(p, h_error(ERR_PARAM_ERROR), NULL);
+
+    return h_action(p, act_fragment, (void *)hdr);
+}
+
+static HParsedToken *act_iin(const HParseResult *p, void *user)
+{
+    DNP3_IntIndications *iin = H_ALLOC(DNP3_IntIndications);
+
+    iin->broadcast  = H_FIELD_UINT(0);
+    iin->class1     = H_FIELD_UINT(1);
+    iin->class2     = H_FIELD_UINT(2);
+    iin->class3     = H_FIELD_UINT(3);
+    iin->need_time  = H_FIELD_UINT(4);
+    iin->local_ctrl = H_FIELD_UINT(5);
+    iin->device_trouble = H_FIELD_UINT(6);
+    iin->device_restart = H_FIELD_UINT(7);
+    iin->func_not_supp  = H_FIELD_UINT(8);
+    iin->obj_unknown    = H_FIELD_UINT(9);
+    iin->param_error    = H_FIELD_UINT(10);
+    iin->eventbuf_overflow  = H_FIELD_UINT(11);
+    iin->already_executing  = H_FIELD_UINT(12);
+    iin->config_corrupt     = H_FIELD_UINT(13);
+    // 14 bits total
+
+    return H_MAKE(DNP3_IntIndications, iin);
 }
 
 static HParsedToken *act_ac(const HParseResult *p, void *user)
@@ -690,7 +727,7 @@ void dnp3_p_init_app(void)
     H_ARULE(conac,  h_sequence(conflags, seqno, NULL));
     H_ARULE(reqac,  h_sequence(reqflags, seqno, NULL));
     H_ARULE(rspac,  h_sequence(rspflags, seqno, NULL));
-    H_RULE (iin,    h_sequence(h_bits(14, false), dnp3_p_reserved(2), NULL)); // XXX individual bits?
+    H_ARULE(iin,    h_left(h_repeat_n(bit, 14), dnp3_p_reserved(2)));
 
     H_RULE (fc,     h_uint8());
     H_RULE (errfc,  h_right(fc, h_error(ERR_FUNC_NOT_SUPP)));
@@ -702,16 +739,19 @@ void dnp3_p_init_app(void)
                                  h_sequence(reqac, reqfc, NULL), NULL));
     H_RULE (rsp_header, h_sequence(rspac, rspfc, iin, NULL));
 
-    H_RULE (request, h_bind(req_header, f_app_request, NULL));
+    H_RULE (request,    h_bind(req_header, f_fragment, NULL));
+    H_RULE (response,   h_bind(rsp_header, f_fragment, NULL));
 
-    dnp3_p_app_request = dnp3_p_packet(request);
-    // XXX response
+    dnp3_p_app_request  = request;
+    dnp3_p_app_response = response;
 }
 
 
 /// human-readable output formatting ///
+// XXX should this move into its own file?
 
-static char *funcname[] = {
+static char *funcnames[] = {
+    // requests 0x00 - 0x21
     "CONFIRM", "READ", "WRITE", "SELECT", "OPERATE", "DIRECT_OPERATE",
     "DIRECT_OPERATE_NR", "IMMED_FREEZE", "IMMED_FREEZE_NR", "FREEZE_CLEAR",
     "FREEZE_CLEAR_NR", "FREEZE_AT_TIME", "FREEZE_AT_TIME_NR", "COLD_RESTART",
@@ -719,7 +759,24 @@ static char *funcname[] = {
     "STOP_APPL", "SAVE_CONFIG", "ENABLE_UNSOLICITED", "DISABLE_UNSOLICITED",
     "ASSIGN_CLASS", "DELAY_MEASURE", "RECORD_CURRENT_TIME", "OPEN_FILE",
     "CLOSE_FILE", "DELETE_FILE", "GET_FILE_INFO", "AUTHENTICATE_FILE",
-    "ABORT_FILE", "ACTIVATE_CONFIG", "AUTHENTICATE_REQ", "AUTH_REQ_NO_ACK"
+    "ABORT_FILE", "ACTIVATE_CONFIG", "AUTHENTICATE_REQ", "AUTH_REQ_NO_ACK",
+
+    // 0x22 - 0x80
+          NULL, NULL, NULL, NULL, NULL, NULL, NULL,     // 0x28
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,     // 0x30
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,     // 0x40
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,     // 0x60
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,     // 0x80
+
+    // responses 0x81-0x83
+    "RESPONSE", "UNSOLICITED_RESPONSE", "AUTHENTICATE_RESP"
     };
 
 int appendf(char **s, size_t *size, const char *fmt, ...)
@@ -839,7 +896,7 @@ err:
     return NULL;
 }
 
-char *dnp3_format_request(const DNP3_Request *req)
+char *dnp3_format_fragment(const DNP3_Fragment *frag)
 {
     char *odata = NULL;
     char *blk = NULL;
@@ -850,10 +907,10 @@ char *dnp3_format_request(const DNP3_Request *req)
     // flags string
     char flags[20]; // need 4*3(names)+3(seps)+2(parens)+1(space)+1(null)
     p = flags;
-    if(req->ac.fin) { strcpy(p, ",fin"); p+=4; }
-    if(req->ac.fir) { strcpy(p, ",fir"); p+=4; }
-    if(req->ac.con) { strcpy(p, ",con"); p+=4; }
-    if(req->ac.uns) { strcpy(p, ",uns"); p+=4; }
+    if(frag->ac.fin) { strcpy(p, ",fin"); p+=4; }
+    if(frag->ac.fir) { strcpy(p, ",fir"); p+=4; }
+    if(frag->ac.con) { strcpy(p, ",con"); p+=4; }
+    if(frag->ac.uns) { strcpy(p, ",uns"); p+=4; }
     if(p > flags) {
         flags[0] = '(';
         *p++ = ')';
@@ -861,9 +918,11 @@ char *dnp3_format_request(const DNP3_Request *req)
     }
     *p = '\0';
 
+    // XXX format iin
+
     // authdata string
     char *auth = "";
-    if(req->auth) {
+    if(frag->auth) {
         auth = " [auth]";   // XXX
     }
 
@@ -872,8 +931,8 @@ char *dnp3_format_request(const DNP3_Request *req)
     odata = malloc(size);
     if(!odata) goto err;
     odata[0] = '\0';
-    for(size_t i=0; i<req->nblocks; i++) {
-        blk = dnp3_format_oblock(req->odata[i]);
+    for(size_t i=0; i<frag->nblocks; i++) {
+        blk = dnp3_format_oblock(frag->odata[i]);
         if(!blk) goto err;
 
         size += 3 + strlen(blk);  // " {$blk}"
@@ -890,13 +949,16 @@ char *dnp3_format_request(const DNP3_Request *req)
         blk = NULL;
     }
 
-    char *name = funcname[req->fc];
+    assert(frag->fc < sizeof(funcnames));
+    char *name = funcnames[frag->fc];
+    assert(name != NULL);
+
     size = 6 + strlen(flags) + strlen(name) + strlen(odata) + strlen(auth);
     res = malloc(size);
     if(!res) goto err;
 
     size_t n = snprintf(res, size, "[%d] %s%s%s%s",
-                        req->ac.seq, flags, name, odata, auth);
+                        frag->ac.seq, flags, name, odata, auth);
     if(n < 0) goto err;
 
     return res;

@@ -4,7 +4,7 @@
 #include <inttypes.h>   // PRIu64
 #include <glib.h>
 #include <dnp3.h>
-#include "src/util.h"   // ISERR
+#include "src/hammer.h" // H_ISERR
 
 
 /// test macros (lifted/adapted from hammer's test suite) ///
@@ -16,13 +16,13 @@ static char *format(const HParsedToken *p)
         return h_write_result_unamb(p);
 
     switch(p->token_type) {
-    case TT_DNP3_Request:   return dnp3_format_request(p->user);
+    case TT_DNP3_Fragment:  return dnp3_format_fragment(p->user);
     case ERR_FUNC_NOT_SUPP: return g_strdup("FUNC_NOT_SUPP");
     case ERR_OBJ_UNKNOWN:   return g_strdup("OBJ_UNKNOWN");
     case ERR_PARAM_ERROR:   return g_strdup("PARAM_ERROR");
     }
 
-    if(ISERR(p->token_type)) {
+    if(H_ISERR(p->token_type)) {
         char *s = malloc(5);
         if(!s) return NULL;
         snprintf(s, 5, "e%.02d", p->token_type);
@@ -94,7 +94,7 @@ static char *format(const HParsedToken *p)
 static void test_req_fail(void)
 {
     check_parse_fail(dnp3_p_app_request, "",0);
-    check_parse_fail(dnp3_p_app_request, "\x00",1);
+    check_parse_fail(dnp3_p_app_request, "\xC0",1);
     check_parse(dnp3_p_app_request, "\xC0\x23",2, "FUNC_NOT_SUPP");
     check_parse(dnp3_p_app_request, "\xC0\x81",2, "FUNC_NOT_SUPP");
 }
@@ -104,6 +104,7 @@ static void test_req_ac(void)
     check_parse(dnp3_p_app_request, "\xC2\x00",2, "[2] (fin,fir) CONFIRM");
     check_parse(dnp3_p_app_request, "\xC5\x00",2, "[5] (fin,fir) CONFIRM");
     check_parse(dnp3_p_app_request, "\xD3\x00",2, "[3] (fin,fir,uns) CONFIRM");
+    // XXX is it correct to fail the parse on invalid AC flags?
     check_parse_fail(dnp3_p_app_request, "\xE0\x23",2); // (con) ???
     check_parse_fail(dnp3_p_app_request, "\xE0\x81",2); // (con) RESPONSE
     check_parse_fail(dnp3_p_app_request, "\xD0\x23",2); // (uns) ???
@@ -119,20 +120,20 @@ static void test_req_ac(void)
 static void test_req_ohdr(void)
 {
     // truncated (otherwise valid) object header
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01",3);
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00",4);
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x17",5);
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x01",6);
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x7A",5);
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01",3, "PARAM_ERROR");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00",4, "PARAM_ERROR");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17",5, "PARAM_ERROR");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x01",6, "PARAM_ERROR");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x7A",5, "PARAM_ERROR");
 
     // truncated object header (invalid group)
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x05",3);
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x05\x00",4);
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41\x58",8);
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x01\x00\x06\x05\x00",7);
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05",3, "PARAM_ERROR");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00",4, "PARAM_ERROR");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41\x58",8, "PARAM_ERROR");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x06\x05\x00",7, "PARAM_ERROR");
 
     // truncated object header (invalid variation)
-    check_parse_fail(dnp3_p_app_request, "\xC0\x01\x32\x00",4);
+    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00",4, "PARAM_ERROR");
 
     // invalid group / variation (complete header)
     check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00\x00\x03\x41",7, "OBJ_UNKNOWN");
@@ -143,7 +144,8 @@ static void test_req_confirm(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fin,fir) CONFIRM");
     check_parse(dnp3_p_app_request, "\xD0\x00",2, "[0] (fin,fir,uns) CONFIRM");
-    check_parse_fail(dnp3_p_app_request, "\xC0\x00\x01\x00\x06",5);
+    check_parse(dnp3_p_app_request, "\xC0\x00\x01\x00\x06",5, "PARAM_ERROR");
+        // XXX should a message with unexpected objects yield OBJ_UNKNOWN?
 }
 
 static void test_req_read(void)
@@ -170,7 +172,7 @@ static void test_req_write(void)
                                     "[1] (fin,fir) WRITE {g10v1 qc=00 #3..6: 0 1 1 1}");
     check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x01",9,
                                     "[1] (fin,fir) WRITE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
-    check_parse_fail(dnp3_p_app_request, "\x01\x02\x0A\x01\x17\x00",6);
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x17\x00",6, "PARAM_ERROR");
         // XXX is qc=17 (index prefixes) valid for bit-packed variation? which encoding is correct?
         //     e.g: "[1] (fin,fir) WRITE {g10v1 qc=17 #1:0,#4:1,#8:1}" "\x01\x02\x0A\x01\x17\x03...
         //     little-on-little
@@ -185,13 +187,49 @@ static void test_req_write(void)
         //     big-on-big
         //       00000001 0|0000010 01|000010 001|00000
         //       ...\x01\x02\x42\x20"
-    check_parse_fail(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9);
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9, "PARAM_ERROR");
         // (an unused bit after the packed objects is not zero)
+}
+
+static void test_rsp_fail(void)
+{
+    check_parse_fail(dnp3_p_app_response, "",0);
+    check_parse_fail(dnp3_p_app_response, "\xC2",1);
+    check_parse_fail(dnp3_p_app_response, "\xC2\x81",2);
+    check_parse_fail(dnp3_p_app_response, "\xC2\x81\x00",3);
+    check_parse_fail(dnp3_p_app_response, "\xC0\x00",2);
+    check_parse_fail(dnp3_p_app_response, "\xC0\x01",2);
+    check_parse_fail(dnp3_p_app_response, "\xC0\x23",2);
+    check_parse_fail(dnp3_p_app_response, "\xC0\xF0",2);
+    check_parse(dnp3_p_app_response, "\xC0\x00\x00\x00",4, "FUNC_NOT_SUPP");
+    check_parse(dnp3_p_app_response, "\xC0\x01\x00\x00",4, "FUNC_NOT_SUPP");
+    check_parse(dnp3_p_app_response, "\xC0\x23\x00\x00",4, "FUNC_NOT_SUPP");
+    check_parse(dnp3_p_app_response, "\xC0\xF0\x00\x00",4, "FUNC_NOT_SUPP");
+}
+
+static void test_rsp_ac(void)
+{
+    check_parse(dnp3_p_app_response, "\x02\x81\x00\x00",4, "[2] RESPONSE");
+    check_parse(dnp3_p_app_response, "\x13\x81\x00\x00",4, "[3] (uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x22\x81\x00\x00",4, "[2] (con) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x32\x81\x00\x00",4, "[2] (con,uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x42\x81\x00\x00",4, "[2] (fir) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x54\x81\x00\x00",4, "[4] (fir,uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x62\x81\x00\x00",4, "[2] (fir,con) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x72\x81\x00\x00",4, "[2] (fir,con,uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x82\x81\x00\x00",4, "[2] (fin) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x9A\x81\x00\x00",4, "[10] (fin,uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xA2\x81\x00\x00",4, "[2] (fin,con) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xB2\x81\x00\x00",4, "[2] (fin,con,uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fin,fir) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xD0\x81\x00\x00",4, "[0] (fin,fir,uns) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xE2\x81\x00\x00",4, "[2] (fin,fir,con) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xF2\x81\x00\x00",4, "[2] (fin,fir,con,uns) RESPONSE");
 }
 
 static void test_rsp_null(void)
 {
-    //check_parse(dnp3_p_app_response, "\xC2\x81\x00",2, "[2] RESPONSE");
+    check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fin,fir) RESPONSE");
 }
 
 
@@ -209,9 +247,9 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/confirm", test_req_confirm);
     g_test_add_func("/app/req/read", test_req_read);
     g_test_add_func("/app/req/write", test_req_write);
-    //g_test_add_func("/app/rsp/fail", test_rsp_fail);
-    //g_test_add_func("/app/rsp/ac", test_rsp_ac);
-    //g_test_add_func("/app/rsp/null", test_rsp_null);
+    g_test_add_func("/app/rsp/fail", test_rsp_fail);
+    g_test_add_func("/app/rsp/ac", test_rsp_ac);
+    g_test_add_func("/app/rsp/null", test_rsp_null);
 
     g_test_run();
 }

@@ -19,8 +19,6 @@ HParser *dnp3_p_many(HParser *p);
 // like h_left(p, h_end_p()) but propagates TT_ERR and friends
 HParser *dnp3_p_packet(HParser *p);
 
-#define ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)
-
 void dnp3_p_init_util(void);
 
 

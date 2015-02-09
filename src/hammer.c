@@ -1,5 +1,7 @@
 #include <hammer/hammer.h>
+#include <hammer/glue.h>
 #include <assert.h>
+#include "hammer.h"
 
 static HParsedToken *act_unit(const HParseResult *p, void *tok_)
 {
@@ -20,9 +22,20 @@ static HParsedToken *act_error(const HParseResult *p, void *user)
 
 HParser *h_error(int code)
 {
-    assert(code >= TT_ERR);
-    assert(code < TT_USER);
+    assert(H_ISERR(code));
 
     // could implement in terms of h_unit, but would need an alloc
     return h_action(h_epsilon_p(), act_error, (void *)(intptr_t)code);
+}
+
+// helper not officially exported by hammer, but I know it is ;)
+HParsedToken *h_make_(HArena *arena, HTokenType type);
+
+HParsedToken *h_make_err(HArena *arena, HTokenType type, void *value)
+{
+    assert(H_ISERR(type));
+
+    HParsedToken *ret = h_make_(arena, type);
+    ret->user = value;
+    return ret;
 }

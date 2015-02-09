@@ -244,7 +244,14 @@ static void test_rsp_ac(void)
 static void test_rsp_iin(void)
 {
     check_parse(dnp3_p_app_response, "\x02\x81\x00\x00",4, "[2] RESPONSE");
-    // XXX test iin...
+    check_parse(dnp3_p_app_response, "\x02\x81\x01\x00",4, "[2] RESPONSE (broadcast)");
+    check_parse(dnp3_p_app_response, "\x02\x81\x06\x00",4, "[2] RESPONSE (class1,class2)");
+    check_parse(dnp3_p_app_response, "\x02\x81\x00\x01",4, "[2] RESPONSE (func_not_supp)");
+    check_parse(dnp3_p_app_response, "\x02\x81\x00\x10",4, "[2] RESPONSE (already_executing)");
+    check_parse(dnp3_p_app_response, "\x02\x81\x00\x20",4, "[2] RESPONSE (config_corrupt)");
+    check_parse(dnp3_p_app_response, "\x02\x81\x80\x20",4, "[2] RESPONSE (device_restart,config_corrupt)");
+    check_parse_fail(dnp3_p_app_response, "\x02\x81\x00\x40",4);
+    check_parse_fail(dnp3_p_app_response, "\x02\x81\x00\x80",4);
 }
 
 static void test_rsp_null(void)
@@ -269,7 +276,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/write", test_req_write);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
-    g_test_add_func("/app/rsp/ac", test_rsp_iin);
+    g_test_add_func("/app/rsp/iin", test_rsp_iin);
     g_test_add_func("/app/rsp/null", test_rsp_null);
 
     g_test_run();

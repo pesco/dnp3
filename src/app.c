@@ -931,6 +931,7 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
     char *odata = NULL;
     char *blk = NULL;
     char *res = NULL;
+    char *iin = NULL;
     size_t size;
     char *p;
 
@@ -948,7 +949,33 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
     }
     *p = '\0';
 
-    // XXX format iin
+    // format iin
+    iin = malloc(size = 128);
+    if(!iin) goto err;
+    iin[0] = ' ';
+    iin[1] = '\0';
+    #define APPEND(FLAG) if(frag->iin.FLAG) appendf(&iin, &size, "," #FLAG)
+    APPEND(broadcast);
+    APPEND(class1);
+    APPEND(class2);
+    APPEND(class3);
+    APPEND(need_time);
+    APPEND(local_ctrl);
+    APPEND(device_trouble);
+    APPEND(device_restart);
+    APPEND(func_not_supp);
+    APPEND(obj_unknown);
+    APPEND(param_error);
+    APPEND(eventbuf_overflow);
+    APPEND(already_executing);
+    APPEND(config_corrupt);
+    #undef APPEND
+    if(iin[1] == '\0') {
+        iin[0] = '\0';
+    } else {
+        iin[1] = '(';
+        appendf(&iin, &size, ")");
+    }
 
     // authdata string
     char *auth = "";
@@ -986,17 +1013,18 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
     if(!name)
         name = "???";
 
-    size = 6 + strlen(flags) + strlen(name) + strlen(odata) + strlen(auth);
+    size = 6 + strlen(flags) + strlen(name) + strlen(iin) + strlen(odata) + strlen(auth);
     res = malloc(size);
     if(!res) goto err;
 
-    size_t n = snprintf(res, size, "[%d] %s%s%s%s",
-                        frag->ac.seq, flags, name, odata, auth);
+    size_t n = snprintf(res, size, "[%d] %s%s%s%s%s",
+                        frag->ac.seq, flags, name, iin, odata, auth);
     if(n < 0) goto err;
 
     return res;
 
 err:
+    if(iin) free(iin);
     if(blk) free(blk);
     if(odata) free(odata);
     if(res) free(res);

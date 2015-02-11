@@ -288,6 +288,25 @@ static void test_obj_binin(void)
                                      "PARAM_ERROR on [0] (fin,fir) RESPONSE");
 }
 
+static void test_obj_bininev(void)
+{
+    check_parse(dnp3_p_app_request, "\xC0\x01\x02\x00\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g2v0 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x02\x01\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g2v1 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x02\x03\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g2v3 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x02\x04\x00\x03\x08",7,
+                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x01\x17\x01\x03\x01",10,
+                                     "[0] (fin,fir) RESPONSE {g2v1 qc=17 #3:1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x01\x17\x01\x03\x81",10,
+                                     "[0] (fin,fir) RESPONSE {g2v1 qc=17 #3:(online)1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x01\x17\x01\x03\x83",10,
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+}
+
 
 
 /// ...
@@ -308,6 +327,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/rsp/iin", test_rsp_iin);
     g_test_add_func("/app/rsp/null", test_rsp_null);
     g_test_add_func("/app/obj/binin", test_obj_binin);
+    g_test_add_func("/app/obj/bininev", test_obj_bininev);
 
     g_test_run();
 }

@@ -115,12 +115,10 @@ typedef enum {
     DNP3_VARIATION_MAC = 9,
 } DNP3_Variation;
 
-typedef union {
-    // g1v1, g10v1 (binary in- and outputs, packed format)
-    uint8_t bit:1;
+typedef uint64_t DNP3_Time;     // milliseconds since 1970-01-01
 
-    // g1v2, g10v2 (binary in- and outputs, with flags)
-    struct {
+// binary point data with flags
+typedef struct {
         uint8_t online:1;
         uint8_t restart:1;
         uint8_t comm_lost:1;
@@ -128,7 +126,23 @@ typedef union {
         uint8_t local_forced:1;
         uint8_t chatter_filter:1;
         uint8_t state:1;
-    } flags;
+} DNP3_Flags;
+
+typedef union {
+    // g1v1, g10v1 (binary in- and outputs, packed format)
+    uint8_t bit:1;
+
+    // g1v2, g2v1, g10v2 (binary in- and outputs, with flags)
+    DNP3_Flags flags;
+
+    // g2v2, g2v3 (binary in- and output events with time)
+    struct {
+        DNP3_Flags flags;
+        union {
+            DNP3_Time abstime;
+            uint16_t  reltime;   // ms since "common time-of-occurance" (CTO)
+        };
+    } timed;
 
 } DNP3_Object;
 

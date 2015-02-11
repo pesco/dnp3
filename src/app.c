@@ -479,7 +479,7 @@ static void init_odata(void)
                                      dnp3_p_dblbitin_rblock,
                                      dnp3_p_dblbitinev_rblock, NULL));
     H_RULE(oblock_binin,    h_choice(dnp3_p_binin_oblock,
-//                                     dnp3_p_bininev_oblock,
+                                     dnp3_p_bininev_oblock,
 //                                     dnp3_p_dblbitin_oblock,
 //                                     dnp3_p_dblbitinev_oblock,
                                      NULL));
@@ -871,11 +871,40 @@ int appendf(char **s, size_t *size, const char *fmt, ...)
     return 0;
 }
 
+static char *format_flags(DNP3_Flags flags)
+{
+    char *res = NULL;
+    size_t n;
+
+    if(flags.online)          appendf(&res, &n, ",online");
+    if(flags.restart)         appendf(&res, &n, ",restart");
+    if(flags.comm_lost)       appendf(&res, &n, ",comm_lost");
+    if(flags.remote_forced)   appendf(&res, &n, ",remote_forced");
+    if(flags.local_forced)    appendf(&res, &n, ",local_forced");
+    if(flags.chatter_filter)  appendf(&res, &n, ",chatter_filter");
+
+    return res;
+}
+
+static int append_flags(char **res, size_t *size, DNP3_Flags flags)
+{
+    char *s = format_flags(flags);
+    int x;
+
+    if(s) {
+        x = appendf(res, size, "(%s)%d", s+1, flags.state);
+        free(s);
+    } else {
+        x = appendf(res, size, "%d", flags.state);
+    }
+
+    return x;
+}
+
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
 {
     size_t size;
     char *res = NULL;
-    char *flags = NULL;
     size_t fsize;
 
     switch(g) {
@@ -886,17 +915,14 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
             appendf(&res, &size, "%d", o.bit);
             break;
         case V(FLAGS):
-            if(o.flags.online)          appendf(&flags, &fsize, ",online");
-            if(o.flags.restart)         appendf(&flags, &fsize, ",restart");
-            if(o.flags.comm_lost)       appendf(&flags, &fsize, ",comm_lost");
-            if(o.flags.remote_forced)   appendf(&flags, &fsize, ",remote_forced");
-            if(o.flags.local_forced)    appendf(&flags, &fsize, ",local_forced");
-            if(o.flags.chatter_filter)  appendf(&flags, &fsize, ",chatter_filter");
-            if(flags) {
-                appendf(&res, &size, "(%s)%d", flags+1, o.flags.state); break;
-                free(flags);
-            }
-            appendf(&res, &size, "%d", o.flags.state); break;
+            append_flags(&res, &size, o.flags);
+            break;
+        }
+        break;
+    case G(BININEV):
+        switch(v) {
+        case V(NOTIME):
+            append_flags(&res, &size, o.flags);
             break;
         }
         break;

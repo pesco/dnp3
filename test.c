@@ -35,7 +35,7 @@ static char *format(const HParsedToken *p)
         else
             frag = g_strdup("-?-");
 
-        return g_strdup_printf("%s (%s)", name, frag);
+        return g_strdup_printf("%s on %s", name, frag);
     }
 
     return h_write_result_unamb(p);
@@ -104,8 +104,8 @@ static void test_req_fail(void)
 {
     check_parse_fail(dnp3_p_app_request, "",0);
     check_parse_fail(dnp3_p_app_request, "\xC0",1);
-    check_parse(dnp3_p_app_request, "\xC0\x23",2, "FUNC_NOT_SUPP ([0] (fin,fir) 0x23)");
-    check_parse(dnp3_p_app_request, "\xC0\x81",2, "FUNC_NOT_SUPP ([0] (fin,fir) RESPONSE)");
+    check_parse(dnp3_p_app_request, "\xC0\x23",2, "FUNC_NOT_SUPP on [0] (fin,fir) 0x23");
+    check_parse(dnp3_p_app_request, "\xC0\x81",2, "FUNC_NOT_SUPP on [0] (fin,fir) RESPONSE");
 }
 
 static void test_req_ac(void)
@@ -116,8 +116,8 @@ static void test_req_ac(void)
     // XXX is it correct to fail the parse on invalid AC flags?
     check_parse_fail(dnp3_p_app_request, "\xE0\x23",2); // (con) ???
     check_parse_fail(dnp3_p_app_request, "\xE0\x81",2); // (con) RESPONSE
-    check_parse(dnp3_p_app_request, "\xD0\x23",2, "FUNC_NOT_SUPP ([0] (fin,fir,uns) 0x23)");
-    check_parse(dnp3_p_app_request, "\xD0\x81",2, "FUNC_NOT_SUPP ([0] (fin,fir,uns) RESPONSE)");
+    check_parse(dnp3_p_app_request, "\xD0\x23",2, "FUNC_NOT_SUPP on [0] (fin,fir,uns) 0x23");
+    check_parse(dnp3_p_app_request, "\xD0\x81",2, "FUNC_NOT_SUPP on [0] (fin,fir,uns) RESPONSE");
     check_parse_fail(dnp3_p_app_request, "\xE0\x23",2); // (con) ???
     check_parse_fail(dnp3_p_app_request, "\x80\x23",2); // not (fir) ???
     check_parse_fail(dnp3_p_app_request, "\xD0\x01",2); // (uns) READ
@@ -131,31 +131,31 @@ static void test_req_ac(void)
 static void test_req_ohdr(void)
 {
     // truncated (otherwise valid) object header
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01",3, "PARAM_ERROR ([0] (fin,fir) READ)");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00",4, "PARAM_ERROR ([0] (fin,fir) READ)");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17",5, "PARAM_ERROR ([0] (fin,fir) READ)");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x01",6, "PARAM_ERROR ([0] (fin,fir) READ)");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x7A",5, "PARAM_ERROR ([0] (fin,fir) READ)");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01",3, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00",4, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17",5, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x01",6, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x7A",5, "PARAM_ERROR on [0] (fin,fir) READ");
 
     // truncated object header (invalid group)
-    check_parse(dnp3_p_app_request, "\xC0\x01\x05",3, "PARAM_ERROR ([0] (fin,fir) READ)");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00",4, "PARAM_ERROR ([0] (fin,fir) READ)");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41\x58",8, "PARAM_ERROR ([0] (fin,fir) READ)");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x06\x05\x00",7, "PARAM_ERROR ([0] (fin,fir) READ)");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05",3, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00",4, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41\x58",8, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x06\x05\x00",7, "PARAM_ERROR on [0] (fin,fir) READ");
 
     // truncated object header (invalid variation)
-    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00",4, "PARAM_ERROR ([0] (fin,fir) READ)");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00",4, "PARAM_ERROR on [0] (fin,fir) READ");
 
     // invalid group / variation (complete header)
-    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00\x00\x03\x41",7, "OBJ_UNKNOWN ([0] (fin,fir) READ)");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00\x06",5, "OBJ_UNKNOWN ([0] (fin,fir) READ)");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00\x00\x03\x41",7, "OBJ_UNKNOWN on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00\x06",5, "OBJ_UNKNOWN on [0] (fin,fir) READ");
 }
 
 static void test_req_confirm(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fin,fir) CONFIRM");
     check_parse(dnp3_p_app_request, "\xD0\x00",2, "[0] (fin,fir,uns) CONFIRM");
-    check_parse(dnp3_p_app_request, "\xC0\x00\x01\x00\x06",5, "PARAM_ERROR ([0] (fin,fir) CONFIRM)");
+    check_parse(dnp3_p_app_request, "\xC0\x00\x01\x00\x06",5, "PARAM_ERROR on [0] (fin,fir) CONFIRM");
         // XXX should a message with unexpected objects yield OBJ_UNKNOWN?
 }
 
@@ -177,13 +177,13 @@ static void test_req_read(void)
 static void test_req_write(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x02",2, "[0] (fin,fir) WRITE"); // XXX null WRITE valid?
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x00\x00\x03\x06",7, "OBJ_UNKNOWN ([1] (fin,fir) WRITE)");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x00\x00\x03\x06",7, "OBJ_UNKNOWN on [1] (fin,fir) WRITE");
         // (variation 0 ("any") specified - not valid for writes)
     check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x03\x06\x0E",8,
                                     "[1] (fin,fir) WRITE {g10v1 qc=00 #3..6: 0 1 1 1}");
     check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x01",9,
                                     "[1] (fin,fir) WRITE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x17\x00",6, "PARAM_ERROR ([1] (fin,fir) WRITE)");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x17\x00",6, "PARAM_ERROR on [1] (fin,fir) WRITE");
         // XXX is qc=17 (index prefixes) valid for bit-packed variation? which encoding is correct?
         //     e.g: "[1] (fin,fir) WRITE {g10v1 qc=17 #1:0,#4:1,#8:1}" "\x01\x02\x0A\x01\x17\x03...
         //     little-on-little
@@ -198,7 +198,7 @@ static void test_req_write(void)
         //     big-on-big
         //       00000001 0|0000010 01|000010 001|00000
         //       ...\x01\x02\x42\x20"
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9, "PARAM_ERROR ([1] (fin,fir) WRITE)");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9, "PARAM_ERROR on [1] (fin,fir) WRITE");
         // (an unused bit after the packed objects is not zero)
 }
 
@@ -212,10 +212,10 @@ static void test_rsp_fail(void)
     check_parse_fail(dnp3_p_app_response, "\xC0\x01",2);
     check_parse_fail(dnp3_p_app_response, "\xC0\x23",2);
     check_parse_fail(dnp3_p_app_response, "\xC0\xF0",2);
-    check_parse(dnp3_p_app_response, "\xC2\x00\x00\x00",4, "FUNC_NOT_SUPP ([2] (fin,fir) CONFIRM)");
-    check_parse(dnp3_p_app_response, "\xC3\x01\x00\x00",4, "FUNC_NOT_SUPP ([3] (fin,fir) READ)");
-    check_parse(dnp3_p_app_response, "\xC0\x23\x00\x00",4, "FUNC_NOT_SUPP ([0] (fin,fir) 0x23)");
-    check_parse(dnp3_p_app_response, "\xC0\xF0\x00\x00",4, "FUNC_NOT_SUPP ([0] (fin,fir) 0xF0)");
+    check_parse(dnp3_p_app_response, "\xC2\x00\x00\x00",4, "FUNC_NOT_SUPP on [2] (fin,fir) CONFIRM");
+    check_parse(dnp3_p_app_response, "\xC3\x01\x00\x00",4, "FUNC_NOT_SUPP on [3] (fin,fir) READ");
+    check_parse(dnp3_p_app_response, "\xC0\x23\x00\x00",4, "FUNC_NOT_SUPP on [0] (fin,fir) 0x23");
+    check_parse(dnp3_p_app_response, "\xC0\xF0\x00\x00",4, "FUNC_NOT_SUPP on [0] (fin,fir) 0xF0");
 }
 
 static void test_rsp_ac(void)
@@ -268,6 +268,26 @@ static void test_rsp_null(void)
     check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fin,fir) RESPONSE");
 }
 
+static void test_obj_binin(void)
+{
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g1v0 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x02\x03\x08",8,
+                                    "[0] (fin,fir) READ {g1v0 qc=17 #3 #8}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x01\x00\x03\x08\x19",10,
+                                     "[0] (fin,fir) RESPONSE {g1v1 qc=00 #3..8: 1 0 0 1 1 0}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x01\x17\x00",8,          // invalid qc
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x02\x17\x01\x03\x01",10,
+                                     "[0] (fin,fir) RESPONSE {g1v2 qc=17 #3:1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x02\x17\x01\x03\x81",10,
+                                     "[0] (fin,fir) RESPONSE {g1v2 qc=17 #3:(online)1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x02\x17\x01\x03\x91",10,
+                                     "[0] (fin,fir) RESPONSE {g1v2 qc=17 #3:(online,remote_forced)1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x02\x17\x01\x03\x02",10,  // reserved bit set
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+}
+
 
 
 /// ...
@@ -287,6 +307,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);
     g_test_add_func("/app/rsp/null", test_rsp_null);
+    g_test_add_func("/app/obj/binin", test_obj_binin);
 
     g_test_run();
 }

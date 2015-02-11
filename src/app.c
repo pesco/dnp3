@@ -552,6 +552,7 @@ static void init_odata(void)
     H_RULE(write,           dnp3_p_many(write_oblock));
 
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
+                                             oblock_binin,
                                              oblock_binout,
                                              NULL));
     H_RULE(response,        dnp3_p_many(rsp_oblock));
@@ -567,8 +568,8 @@ static void init_odata(void)
         //   may not use variation 0
         //   may not use group 60
         //   may not use range specifier 0x6
-    odata [DNP3_RESPONSE] = ama(response);    // XXX ? or depend on req. fc?!
-    odata [DNP3_UNSOLICITED_RESPONSE] = ama(unsolicited);
+    odata[DNP3_RESPONSE] = ama(response);    // XXX ? or depend on req. fc?!
+    odata[DNP3_UNSOLICITED_RESPONSE] = ama(unsolicited);
 
     //odata[DNP3_AUTHENTICATE_REQ]    = authenticate_req;
     //odata[DNP3_AUTH_REQ_NO_ACK]     = auth_req_no_ack;
@@ -874,6 +875,8 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
 {
     size_t size;
     char *res = NULL;
+    char *flags = NULL;
+    size_t fsize;
 
     switch(g) {
     case G(BININ):
@@ -883,7 +886,16 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
             appendf(&res, &size, "%d", o.bit);
             break;
         case V(FLAGS):
-            // XXX output the flags
+            if(o.flags.online)          appendf(&flags, &fsize, ",online");
+            if(o.flags.restart)         appendf(&flags, &fsize, ",restart");
+            if(o.flags.comm_lost)       appendf(&flags, &fsize, ",comm_lost");
+            if(o.flags.remote_forced)   appendf(&flags, &fsize, ",remote_forced");
+            if(o.flags.local_forced)    appendf(&flags, &fsize, ",local_forced");
+            if(o.flags.chatter_filter)  appendf(&flags, &fsize, ",chatter_filter");
+            if(flags) {
+                appendf(&res, &size, "(%s)%d", flags+1, o.flags.state); break;
+                free(flags);
+            }
             appendf(&res, &size, "%d", o.flags.state); break;
             break;
         }

@@ -39,3 +39,12 @@ HParsedToken *h_make_err(HArena *arena, HTokenType type, void *value)
     ret->user = value;
     return ret;
 }
+
+HParsedToken *h_make_err_uint(HArena *arena, HTokenType type, uint64_t value)
+{
+    assert(H_ISERR(type));
+
+    HParsedToken *ret = h_make_(arena, type);
+    ret->uint = value;
+    return ret;
+}

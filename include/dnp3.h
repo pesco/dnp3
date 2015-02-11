@@ -35,7 +35,7 @@ typedef struct {
 } DNP3_IntIndications;
 
 typedef enum {
-    ERR_FUNC_NOT_SUPP = TT_ERR,
+    ERR_FUNC_NOT_SUPP = TT_ERR+1,
     ERR_OBJ_UNKNOWN,
     ERR_PARAM_ERROR
 } DNP3_ParseError;

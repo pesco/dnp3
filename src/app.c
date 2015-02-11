@@ -639,13 +639,26 @@ static HParsedToken *act_fragment(const HParseResult *p, void *user)
     return H_MAKE(DNP3_Fragment, frag);
 }
 
+static HParsedToken *act_fragment_errfc(const HParseResult *p, void *user)
+{
+    HParsedToken *ac = user;
+
+    // return a DNP3_Fragment containing the parsed application control octet
+    DNP3_Fragment *frag = H_ALLOC(DNP3_Fragment);
+    frag->ac = *H_CAST(DNP3_AppControl, ac);
+    frag->fc = p->ast->uint;
+
+    return h_make_err(p->arena, p->ast->token_type, frag);
+}
+
 // parse the rest of a fragment, after the application header
 static HParser *f_fragment(const HParsedToken *hdr, void *env)
 {
     // propagate TT_ERR on function code
     HParsedToken *fc_ = H_INDEX_TOKEN(hdr, 1);
-    if(H_ISERR(H_INDEX_TOKEN(hdr, 1)->token_type)) {
-        return h_unit(fc_);
+    if(H_ISERR(fc_->token_type)) {
+        HParsedToken *ac = H_INDEX_TOKEN(hdr, 0);
+        return h_action(h_unit(fc_), act_fragment_errfc, (void *)ac);
     }
 
     int fc = H_CAST_UINT(fc_);
@@ -704,6 +717,14 @@ static HParsedToken *act_ac(const HParseResult *p, void *user)
 #define act_unsac act_ac
 #define act_rspac act_ac
 
+static HParsedToken *act_errfc(const HParseResult *p, void *user)
+{
+    return h_make_err_uint(p->arena, ERR_FUNC_NOT_SUPP, H_CAST_UINT(p->ast));
+}
+
+#define act_ereqfc act_errfc
+#define act_erspfc act_errfc
+
 void dnp3_p_init_app(void)
 {
     // initialize object block and associated parsers/combinators
@@ -757,10 +778,8 @@ void dnp3_p_init_app(void)
     H_RULE (anyreqfc,   h_choice(confc, reqfc, NULL));
     H_RULE (anyrspfc,   h_choice(unsfc, rspfc, NULL));
 
-    H_RULE (notreqfc,   h_right(h_and(fc), h_not(anyreqfc)));
-    H_RULE (notrspfc,   h_right(h_and(fc), h_not(anyrspfc)));
-    H_RULE (ereqfc,     h_right(notreqfc, h_error(ERR_FUNC_NOT_SUPP)));
-    H_RULE (erspfc,     h_right(notrspfc, h_error(ERR_FUNC_NOT_SUPP)));
+    H_ARULE(ereqfc,     h_right(h_and(h_not(anyreqfc)), fc));
+    H_ARULE(erspfc,     h_right(h_and(h_not(anyrspfc)), fc));
 
     H_RULE (req_header, h_choice(h_sequence(conac, confc, NULL),
                                  h_sequence(reqac, reqfc, NULL),
@@ -951,15 +970,18 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
     }
     *p = '\0';
 
+    // begin assembly of result string
+    x = appendf(&res, &size, "[%d] %s", frag->ac.seq, flags);
+    if(x<0) goto err;
+
     // function name
     char *name = NULL;
     if(frag->fc < sizeof(funcnames) / sizeof(char *))
         name = funcnames[frag->fc];
-    if(!name)
-        name = "???";
-
-    // begin assembly of result string
-    x = appendf(&res, &size, "[%d] %s%s", frag->ac.seq, flags, name);
+    if(name)
+        x = appendf(&res, &size, "%s", name);
+    else
+        x = appendf(&res, &size, "0x%.2X", (int)frag->fc);
     if(x<0) goto err;
 
     // add internal indications

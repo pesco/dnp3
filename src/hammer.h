@@ -7,9 +7,10 @@ HParser *h_unit(const HParsedToken *tok);
 // parser that always "succeeds" with the given error code (token type).
 HParser *h_error(int code);     // TT_ERR <= code < TT_USER
 
-// helper to construct custom error tokens
-// we use (abuse?) the 'user' field to report user-supplied data.
+// helpers to construct custom error tokens
+// we use (abuse?) the 'user' and other fields to report user-supplied data.
 HParsedToken *h_make_err(HArena *arena, HTokenType type, void *value);
+HParsedToken *h_make_err_uint(HArena *arena, HTokenType type, uint64_t value);
 
 // macro to test whether a token type represents an error
 #define H_ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)

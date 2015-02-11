@@ -812,13 +812,23 @@ static char *funcnames[] = {
 int appendf(char **s, size_t *size, const char *fmt, ...)
 {
     va_list args;
-    size_t len = strlen(*s);
+    size_t len;
+    int n;
     char *p;
 
+    assert(s != NULL);
+    if(*s == NULL) {
+        *s = malloc(n = 64);
+        if(!*s) return -1;
+        *s[0] = '\0';
+        *size = n;
+    }
+
+    len = strlen(*s);
     va_start(args, fmt);
     while(1) {
         size_t left = *size - len;
-        int n = vsnprintf(*s + len, left, fmt, args);
+        n = vsnprintf(*s + len, left, fmt, args);
         if(n < 0) {
             va_end(args);
             return -1;
@@ -843,10 +853,8 @@ int appendf(char **s, size_t *size, const char *fmt, ...)
 
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
 {
-    size_t size = 128;
-    char *res = malloc(size);
-    if(!res) return NULL;
-    res[0] = '\0';
+    size_t size;
+    char *res = NULL;
 
     switch(g) {
     case G(BININ):
@@ -863,7 +871,7 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         break;
     }
 
-    if(res[0] == '\0')
+    if(!res)
         appendf(&res, &size, "?");
 
     return res;
@@ -871,13 +879,10 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
 
 char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
 {
-    size_t size = 128;
-    char *res = malloc(size);
+    size_t size;
+    char *res = NULL;
     const char *sep = ob->objects ? ":" : "";
     int x;
-
-    if(!res) return NULL;
-    res[0] = '\0';
 
     // group, variation, qc
     x = appendf(&res, &size, "g%dv%d qc=%x%x",
@@ -922,7 +927,7 @@ char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
     return res;
 
 err:
-    free(res);
+    if(res) free(res);
     return NULL;
 }
 

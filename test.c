@@ -338,6 +338,7 @@ static void test_obj_dblbitin(void)
     check_parse(dnp3_p_app_request, "\xC0\x01\x03\x03\x00\x03\x08",7,
                                     "OBJ_UNKNOWN on [0] (fin,fir) READ");
 
+    // v1 (packed)
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x03\x36",10,
                                      "[0] (fin,fir) RESPONSE {g3v1 qc=00 #0..3: 1 0 - ~}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x02\x06",10,
@@ -345,7 +346,15 @@ static void test_obj_dblbitin(void)
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x02\x46",10,
                                      "PARAM_ERROR on [0] (fin,fir) RESPONSE");  // extra bit set
 
-    // XXX v2 (flags)
+    // v2 (flags)
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\x80",10,
+                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\x03",10,
+                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online,restart)~}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\x89",10,
+                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online,remote_forced)1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\xC1",10,
+                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online)-}");
 }
 
 

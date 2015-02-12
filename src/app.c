@@ -884,19 +884,31 @@ static char *format_flags(DNP3_Flags flags)
     return res;
 }
 
-static int append_flags(char **res, size_t *size, DNP3_Flags flags)
+static int append_flags_(char **res, size_t *size, DNP3_Flags flags)
 {
     char *s = format_flags(flags);
     int x;
 
     if(s) {
-        x = appendf(res, size, "(%s)%d", s+1, (int)flags.state);
+        x = appendf(res, size, "(%s)", s+1);
         free(s);
     } else {
-        x = appendf(res, size, "%d", (int)flags.state);
+        x = 0;
     }
 
     return x;
+}
+
+static int append_flags(char **res, size_t *size, DNP3_Flags flags)
+{
+    if(append_flags_(res, size, flags) < 0) return -1;
+    return appendf(res, size, "%d", (int)flags.state);
+}
+
+static int append_flags2(char **res, size_t *size, DNP3_Flags flags)
+{
+    if(append_flags_(res, size, flags) < 0) return -1;
+    return appendf(res, size, "%c", (int)dblbit_sym[flags.state]);
 }
 
 static int append_time(char **res, size_t *size, uint64_t time, bool relative)
@@ -941,6 +953,10 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         break;
     case GV(DBLBITIN, PACKED):
         appendf(&res, &size, "%c", (int)dblbit_sym[o.dblbit]);
+        // XXX why not bit = dblbit = flags.state ?!
+        break;
+    case GV(DBLBITIN, FLAGS):
+        append_flags2(&res, &size, o.flags);
         break;
     }
 

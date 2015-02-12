@@ -416,6 +416,36 @@ static void test_obj_binout(void)
                                     "OBJ_UNKNOWN on [1] (fin,fir) WRITE");
 }
 
+static void test_obj_binoutev(void)
+{
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0B\x00\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g11v0 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0B\x01\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g11v1 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0B\x02\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g11v2 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0B\x03\x00\x03\x08",7,
+                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x01\x17\x01\x03\x80",10,
+                                     "[0] (fin,fir) RESPONSE {g11v1 qc=17 #3:1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x01\x17\x01\x03\x83",10,
+                                     "[0] (fin,fir) RESPONSE {g11v1 qc=17 #3:(online,restart)1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x01\x17\x01\x03\xC3",10,
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x01\x17\x01\x03\xE3",10,
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
+                                     "[0] (fin,fir) RESPONSE {g11v2 qc=17 #3:1@0}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x01\x00\x00\x00\x00\x00\x80",16,
+                                     "[0] (fin,fir) RESPONSE {g11v2 qc=17 #3:(online)0@140737488355.328}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x82\xA0\xFC\x7D\x7A\x4B\x01",16,
+                                     "[0] (fin,fir) RESPONSE {g11v2 qc=17 #3:(restart)1@1423689252}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\xC2\x00\x00\x00\x00\x00\x00",16,
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+}
+
 
 
 /// ...
@@ -440,6 +470,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/dblbitin", test_obj_dblbitin);
     g_test_add_func("/app/obj/dblbitinev", test_obj_dblbitinev);
     g_test_add_func("/app/obj/binout", test_obj_binout);
+    g_test_add_func("/app/obj/binoutev", test_obj_binoutev);
 
     g_test_run();
 }

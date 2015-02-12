@@ -117,6 +117,13 @@ typedef enum {
 
 typedef uint64_t DNP3_Time;     // milliseconds since 1970-01-01
 
+typedef enum {
+    DNP3_INTERMEDIATE = 0,
+    DNP3_DETERMINED_OFF = 1,
+    DNP3_DETERMINED_ON = 2,
+    DNP3_INDETERMINATE = 3
+} DNP3_DblBit;
+
 // binary point data with flags
 typedef struct {
         uint8_t online:1;
@@ -125,12 +132,15 @@ typedef struct {
         uint8_t remote_forced:1;
         uint8_t local_forced:1;
         uint8_t chatter_filter:1;
-        uint8_t state:1;
+        uint8_t state:2;            // single-bit binary (0/1) or DNP3_DblBit!
 } DNP3_Flags;
 
 typedef union {
     // g1v1, g10v1 (binary in- and outputs, packed format)
     uint8_t bit:1;
+
+    // g3v1 (double-bit binary, packed format)
+    DNP3_DblBit dblbit:2;
 
     // g1v2, g2v1, g10v2 (binary in- and outputs, with flags)
     DNP3_Flags flags;

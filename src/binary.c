@@ -7,7 +7,9 @@
 
 
 HParser *dnp3_p_bin_packed;
+HParser *dnp3_p_bin_packed2;
 HParser *dnp3_p_bin_flags;
+HParser *dnp3_p_bin_flags2;
 
 HParser *dnp3_p_abstime;
 HParser *dnp3_p_reltime;
@@ -16,6 +18,13 @@ static HParsedToken *act_packed(const HParseResult *p, void *user)
 {
     DNP3_Object *o = H_ALLOC(DNP3_Object);
     o->bit = H_CAST_UINT(p->ast);
+    return H_MAKE(DNP3_Object, o);
+}
+
+static HParsedToken *act_packed2(const HParseResult *p, void *user)
+{
+    DNP3_Object *o = H_ALLOC(DNP3_Object);
+    o->dblbit = H_CAST_UINT(p->ast);
     return H_MAKE(DNP3_Object, o);
 }
 
@@ -34,24 +43,39 @@ static HParsedToken *act_flags(const HParseResult *p, void *user)
     return H_MAKE(DNP3_Object, o);
 }
 
+#define act_flags2 act_flags
+
 void dnp3_p_init_binary(void)
 {
     H_RULE (bit,         h_bits(1, false));
+    H_RULE (dblbit,      h_bits(2, false));
     H_RULE (reserved,    dnp3_p_reserved(1));
 
-    H_ARULE(packed,      bit);
-    H_ARULE(flags,       h_sequence(bit,    // ONLINE
-                                    bit,    // RESTART
-                                    bit,    // COMM_LOST
-                                    bit,    // REMOTE_FORCED
-                                    bit,    // LOCAL_FORCED
-                                    bit,    // CHATTER_FILTER
-                                    reserved,
-                                    bit,    // STATE
-                                    NULL));
+    H_ARULE(packed,     bit);
+    H_ARULE(packed2,    dblbit);
+    H_ARULE(flags,      h_sequence(bit,    // ONLINE
+                                   bit,    // RESTART
+                                   bit,    // COMM_LOST
+                                   bit,    // REMOTE_FORCED
+                                   bit,    // LOCAL_FORCED
+                                   bit,    // CHATTER_FILTER
+                                   reserved,
+                                   bit,    // STATE
+                                   NULL));
 
-    dnp3_p_bin_packed = packed;
-    dnp3_p_bin_flags  = h_with_endianness(BIT_LITTLE_ENDIAN, flags);
+    H_ARULE(flags2,     h_sequence(bit,    // ONLINE
+                                   bit,    // RESTART
+                                   bit,    // COMM_LOST
+                                   bit,    // REMOTE_FORCED
+                                   bit,    // LOCAL_FORCED
+                                   bit,    // CHATTER_FILTER
+                                   dblbit, // STATE
+                                   NULL));
+
+    dnp3_p_bin_packed  = packed;
+    dnp3_p_bin_packed2 = packed2;
+    dnp3_p_bin_flags   = h_with_endianness(BIT_LITTLE_ENDIAN, flags);
+    dnp3_p_bin_flags2  = h_with_endianness(BIT_LITTLE_ENDIAN, flags2);
         // XXX switch to bit-little-endian for oblocks in general?!
 
     // XXX move the time parsers into another file

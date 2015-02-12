@@ -480,7 +480,7 @@ static void init_odata(void)
                                      dnp3_p_dblbitinev_rblock, NULL));
     H_RULE(oblock_binin,    h_choice(dnp3_p_binin_oblock,
                                      dnp3_p_bininev_oblock,
-//                                     dnp3_p_dblbitin_oblock,
+                                     dnp3_p_dblbitin_oblock,
 //                                     dnp3_p_dblbitinev_oblock,
                                      NULL));
 
@@ -867,6 +867,8 @@ int appendf(char **s, size_t *size, const char *fmt, ...)
     return 0;
 }
 
+static const char dblbit_sym[] = "~01-";
+
 static char *format_flags(DNP3_Flags flags)
 {
     char *res = NULL;
@@ -936,6 +938,9 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(BININEV, RELTIME):
         append_flags(&res, &size, o.timed.flags);
         append_reltime(&res, &size, o.timed.reltime);
+        break;
+    case GV(DBLBITIN, PACKED):
+        appendf(&res, &size, "%c", (int)dblbit_sym[o.dblbit]);
         break;
     }
 

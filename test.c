@@ -327,6 +327,27 @@ static void test_obj_bininev(void)
         //     Common Time-of-Occurance (CTO, group 50) object in the same message?
 }
 
+static void test_obj_dblbitin(void)
+{
+    check_parse(dnp3_p_app_request, "\xC0\x01\x03\x00\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g3v0 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x03\x01\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g3v1 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x03\x02\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g3v2 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x03\x03\x00\x03\x08",7,
+                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x03\x36",10,
+                                     "[0] (fin,fir) RESPONSE {g3v1 qc=00 #0..3: 1 0 - ~}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x02\x06",10,
+                                     "[0] (fin,fir) RESPONSE {g3v1 qc=00 #0..2: 1 0 ~}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x02\x46",10,
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");  // extra bit set
+
+    // XXX v2 (flags)
+}
+
 
 
 /// ...
@@ -348,6 +369,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/rsp/null", test_rsp_null);
     g_test_add_func("/app/obj/binin", test_obj_binin);
     g_test_add_func("/app/obj/bininev", test_obj_bininev);
+    g_test_add_func("/app/obj/dblbitin", test_obj_dblbitin);
 
     g_test_run();
 }

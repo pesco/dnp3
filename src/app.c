@@ -481,8 +481,7 @@ static void init_odata(void)
     H_RULE(oblock_binin,    h_choice(dnp3_p_binin_oblock,
                                      dnp3_p_bininev_oblock,
                                      dnp3_p_dblbitin_oblock,
-//                                     dnp3_p_dblbitinev_oblock,
-                                     NULL));
+                                     dnp3_p_dblbitinev_oblock, NULL));
 
     // binary outputs
     H_RULE(rblock_binout,   h_choice(dnp3_p_binout_rblock, NULL));
@@ -953,10 +952,18 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         break;
     case GV(DBLBITIN, PACKED):
         appendf(&res, &size, "%c", (int)dblbit_sym[o.dblbit]);
-        // XXX why not bit = dblbit = flags.state ?!
         break;
     case GV(DBLBITIN, FLAGS):
+    case GV(DBLBITINEV, NOTIME):
         append_flags2(&res, &size, o.flags);
+        break;
+    case GV(DBLBITINEV, ABSTIME):
+        append_flags2(&res, &size, o.timed.flags);
+        append_abstime(&res, &size, o.timed.abstime);
+        break;
+    case GV(DBLBITINEV, RELTIME):
+        append_flags2(&res, &size, o.timed.flags);
+        append_reltime(&res, &size, o.timed.reltime);
         break;
     }
 

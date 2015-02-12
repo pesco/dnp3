@@ -83,3 +83,28 @@ void dnp3_p_init_binary(void)
     dnp3_p_reltime = h_with_endianness(BIT_LITTLE_ENDIAN, h_bits(16, false));
         // XXX switch to bit-little-endian for oblocks in general?!
 }
+
+
+// utility actions for timestamped object variations...
+
+HParsedToken *dnp3_p_act_abstime(const HParseResult *p, void *user)
+{
+    DNP3_Object *o = H_ALLOC(DNP3_Object);
+
+    // p = (flags, abstime)
+    o->timed.flags = H_FIELD(DNP3_Object, 0)->flags;
+    o->timed.abstime = H_FIELD_UINT(1);
+
+    return H_MAKE(DNP3_Object, o);
+}
+
+HParsedToken *dnp3_p_act_reltime(const HParseResult *p, void *user)
+{
+    DNP3_Object *o = H_ALLOC(DNP3_Object);
+
+    // p = (flags, reltime)
+    o->timed.flags = H_FIELD(DNP3_Object, 0)->flags;
+    o->timed.reltime = H_FIELD_UINT(1);
+
+    return H_MAKE(DNP3_Object, o);
+}

@@ -10,27 +10,8 @@
 HParser *dnp3_p_bininev_rblock;
 HParser *dnp3_p_bininev_oblock;
 
-static HParsedToken *act_abs(const HParseResult *p, void *user)
-{
-    DNP3_Object *o = H_ALLOC(DNP3_Object);
-
-    // p = (flags, abstime)
-    o->timed.flags = H_FIELD(DNP3_Object, 0)->flags;
-    o->timed.abstime = H_FIELD_UINT(1);
-
-    return H_MAKE(DNP3_Object, o);
-}
-
-static HParsedToken *act_rel(const HParseResult *p, void *user)
-{
-    DNP3_Object *o = H_ALLOC(DNP3_Object);
-
-    // p = (flags, reltime)
-    o->timed.flags = H_FIELD(DNP3_Object, 0)->flags;
-    o->timed.reltime = H_FIELD_UINT(1);
-
-    return H_MAKE(DNP3_Object, o);
-}
+#define act_abs dnp3_p_act_abstime
+#define act_rel dnp3_p_act_reltime
 
 void dnp3_p_init_g2_bininev(void)
 {

@@ -93,8 +93,8 @@ typedef enum {
     DNP3_GROUP_DBLBITINEV = 4,
     DNP3_GROUP_BINOUT = 10,
     DNP3_GROUP_BINOUTEV = 11,
-    DNP3_GROUP_CROB = 12,
-    DNP3_GROUP_PCB = 13,
+    DNP3_GROUP_BINOUTCMD = 12,
+    DNP3_GROUP_BINOUTCMDEV = 13,
     DNP3_GROUP_AUTH = 120,
 } DNP3_Group;
 
@@ -124,6 +124,23 @@ typedef enum {
     DNP3_INDETERMINATE = 3
 } DNP3_DblBit;
 
+typedef enum {
+    DNP3_CTL_SUCCESS = 0,
+    DNP3_CTL_TIMEOUT = 1,
+    DNP3_CTL_NO_SELECT = 2,
+    DNP3_CTL_FORMAT_ERROR = 3,
+    DNP3_CTL_NOT_SUPPORTED = 4,
+    DNP3_CTL_ALREADY_ACTIVE = 5,
+    DNP3_CTL_HARDWARE_ERROR = 6,
+    DNP3_CTL_LOCAL = 7,
+    DNP3_CTL_TOO_MANY_OBJS = 8,
+    DNP3_CTL_NOT_AUTHORIZED = 9,
+    DNP3_CTL_AUTOMATION_INHIBIT = 10,
+    DNP3_CTL_PROCESSING_LIMITED = 11,
+    DNP3_CTL_OUT_OF_RANGE = 12,
+    DNP3_CTL_NOT_PARTICIPATING = 126
+} DNP3_ControlStatus;
+
 // binary point data with flags
 typedef struct {
         uint8_t online:1;
@@ -135,6 +152,11 @@ typedef struct {
         uint8_t state:2;            // single-bit binary (0/1) or DNP3_DblBit!
 } DNP3_Flags;
 
+typedef struct {
+    uint8_t cs:1;                   // "commanded state"
+    DNP3_ControlStatus status:7;
+} DNP3_CommandEvent;
+
 typedef union {
     // g1v1, g10v1 (binary in- and outputs, packed format)
     uint8_t bit:1;
@@ -145,12 +167,18 @@ typedef union {
     // g1v2, g2v1, g10v2 (binary in- and outputs, with flags)
     DNP3_Flags flags;
 
-    // g2v2, g2v3 (binary in- and output events with time)
+    // g13v1 (binary output command event)
+    DNP3_CommandEvent cmdev;
+
+    // g2v2, g2v3, g13v2 (events with timestamps)
     struct {
-        DNP3_Flags flags;
         union {
-            DNP3_Time abstime;
-            uint16_t  reltime;   // ms since "common time-of-occurance" (CTO)
+            DNP3_Flags flags;
+            DNP3_CommandEvent cmdev;
+        };
+        union {
+            DNP3_Time abstime;  // ms since 1970-01-01
+            uint16_t  reltime;  // ms since "common time-of-occurance" (CTO)
         };
     } timed;
 

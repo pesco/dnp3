@@ -11,7 +11,7 @@ HParser *dnp3_p_binoutev_oblock;
 
 #define act_abs dnp3_p_act_abstime
 
-void dnp3_p_init_g10_binoutev(void)
+void dnp3_p_init_g11_binoutev(void)
 {
     H_ARULE(abs, h_sequence(dnp3_p_bin_flags, dnp3_p_abstime, NULL));
 

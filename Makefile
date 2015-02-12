@@ -7,6 +7,7 @@ OBJS = src/app.o \
        src/g4_dblbitinev.o \
        src/g10_binout.o \
        src/g11_binoutev.o \
+       src/g13_binoutcmdev.o \
        src/g120_auth.o \
        src/hammer.o \
        src/util.o

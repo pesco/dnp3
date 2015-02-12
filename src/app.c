@@ -15,6 +15,7 @@
 #include "g4_dblbitinev.h"
 #include "g10_binout.h"
 #include "g11_binoutev.h"
+#include "g13_binoutcmdev.h"
 #include "g120_auth.h"
 
 
@@ -486,10 +487,11 @@ static void init_odata(void)
 
     // binary outputs
     H_RULE(rblock_binout,   h_choice(dnp3_p_binout_rblock,
-                                     dnp3_p_binoutev_rblock, NULL));
+                                     dnp3_p_binoutev_rblock,
+                                     dnp3_p_binoutcmdev_rblock, NULL));
     H_RULE(oblock_binout,   h_choice(dnp3_p_binout_oblock,
-                                     dnp3_p_binoutev_oblock, NULL));
-                                 //g13...,
+                                     dnp3_p_binoutev_oblock,
+                                     dnp3_p_binoutcmdev_oblock, NULL));
 
                                  //g20...,    // counters
                                  //g21...,
@@ -740,7 +742,8 @@ void dnp3_p_init_app(void)
     dnp3_p_init_g3_dblbitin();
     dnp3_p_init_g4_dblbitinev();
     dnp3_p_init_g10_binout();
-    dnp3_p_init_g10_binoutev();
+    dnp3_p_init_g11_binoutev();
+    dnp3_p_init_g13_binoutcmdev();
 
     // initialize request-specific "object data" parsers
     init_odata();
@@ -968,6 +971,15 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(DBLBITINEV, RELTIME):
         append_flags2(&res, &size, o.timed.flags);
         append_reltime(&res, &size, o.timed.reltime);
+        break;
+    case GV(BINOUTCMDEV, NOTIME):
+        appendf(&res, &size, "(cs=%d,status=%d)",
+                (int)o.cmdev.cs, (int)o.cmdev.status);
+        break;
+    case GV(BINOUTCMDEV, ABSTIME):
+        appendf(&res, &size, "(cs=%d,status=%d)",
+                (int)o.timed.cmdev.cs, (int)o.timed.cmdev.status);
+        append_abstime(&res, &size, o.timed.abstime);
         break;
     }
 

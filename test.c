@@ -446,6 +446,30 @@ static void test_obj_binoutev(void)
                                      "PARAM_ERROR on [0] (fin,fir) RESPONSE");
 }
 
+static void test_obj_binoutcmdev(void)
+{
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0D\x00\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g13v0 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0D\x01\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g13v1 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0D\x02\x00\x03\x08",7,
+                                    "[0] (fin,fir) READ {g13v2 qc=00 #3..8}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0D\x03\x00\x03\x08",7,
+                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x01\x17\x01\x03\xFF",10,
+                                     "[0] (fin,fir) RESPONSE {g13v1 qc=17 #3:(cs=1,status=127)}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x01\x17\x01\x03\x00",10,
+                                     "[0] (fin,fir) RESPONSE {g13v1 qc=17 #3:(cs=0,status=0)}");
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
+                                     "[0] (fin,fir) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@0}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x80",16,
+                                     "[0] (fin,fir) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@140737488355.328}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\xA0\xFC\x7D\x7A\x4B\x01",16,
+                                     "[0] (fin,fir) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@1423689252}");
+}
+
 
 
 /// ...
@@ -471,6 +495,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/dblbitinev", test_obj_dblbitinev);
     g_test_add_func("/app/obj/binout", test_obj_binout);
     g_test_add_func("/app/obj/binoutev", test_obj_binoutev);
+    g_test_add_func("/app/obj/binoutcmdev", test_obj_binoutcmdev);
 
     g_test_run();
 }

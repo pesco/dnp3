@@ -919,32 +919,23 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     char *res = NULL;
     size_t fsize;
 
-    switch(g) {
-    case G(BININ):
-    case G(BINOUT):
-        switch(v) {
-        case V(PACKED):
-            appendf(&res, &size, "%d", (int)o.bit);
-            break;
-        case V(FLAGS):
-            append_flags(&res, &size, o.flags);
-            break;
-        }
+    switch(g << 8 | v) {
+    case GV(BININ, PACKED):
+    case GV(BINOUT, PACKED):
+        appendf(&res, &size, "%d", (int)o.bit);
         break;
-    case G(BININEV):
-        switch(v) {
-        case V(NOTIME):
-            append_flags(&res, &size, o.flags);
-            break;
-        case V(ABSTIME):
-            append_flags(&res, &size, o.timed.flags);
-            append_abstime(&res, &size, o.timed.abstime);
-            break;
-        case V(RELTIME):
-            append_flags(&res, &size, o.timed.flags);
-            append_reltime(&res, &size, o.timed.reltime);
-            break;
-        }
+    case GV(BININ, FLAGS):
+    case GV(BINOUT, FLAGS):
+    case GV(BININEV, NOTIME):
+        append_flags(&res, &size, o.flags);
+        break;
+    case GV(BININEV, ABSTIME):
+        append_flags(&res, &size, o.timed.flags);
+        append_abstime(&res, &size, o.timed.abstime);
+        break;
+    case GV(BININEV, RELTIME):
+        append_flags(&res, &size, o.timed.flags);
+        append_reltime(&res, &size, o.timed.reltime);
         break;
     }
 

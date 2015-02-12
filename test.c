@@ -323,6 +323,8 @@ static void test_obj_bininev(void)
                                      "[0] (fin,fir) RESPONSE {g2v3 qc=17 #3:(online)1@+22.240}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\xC1\x00\x00",12,
                                      "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+        // XXX should the relative time variants generate a PARAM_ERROR unless they are preceded by a
+        //     Common Time-of-Occurance (CTO, group 50) object in the same message?
 }
 
 

@@ -9,6 +9,9 @@
 HParser *dnp3_p_bin_packed;
 HParser *dnp3_p_bin_flags;
 
+HParser *dnp3_p_abstime;
+HParser *dnp3_p_reltime;
+
 static HParsedToken *act_packed(const HParseResult *p, void *user)
 {
     DNP3_Object *o = H_ALLOC(DNP3_Object);
@@ -48,5 +51,11 @@ void dnp3_p_init_binary(void)
                                     NULL));
 
     dnp3_p_bin_packed = packed;
-    dnp3_p_bin_flags  = flags;
+    dnp3_p_bin_flags  = h_with_endianness(BIT_LITTLE_ENDIAN, flags);
+        // XXX switch to bit-little-endian for oblocks in general?!
+
+    // XXX move the time parsers into another file
+    dnp3_p_abstime = h_with_endianness(BIT_LITTLE_ENDIAN, h_bits(48, false));
+    dnp3_p_reltime = h_with_endianness(BIT_LITTLE_ENDIAN, h_bits(16, false));
+        // XXX switch to bit-little-endian for oblocks in general?!
 }

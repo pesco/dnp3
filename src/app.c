@@ -838,35 +838,31 @@ int appendf(char **s, size_t *size, const char *fmt, ...)
 
     assert(s != NULL);
     if(*s == NULL) {
-        *s = malloc(n = 64);
+        *s = malloc(n = 10);
         if(!*s) return -1;
         *s[0] = '\0';
         *size = n;
     }
 
     len = strlen(*s);
-    va_start(args, fmt);
     while(1) {
         size_t left = *size - len;
+        va_start(args, fmt);
         n = vsnprintf(*s + len, left, fmt, args);
-        if(n < 0) {
-            va_end(args);
+        va_end(args);
+        if(n < 0)
             return -1;
-        }
         if(n < left)
             break;
 
         // need more space
         n = len + n + 1;
         p = realloc(*s, n);
-        if(!p) {
-            va_end(args);
+        if(!p)
             return -1;
-        }
         *size = n;
         *s = p;
     }
-    va_end(args);
 
     return 0;
 }
@@ -892,14 +888,30 @@ static int append_flags(char **res, size_t *size, DNP3_Flags flags)
     int x;
 
     if(s) {
-        x = appendf(res, size, "(%s)%d", s+1, flags.state);
+        x = appendf(res, size, "(%s)%d", s+1, (int)flags.state);
         free(s);
     } else {
-        x = appendf(res, size, "%d", flags.state);
+        x = appendf(res, size, "%d", (int)flags.state);
     }
 
     return x;
 }
+
+static int append_time(char **res, size_t *size, uint64_t time, bool relative)
+{
+    uint64_t s  = time / 1000;
+    uint64_t ms = time % 1000;
+    const char *fmt;
+
+    if(relative)
+        fmt = ms ? "@+%"PRIu64".%.3"PRIu64 : "@+%"PRIu64;
+    else
+        fmt = ms ? "@%"PRIu64".%.3"PRIu64 : "@%"PRIu64;
+    return appendf(res, size, fmt, s, ms);
+}
+
+#define append_abstime(res, size, time) append_time(res, size, time, false)
+#define append_reltime(res, size, time) append_time(res, size, time, true)
 
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
 {
@@ -912,7 +924,7 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case G(BINOUT):
         switch(v) {
         case V(PACKED):
-            appendf(&res, &size, "%d", o.bit);
+            appendf(&res, &size, "%d", (int)o.bit);
             break;
         case V(FLAGS):
             append_flags(&res, &size, o.flags);
@@ -923,6 +935,14 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         switch(v) {
         case V(NOTIME):
             append_flags(&res, &size, o.flags);
+            break;
+        case V(ABSTIME):
+            append_flags(&res, &size, o.timed.flags);
+            append_abstime(&res, &size, o.timed.abstime);
+            break;
+        case V(RELTIME):
+            append_flags(&res, &size, o.timed.flags);
+            append_reltime(&res, &size, o.timed.reltime);
             break;
         }
         break;
@@ -1009,7 +1029,7 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
     *p = '\0';
 
     // begin assembly of result string
-    x = appendf(&res, &size, "[%d] %s", frag->ac.seq, flags);
+    x = appendf(&res, &size, "[%d] %s", (int)frag->ac.seq, flags);
     if(x<0) goto err;
 
     // function name
@@ -1019,12 +1039,13 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
     if(name)
         x = appendf(&res, &size, "%s", name);
     else
-        x = appendf(&res, &size, "0x%.2X", (int)frag->fc);
+        x = appendf(&res, &size, "0x%.2X", (unsigned int)frag->fc);
     if(x<0) goto err;
 
     // add internal indications
     char *iin = NULL;
-    #define APPEND_IIN(FLAG) if(frag->iin.FLAG) appendf(&iin, &size, "," #FLAG)
+    size_t iinsize;
+    #define APPEND_IIN(FLAG) if(frag->iin.FLAG) appendf(&iin, &iinsize, "," #FLAG)
     APPEND_IIN(broadcast);
     APPEND_IIN(class1);
     APPEND_IIN(class2);

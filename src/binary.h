@@ -4,6 +4,7 @@ extern HParser *dnp3_p_bin_packed;
 extern HParser *dnp3_p_bin_packed2;
 extern HParser *dnp3_p_bin_flags;
 extern HParser *dnp3_p_bin_flags2;
+extern HParser *dnp3_p_bin_outflags;
 
 extern HParser *dnp3_p_abstime;
 extern HParser *dnp3_p_reltime;

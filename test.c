@@ -170,8 +170,6 @@ static void test_req_read(void)
                                     "[0] (fin,fir) READ {g1v0 qc=00 #3..65}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x02\x03\x00\x03\x41",7,
                                     "[0] (fin,fir) READ {g2v3 qc=00 #3..65}");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x0A\x01\x00\x03\x41",7,
-                                    "[0] (fin,fir) READ {g10v1 qc=00 #3..65}");
 }
 
 static void test_req_write(void)
@@ -181,25 +179,6 @@ static void test_req_write(void)
         // (variation 0 ("any") specified - not valid for writes)
     check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x03\x06\x0E",8,
                                     "[1] (fin,fir) WRITE {g10v1 qc=00 #3..6: 0 1 1 1}");
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x01",9,
-                                    "[1] (fin,fir) WRITE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x17\x00",6, "PARAM_ERROR on [1] (fin,fir) WRITE");
-        // XXX is qc=17 (index prefixes) valid for bit-packed variation? which encoding is correct?
-        //     e.g: "[1] (fin,fir) WRITE {g10v1 qc=17 #1:0,#4:1,#8:1}" "\x01\x02\x0A\x01\x17\x03...
-        //     little-on-little
-        //       00000001 0000100|0 001000|10 00000|100
-        //       ...\x01\x08\x22\x04"
-        //     big-on-little
-        //       10000000 0100000|0 010000|10 00000|100
-        //       ...\x80\x40\x42\x04"
-        //     little-on-big
-        //       10000000 0|0010000 01|000100 001|00000
-        //       ...\x80\x10\x24\x20"
-        //     big-on-big
-        //       00000001 0|0000010 01|000010 001|00000
-        //       ...\x01\x02\x42\x20"
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9, "PARAM_ERROR on [1] (fin,fir) WRITE");
-        // (an unused bit after the packed objects is not zero)
 }
 
 static void test_rsp_fail(void)
@@ -351,8 +330,8 @@ static void test_obj_dblbitin(void)
                                      "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\x03",10,
                                      "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online,restart)~}");
-    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\x89",10,
-                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online,remote_forced)1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\xA1",10,
+                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online,chatter_filter)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\xC1",10,
                                      "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online)-}");
 }
@@ -392,6 +371,51 @@ static void test_obj_dblbitinev(void)
         //     Common Time-of-Occurance (CTO, group 50) object in the same message?
 }
 
+static void test_obj_binout(void)
+{
+    // v1 (packed)
+    check_parse(dnp3_p_app_request, "\xC0\x01\x0A\x01\x00\x03\x41",7,
+                                    "[0] (fin,fir) READ {g10v1 qc=00 #3..65}");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x01",9,
+                                    "[1] (fin,fir) WRITE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x17\x00",6, "PARAM_ERROR on [1] (fin,fir) WRITE");
+        // XXX is qc=17 (index prefixes) valid for bit-packed variation? which encoding is correct?
+        //     e.g: "[1] (fin,fir) WRITE {g10v1 qc=17 #1:0,#4:1,#8:1}" "\x01\x02\x0A\x01\x17\x03...
+        //     little-on-little
+        //       00000001 0000100|0 001000|10 00000|100
+        //       ...\x01\x08\x22\x04"
+        //     big-on-little
+        //       10000000 0100000|0 010000|10 00000|100
+        //       ...\x80\x40\x42\x04"
+        //     little-on-big
+        //       10000000 0|0010000 01|000100 001|00000
+        //       ...\x80\x10\x24\x20"
+        //     big-on-big
+        //       00000001 0|0000010 01|000010 001|00000
+        //       ...\x01\x02\x42\x20"
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9, "PARAM_ERROR on [1] (fin,fir) WRITE");
+        // (an unused bit after the packed objects is not zero)
+    check_parse(dnp3_p_app_response, "\xC1\x81\x00\x00\x0A\x01\x00\x00\x08\x5E\x01",11,
+                                     "[1] (fin,fir) RESPONSE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
+    check_parse(dnp3_p_app_response, "\xC1\x81\x00\x00\x0A\x01\x00\x00\x08\x5E\x02",11,
+                                     "PARAM_ERROR on [1] (fin,fir) RESPONSE");
+        // (an unused bit after the packed objects is not zero)
+
+    // v2 (flags)
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x80",10,
+                                     "[0] (fin,fir) RESPONSE {g10v2 qc=17 #3:1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x83",10,
+                                     "[0] (fin,fir) RESPONSE {g10v2 qc=17 #3:(online,restart)1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x89",10,
+                                     "[0] (fin,fir) RESPONSE {g10v2 qc=17 #3:(online,remote_forced)1}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x20",10,  // reserved bit set
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x40",10,  // reserved bit set
+                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x02\x17\x01\x03\x80",9,
+                                    "OBJ_UNKNOWN on [1] (fin,fir) WRITE");
+}
+
 
 
 /// ...
@@ -415,6 +439,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/bininev", test_obj_bininev);
     g_test_add_func("/app/obj/dblbitin", test_obj_dblbitin);
     g_test_add_func("/app/obj/dblbitinev", test_obj_dblbitinev);
+    g_test_add_func("/app/obj/binout", test_obj_binout);
 
     g_test_run();
 }

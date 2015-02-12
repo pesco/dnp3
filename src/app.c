@@ -486,7 +486,6 @@ static void init_odata(void)
     // binary outputs
     H_RULE(rblock_binout,   h_choice(dnp3_p_binout_rblock, NULL));
     H_RULE(oblock_binout,   h_choice(dnp3_p_binout_oblock, NULL));
-                                 //g10...,
                                  //g11...,
                                  //g13...,
 

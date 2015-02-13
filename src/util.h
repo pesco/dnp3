@@ -7,6 +7,9 @@
 // pad with zero bits until the next byte boundary
 extern HParser *dnp3_p_pad;
 
+extern HParser *dnp3_p_dnp3time;    // 48-bit [ms since 1970-01-01]
+extern HParser *dnp3_p_reltime;     // 16-bit [ms since CTO]
+
 // parse n reserved bits; must be zero, ignored in sequences
 HParser *dnp3_p_reserved(size_t n);
 

@@ -1,7 +1,9 @@
+// XXX move g13 into obj/command.c or so
+
 #include <dnp3.h>
 #include <hammer/glue.h>
 #include "app.h"
-#include "binary.h"
+#include "util.h"
 
 #include "g13_binoutcmdev.h"
 
@@ -38,7 +40,7 @@ void dnp3_p_init_g13_binoutcmdev(void)
     H_RULE (status,     h_bits(7, false));
 
     H_ARULE(notime,  h_sequence(cs, status, NULL));
-    H_ARULE(abstime, h_sequence(cs, status, dnp3_p_abstime, NULL));
+    H_ARULE(abstime, h_sequence(cs, status, dnp3_p_dnp3time, NULL));
 
     H_RULE(oblock_notime,   dnp3_p_oblock(G(BINOUTCMDEV), V(NOTIME),  notime));
     H_RULE(oblock_abstime,  dnp3_p_oblock(G(BINOUTCMDEV), V(ABSTIME), abstime));

@@ -64,6 +64,8 @@ HParser *dnp3_p_packet(HParser *p)
 }
 
 HParser *dnp3_p_pad;
+HParser *dnp3_p_dnp3time;
+HParser *dnp3_p_reltime;
 
 void dnp3_p_init_util(void)
 {
@@ -72,6 +74,9 @@ void dnp3_p_init_util(void)
     H_RULE(pad,     h_indirect());
     h_bind_indirect(pad,
                     h_choice(h_aligned(8), h_right(zero, pad), NULL));
-
     dnp3_p_pad = pad;
+
+    dnp3_p_dnp3time = h_with_endianness(BIT_LITTLE_ENDIAN, h_bits(48, false));
+    dnp3_p_reltime  = h_with_endianness(BIT_LITTLE_ENDIAN, h_bits(16, false));
+        // XXX switch to bit-little-endian for oblocks in general?!
 }

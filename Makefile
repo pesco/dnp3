@@ -1,16 +1,10 @@
 OBJS = src/app.o \
-       src/binary.o \
-       src/dnp3.o \
-       src/g1_binin.o \
-       src/g2_bininev.o \
-       src/g3_dblbitin.o \
-       src/g4_dblbitinev.o \
-       src/g10_binout.o \
-       src/g11_binoutev.o \
+       src/obj/binary.o \
        src/g13_binoutcmdev.o \
        src/g120_auth.o \
        src/hammer.o \
-       src/util.o
+       src/util.o \
+       src/dnp3.o
 
 INCLUDES = include/dnp3.h
 

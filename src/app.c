@@ -7,16 +7,10 @@
 #include <stdlib.h> // malloc
 #include <inttypes.h> // PRIu32 etc.
 #include "app.h"
-#include "util.h"
-#include "binary.h"
-#include "g1_binin.h"
-#include "g2_bininev.h"
-#include "g3_dblbitin.h"
-#include "g4_dblbitinev.h"
-#include "g10_binout.h"
-#include "g11_binoutev.h"
+#include "obj/binary.h"
 #include "g13_binoutcmdev.h"
 #include "g120_auth.h"
+#include "util.h"
 
 
 /// APPLICATION HEADER ///
@@ -733,17 +727,10 @@ void dnp3_p_init_app(void)
     // initialize object block and associated parsers/combinators
     init_oblock();
 
-    // initialize object helper parsers
-    dnp3_p_init_binary();
-
     // initialize object parsers
-    dnp3_p_init_g1_binin();
-    dnp3_p_init_g2_bininev();
-    dnp3_p_init_g3_dblbitin();
-    dnp3_p_init_g4_dblbitinev();
-    dnp3_p_init_g10_binout();
-    dnp3_p_init_g11_binoutev();
+    dnp3_p_init_binary();
     dnp3_p_init_g13_binoutcmdev();
+    //dnp3_p_init_counter();
 
     // initialize request-specific "object data" parsers
     init_odata();

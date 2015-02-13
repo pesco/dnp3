@@ -9,6 +9,7 @@
 #include "app.h"
 #include "obj/binary.h"
 #include "g13_binoutcmdev.h"
+#include "obj/counter.h"
 #include "g120_auth.h"
 #include "util.h"
 
@@ -107,9 +108,10 @@ static HParser *int_exact(HParser *p, uint64_t x)
 // prefix code
 static HParser *withpc(uint8_t x, HParser *p)
 {
-    HParser *pc = int_exact(h_right(dnp3_p_reserved(1), h_bits(3, 0)), x);
+    H_RULE(pc_, h_bits(3, false));
+    H_RULE(pc,  bit_big_endian(h_right(dnp3_p_reserved(1), pc_)));
 
-    return h_sequence(pc, p, NULL);
+    return h_sequence(int_exact(pc,x), p, NULL);
 }
 static HParser *noprefix(HParser *p)
 {
@@ -278,9 +280,8 @@ static HParser *oblock_packed_(HParser *p)
 {
     H_RULE(objs,        oblock_range__(p));
     H_RULE(objs_pad,    h_left(objs, dnp3_p_pad));
-    H_RULE(objs_pad_le, h_with_endianness(BIT_LITTLE_ENDIAN, objs_pad));
 
-    return noprefix(objs_pad_le);
+    return noprefix(objs_pad);
 }
 
 static HParser *oblock_index_(HParser *p)
@@ -487,7 +488,9 @@ static void init_odata(void)
                                      dnp3_p_binoutev_oblock,
                                      dnp3_p_binoutcmdev_oblock, NULL));
 
-                                 //g20...,    // counters
+    // counters
+    H_RULE(rblock_ctr,      h_choice(dnp3_p_ctr_rblock, NULL));
+    H_RULE(oblock_ctr,      h_choice(dnp3_p_ctr_oblock, NULL));
                                  //g21...,
                                  //g22...,
                                  //g23...,
@@ -534,6 +537,7 @@ static void init_odata(void)
     H_RULE(read_oblock,     dnp3_p_objchoice(//rblock_attr,
                                              rblock_binin,
                                              rblock_binout,
+                                             rblock_ctr,
                                              NULL));
     H_RULE(read,            dnp3_p_many(read_oblock));
     // XXX NB parsing pseudocode in AN2012-004b does NOT work for READ requests.
@@ -550,6 +554,7 @@ static void init_odata(void)
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
                                              oblock_binin,
                                              oblock_binout,
+                                             oblock_ctr,
                                              NULL));
     H_RULE(response,        dnp3_p_many(rsp_oblock));
 
@@ -700,11 +705,11 @@ static HParsedToken *act_ac(const HParseResult *p, void *user)
 {
     DNP3_AppControl *ac = H_ALLOC(DNP3_AppControl);
 
-    ac->fin = H_FIELD_UINT(0, 0);
-    ac->fir = H_FIELD_UINT(0, 1);
-    ac->con = H_FIELD_UINT(0, 2);
-    ac->uns = H_FIELD_UINT(0, 3);
-    ac->seq = H_FIELD_UINT(1);
+    ac->seq = H_FIELD_UINT(0);
+    ac->uns = H_FIELD_UINT(1, 0);
+    ac->con = H_FIELD_UINT(1, 1);
+    ac->fin = H_FIELD_UINT(1, 2);
+    ac->fir = H_FIELD_UINT(1, 3);
 
     return H_MAKE(DNP3_AppControl, ac);
 }
@@ -730,7 +735,7 @@ void dnp3_p_init_app(void)
     // initialize object parsers
     dnp3_p_init_binary();
     dnp3_p_init_g13_binoutcmdev();
-    //dnp3_p_init_counter();
+    dnp3_p_init_counter();
 
     // initialize request-specific "object data" parsers
     init_odata();
@@ -740,19 +745,18 @@ void dnp3_p_init_app(void)
     H_RULE (one,    int_exact(bit, 1));
     H_RULE (ign,    bit); // to be ignored
 
-                          /* --- fin,fir,con,uns --- */
-    H_RULE (conflags, h_sequence(one,one,zro,bit, NULL));   // CONFIRM
-    H_RULE (reqflags, h_sequence(one,one,zro,zro, NULL));   // always fin,fir!
-    H_RULE (unsflags, h_sequence(ign,ign,one,one, NULL));   // unsolicited
-    H_RULE (rspflags, h_sequence(bit,bit,bit,zro, NULL));
+                          /* --- uns,con,fin,fir --- */
+    H_RULE (conflags, h_sequence(bit,zro,one,one, NULL));   // CONFIRM
+    H_RULE (reqflags, h_sequence(zro,zro,one,one, NULL));   // always fin,fir!
+    H_RULE (unsflags, h_sequence(one,one,ign,ign, NULL));   // unsolicited
+    H_RULE (rspflags, h_sequence(zro,bit,bit,bit, NULL));
 
     H_RULE (seqno,  h_bits(4, false));
-    H_ARULE(conac,  h_sequence(conflags, seqno, NULL));
-    H_ARULE(reqac,  h_sequence(reqflags, seqno, NULL));
-    H_ARULE(unsac,  h_sequence(unsflags, seqno, NULL));
-    H_ARULE(rspac,  h_sequence(rspflags, seqno, NULL));
-    H_ARULE(iin,    h_with_endianness(BIT_LITTLE_ENDIAN,
-                        h_left(h_repeat_n(bit, 14), dnp3_p_reserved(2))));
+    H_ARULE(conac,  h_sequence(seqno, conflags, NULL));
+    H_ARULE(reqac,  h_sequence(seqno, reqflags, NULL));
+    H_ARULE(unsac,  h_sequence(seqno, unsflags, NULL));
+    H_ARULE(rspac,  h_sequence(seqno, rspflags, NULL));
+    H_ARULE(iin,    h_left(h_repeat_n(bit, 14), dnp3_p_reserved(2)));
 
     H_RULE (anyreqac, h_choice(conac, reqac, NULL));
     H_RULE (anyrspac, h_choice(unsac, rspac, NULL));
@@ -783,8 +787,8 @@ void dnp3_p_init_app(void)
     H_RULE (request,    h_bind(req_header, f_fragment, NULL));
     H_RULE (response,   h_bind(rsp_header, f_fragment, NULL));
 
-    dnp3_p_app_request  = request;
-    dnp3_p_app_response = response;
+    dnp3_p_app_request  = little_endian(request);
+    dnp3_p_app_response = little_endian(response);
 }
 
 

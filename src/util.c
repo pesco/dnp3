@@ -76,7 +76,6 @@ void dnp3_p_init_util(void)
                     h_choice(h_aligned(8), h_right(zero, pad), NULL));
     dnp3_p_pad = pad;
 
-    dnp3_p_dnp3time = h_with_endianness(BIT_LITTLE_ENDIAN, h_bits(48, false));
-    dnp3_p_reltime  = h_with_endianness(BIT_LITTLE_ENDIAN, h_bits(16, false));
-        // XXX switch to bit-little-endian for oblocks in general?!
+    dnp3_p_dnp3time = h_bits(48, false);
+    dnp3_p_reltime  = h_bits(16, false);
 }

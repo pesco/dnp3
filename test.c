@@ -201,16 +201,16 @@ static void test_rsp_ac(void)
 {
     check_parse(dnp3_p_app_response, "\x02\x81\x00\x00",4, "[2] RESPONSE");
     check_parse(dnp3_p_app_response, "\x22\x81\x00\x00",4, "[2] (con) RESPONSE");
-    check_parse(dnp3_p_app_response, "\x43\x81\x00\x00",4, "[3] (fir) RESPONSE");
-    check_parse(dnp3_p_app_response, "\x62\x81\x00\x00",4, "[2] (fir,con) RESPONSE");
-    check_parse(dnp3_p_app_response, "\x82\x81\x00\x00",4, "[2] (fin) RESPONSE");
-    check_parse(dnp3_p_app_response, "\xA4\x81\x00\x00",4, "[4] (fin,con) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x83\x81\x00\x00",4, "[3] (fir) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xA2\x81\x00\x00",4, "[2] (fir,con) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x42\x81\x00\x00",4, "[2] (fin) RESPONSE");
+    check_parse(dnp3_p_app_response, "\x64\x81\x00\x00",4, "[4] (fin,con) RESPONSE");
     check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fin,fir) RESPONSE");
     check_parse(dnp3_p_app_response, "\xE2\x81\x00\x00",4, "[2] (fin,fir,con) RESPONSE");
 
     check_parse(dnp3_p_app_response, "\x32\x82\x00\x00",4, "[2] (con,uns) UNSOLICITED_RESPONSE");
-    check_parse(dnp3_p_app_response, "\x72\x82\x00\x00",4, "[2] (fir,con,uns) UNSOLICITED_RESPONSE");
-    check_parse(dnp3_p_app_response, "\xB2\x82\x00\x00",4, "[2] (fin,con,uns) UNSOLICITED_RESPONSE");
+    check_parse(dnp3_p_app_response, "\xB2\x82\x00\x00",4, "[2] (fir,con,uns) UNSOLICITED_RESPONSE");
+    check_parse(dnp3_p_app_response, "\x72\x82\x00\x00",4, "[2] (fin,con,uns) UNSOLICITED_RESPONSE");
     check_parse(dnp3_p_app_response, "\xF2\x82\x00\x00",4, "[2] (fin,fir,con,uns) UNSOLICITED_RESPONSE");
 
     // XXX should unsol. responses with con=0 really be discarded?
@@ -470,6 +470,18 @@ static void test_obj_binoutcmdev(void)
                                      "[0] (fin,fir) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@1423689252}");
 }
 
+static void test_obj_counter(void)
+{
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
+                                     "[0] RESPONSE {g20v1 qc=17 #1:(online,discontinuity)2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x02\x17\x01\x01\x20\x12\x34",12,
+                                     "[0] RESPONSE {g20v2 qc=17 #1:(rollover)13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x05\x17\x01\x01\x12\x34\x56\x78",13,
+                                     "[0] RESPONSE {g20v5 qc=17 #1:2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x06\x17\x01\x01\x12\x34",11,
+                                     "[0] RESPONSE {g20v6 qc=17 #1:13330}");
+}
+
 
 
 /// ...
@@ -496,6 +508,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/binout", test_obj_binout);
     g_test_add_func("/app/obj/binoutev", test_obj_binoutev);
     g_test_add_func("/app/obj/binoutcmdev", test_obj_binoutcmdev);
+    g_test_add_func("/app/obj/counter", test_obj_counter);
 
     g_test_run();
 }

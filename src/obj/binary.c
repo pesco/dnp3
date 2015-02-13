@@ -96,10 +96,6 @@ static HParsedToken *act_flags_rel(const HParseResult *p, void *user)
 #define act_flags2_abs act_flags_abs
 #define act_flags2_rel act_flags_rel
 
-#define act_flags_ act_flags
-#define act_flags2_ act_flags2
-#define act_outflags_ act_outflags
-
 void dnp3_p_init_binary(void)
 {
     H_RULE (bit,         h_bits(1, false));
@@ -108,7 +104,7 @@ void dnp3_p_init_binary(void)
 
     H_ARULE(packed,     bit);
     H_ARULE(packed2,    dblbit);
-    H_ARULE(flags_,     h_sequence(bit,    // ONLINE
+    H_ARULE(flags,      h_sequence(bit,    // ONLINE
                                    bit,    // RESTART
                                    bit,    // COMM_LOST
                                    bit,    // REMOTE_FORCED
@@ -117,7 +113,7 @@ void dnp3_p_init_binary(void)
                                    reserved,
                                    bit,    // STATE
                                    NULL));
-    H_ARULE(flags2_,    h_sequence(bit,    // ONLINE
+    H_ARULE(flags2,     h_sequence(bit,    // ONLINE
                                    bit,    // RESTART
                                    bit,    // COMM_LOST
                                    bit,    // REMOTE_FORCED
@@ -125,7 +121,7 @@ void dnp3_p_init_binary(void)
                                    bit,    // CHATTER_FILTER
                                    dblbit, // STATE
                                    NULL));
-    H_ARULE(outflags_,  h_sequence(bit,    // ONLINE
+    H_ARULE(outflags,   h_sequence(bit,    // ONLINE
                                    bit,    // RESTART
                                    bit,    // COMM_LOST
                                    bit,    // REMOTE_FORCED
@@ -134,11 +130,6 @@ void dnp3_p_init_binary(void)
                                    reserved,
                                    bit,    // STATE
                                    NULL));
-
-    H_RULE (flags,      h_with_endianness(BIT_LITTLE_ENDIAN, flags_));
-    H_RULE (flags2,     h_with_endianness(BIT_LITTLE_ENDIAN, flags2_));
-    H_RULE (outflags,   h_with_endianness(BIT_LITTLE_ENDIAN, outflags_));
-        // XXX switch to bit-little-endian for oblocks in general?!
 
     H_ARULE(flags_abs,  h_sequence(flags, dnp3_p_dnp3time, NULL));
     H_ARULE(flags_rel,  h_sequence(flags, dnp3_p_reltime, NULL));

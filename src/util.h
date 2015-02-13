@@ -22,6 +22,9 @@ HParser *dnp3_p_many(HParser *p);
 // like h_left(p, h_end_p()) but propagates TT_ERR and friends
 HParser *dnp3_p_packet(HParser *p);
 
+#define little_endian(p)  h_with_endianness(BIT_LITTLE_ENDIAN|BYTE_LITTLE_ENDIAN, p)
+#define bit_big_endian(p) h_with_endianness(BIT_BIG_ENDIAN|BYTE_LITTLE_ENDIAN, p)
+
 void dnp3_p_init_util(void);
 
 

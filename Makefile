@@ -5,6 +5,7 @@ OBJS = src/app.o \
        src/g120_auth.o \
        src/hammer.o \
        src/util.o \
+       src/format.o \
        src/dnp3.o
 
 INCLUDES = include/dnp3.h

@@ -139,55 +139,66 @@ void dnp3_p_init_binary(void)
 
     // group 1: binary inputs...
     // XXX does oblock_packed become unnecessary when little-endian is the default?
-    H_RULE (oblock_packed,      dnp3_p_oblock_packed(G(BININ), V(PACKED), packed));
-    H_RULE (oblock_flags,       dnp3_p_oblock(G(BININ), V(FLAGS), flags));
+    H_RULE (oblock_packed,      dnp3_p_oblock_packed(G_V(BININ, PACKED), packed));
+    H_RULE (oblock_flags,       dnp3_p_oblock(G_V(BININ, FLAGS), flags));
 
-    dnp3_p_binin_rblock     = dnp3_p_rblock(G(BININ), V(PACKED), V(FLAGS), 0);
+    dnp3_p_binin_rblock     = dnp3_p_rblock(G(BININ),
+                                            V(BININ, PACKED),
+                                            V(BININ, FLAGS), 0);
     dnp3_p_binin_oblock     = h_choice(oblock_packed, oblock_flags, NULL);
 
     // group 2: binary input events...
-    H_RULE (oblock_notime,      dnp3_p_oblock(G(BININEV), V(NOTIME), flags));
-    H_RULE (oblock_abstime,     dnp3_p_oblock(G(BININEV), V(ABSTIME), flags_abs));
-    H_RULE (oblock_reltime,     dnp3_p_oblock(G(BININEV), V(RELTIME), flags_rel));
+    H_RULE (oblock_notime,      dnp3_p_oblock(G_V(BININEV, NOTIME), flags));
+    H_RULE (oblock_abstime,     dnp3_p_oblock(G_V(BININEV, ABSTIME), flags_abs));
+    H_RULE (oblock_reltime,     dnp3_p_oblock(G_V(BININEV, RELTIME), flags_rel));
 
     dnp3_p_bininev_rblock   = dnp3_p_rblock(G(BININEV),
-                                            V(NOTIME), V(ABSTIME), V(RELTIME), 0);
+                                            V(BININEV, NOTIME),
+                                            V(BININEV, ABSTIME),
+                                            V(BININEV, RELTIME), 0);
     dnp3_p_bininev_oblock   = h_choice(oblock_notime,
                                        oblock_abstime,
                                        oblock_reltime, NULL);
 
     // group 3: double-bit binary inputs...
-    H_RULE (oblock_packed2,     dnp3_p_oblock_packed(G(DBLBITIN), V(PACKED), packed2));
-    H_RULE (oblock_flags2,      dnp3_p_oblock(G(DBLBITIN), V(FLAGS), flags2));
+    H_RULE (oblock_packed2,     dnp3_p_oblock_packed(G_V(DBLBITIN, PACKED), packed2));
+    H_RULE (oblock_flags2,      dnp3_p_oblock(G_V(DBLBITIN, FLAGS), flags2));
 
-    dnp3_p_dblbitin_rblock  = dnp3_p_rblock(G(DBLBITIN), V(PACKED), V(FLAGS), 0);
+    dnp3_p_dblbitin_rblock  = dnp3_p_rblock(G(DBLBITIN),
+                                            V(DBLBITIN, PACKED),
+                                            V(DBLBITIN, FLAGS), 0);
     dnp3_p_dblbitin_oblock  = h_choice(oblock_packed2, oblock_flags2, NULL);
 
     // group 4: double-bit binary input events...
-    H_RULE (oblock_notime2,     dnp3_p_oblock(G(DBLBITINEV), V(NOTIME), flags2));
-    H_RULE (oblock_abstime2,    dnp3_p_oblock(G(DBLBITINEV), V(ABSTIME), flags2_abs));
-    H_RULE (oblock_reltime2,    dnp3_p_oblock(G(DBLBITINEV), V(RELTIME), flags2_rel));
+    H_RULE (oblock_notime2,     dnp3_p_oblock(G_V(DBLBITINEV, NOTIME), flags2));
+    H_RULE (oblock_abstime2,    dnp3_p_oblock(G_V(DBLBITINEV, ABSTIME), flags2_abs));
+    H_RULE (oblock_reltime2,    dnp3_p_oblock(G_V(DBLBITINEV, RELTIME), flags2_rel));
 
     dnp3_p_dblbitinev_rblock = dnp3_p_rblock(G(DBLBITINEV),
-                                             V(NOTIME), V(ABSTIME), V(RELTIME), 0);
+                                             V(DBLBITINEV, NOTIME),
+                                             V(DBLBITINEV, ABSTIME),
+                                             V(DBLBITINEV, RELTIME), 0);
     dnp3_p_dblbitinev_oblock = h_choice(oblock_notime2,
                                         oblock_abstime2,
                                         oblock_reltime2, NULL);
 
     // group 10: binary outputs...
-    H_RULE (oblock_outpacked,   dnp3_p_oblock_packed(G(BINOUT), V(PACKED), packed));
-    H_RULE (oblock_outflags,    dnp3_p_oblock(G(BINOUT), V(FLAGS), outflags));
+    H_RULE (oblock_outpacked,   dnp3_p_oblock_packed(G_V(BINOUT, PACKED), packed));
+    H_RULE (oblock_outflags,    dnp3_p_oblock(G_V(BINOUT, FLAGS), outflags));
 
-    dnp3_p_binout_rblock    = dnp3_p_rblock(G(BINOUT), V(PACKED), V(FLAGS), 0);
+    dnp3_p_binout_rblock    = dnp3_p_rblock(G(BINOUT),
+                                            V(BINOUT, PACKED),
+                                            V(BINOUT, FLAGS), 0);
     dnp3_p_binout_wblock    = oblock_outpacked;
     dnp3_p_binout_oblock    = h_choice(oblock_outpacked, oblock_outflags, NULL);
 
     // group 11: binary output events...
-    H_RULE (oblock_outnotime,   dnp3_p_oblock(G(BINOUTEV), V(NOTIME), flags));
-    H_RULE (oblock_outabstime,  dnp3_p_oblock(G(BINOUTEV), V(ABSTIME), flags_abs));
+    H_RULE (oblock_outnotime,   dnp3_p_oblock(G_V(BINOUTEV, NOTIME), flags));
+    H_RULE (oblock_outabstime,  dnp3_p_oblock(G_V(BINOUTEV, ABSTIME), flags_abs));
 
     dnp3_p_binoutev_rblock  = dnp3_p_rblock(G(BINOUTEV),
-                                            V(NOTIME), V(ABSTIME), 0);
+                                            V(BINOUTEV, NOTIME),
+                                            V(BINOUTEV, ABSTIME), 0);
     dnp3_p_binoutev_oblock  = h_choice(oblock_outnotime,
                                        oblock_outabstime, NULL);
 }

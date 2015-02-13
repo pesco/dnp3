@@ -489,9 +489,10 @@ static void init_odata(void)
                                      dnp3_p_binoutcmdev_oblock, NULL));
 
     // counters
-    H_RULE(rblock_ctr,      h_choice(dnp3_p_ctr_rblock, NULL));
-    H_RULE(oblock_ctr,      h_choice(dnp3_p_ctr_oblock, NULL));
-                                 //g21...,
+    H_RULE(rblock_ctr,      h_choice(dnp3_p_ctr_rblock,
+                                     dnp3_p_frozenctr_rblock, NULL));
+    H_RULE(oblock_ctr,      h_choice(dnp3_p_ctr_oblock,
+                                     dnp3_p_frozenctr_oblock, NULL));
                                  //g22...,
                                  //g23...,
 
@@ -976,11 +977,21 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         break;
     case GV(CTR, 32BIT_FLAG):
     case GV(CTR, 16BIT_FLAG):
+    case GV(FROZENCTR, 32BIT_FLAG):
+    case GV(FROZENCTR, 16BIT_FLAG):
         append_flags(&res, &size, o.ctr.flags);
         // fall through to next case to append counter value
     case GV(CTR, 32BIT_NOFLAG):
     case GV(CTR, 16BIT_NOFLAG):
+    case GV(FROZENCTR, 32BIT_NOFLAG):
+    case GV(FROZENCTR, 16BIT_NOFLAG):
         appendf(&res, &size, "%"PRIu64, o.ctr.value);
+        break;
+    case GV(FROZENCTR, 32BIT_FLAG_TIME):
+    case GV(FROZENCTR, 16BIT_FLAG_TIME):
+        append_flags(&res, &size, o.timed.ctr.flags);
+        appendf(&res, &size, "%"PRIu64, o.timed.ctr.value);
+        append_abstime(&res, &size, o.timed.abstime);
         break;
     }
 

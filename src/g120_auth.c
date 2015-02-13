@@ -18,6 +18,6 @@ void dnp3_p_init_g120_auth(void)
     H_RULE(userno,    h_int_range(h_uint16(), 1, 65535));
     H_RULE(auth_aggr, h_sequence(seqno, userno, NULL));
 
-    dnp3_p_g120v3_auth_aggr_block = dnp3_p_single(G(AUTH), V(AGGR), auth_aggr);
-    dnp3_p_g120v9_auth_mac_block = dnp3_p_single_vf(G(AUTH), V(MAC), auth_mac);
+    dnp3_p_g120v3_auth_aggr_block = dnp3_p_single(G_V(AUTH, AGGR), auth_aggr);
+    dnp3_p_g120v9_auth_mac_block = dnp3_p_single_vf(G_V(AUTH, MAC), auth_mac);
 }

@@ -42,11 +42,12 @@ void dnp3_p_init_g13_binoutcmdev(void)
     H_ARULE(notime,  h_sequence(status, cs, NULL));
     H_ARULE(abstime, h_sequence(status, cs, dnp3_p_dnp3time, NULL));
 
-    H_RULE(oblock_notime,   dnp3_p_oblock(G(BINOUTCMDEV), V(NOTIME),  notime));
-    H_RULE(oblock_abstime,  dnp3_p_oblock(G(BINOUTCMDEV), V(ABSTIME), abstime));
+    H_RULE(oblock_notime,   dnp3_p_oblock(G_V(BINOUTCMDEV, NOTIME),  notime));
+    H_RULE(oblock_abstime,  dnp3_p_oblock(G_V(BINOUTCMDEV, ABSTIME), abstime));
 
     dnp3_p_binoutcmdev_rblock = dnp3_p_rblock(G(BINOUTCMDEV),
-                                              V(NOTIME), V(ABSTIME), 0);
+                                              V(BINOUTCMDEV, NOTIME),
+                                              V(BINOUTCMDEV, ABSTIME), 0);
     dnp3_p_binoutcmdev_oblock = h_choice(oblock_notime,
                                          oblock_abstime, NULL);
 }

@@ -480,6 +480,15 @@ static void test_obj_counter(void)
                                      "[0] RESPONSE {g20v5 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x06\x17\x01\x01\x12\x34",11,
                                      "[0] RESPONSE {g20v6 qc=17 #1:13330}");
+
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
+                                     "[0] RESPONSE {g21v1 qc=17 #1:(online,discontinuity)2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x02\x17\x01\x01\x20\x12\x34",12,
+                                     "[0] RESPONSE {g21v2 qc=17 #1:13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x09\x17\x01\x01\x12\x34\x56\x78",13,
+                                     "[0] RESPONSE {g21v9 qc=17 #1:2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x0A\x17\x01\x01\x12\x34",11,
+                                     "[0] RESPONSE {g21v10 qc=17 #1:13330}");
 }
 
 

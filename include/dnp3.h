@@ -121,22 +121,45 @@ typedef enum {
 typedef enum {
     DNP3_VARIATION_ANY = 0,
 
-    DNP3_VARIATION_ALL = 254,
+    DNP3_VARIATION_ATTR_ALL = 254,
 
-    DNP3_VARIATION_PACKED = 1,
-    DNP3_VARIATION_FLAGS = 2,
+    DNP3_VARIATION_BININ_PACKED = 1,
+    DNP3_VARIATION_BININ_FLAGS = 2,
 
-    DNP3_VARIATION_NOTIME = 1,
-    DNP3_VARIATION_ABSTIME = 2,
-    DNP3_VARIATION_RELTIME = 3,
+    DNP3_VARIATION_BININEV_NOTIME = 1,
+    DNP3_VARIATION_BININEV_ABSTIME = 2,
+    DNP3_VARIATION_BININEV_RELTIME = 3,
 
-    DNP3_VARIATION_32BIT_FLAG = 1,
-    DNP3_VARIATION_16BIT_FLAG = 2,
-    DNP3_VARIATION_32BIT_NOFLAG = 5,
-    DNP3_VARIATION_16BIT_NOFLAG = 6,
+    DNP3_VARIATION_DBLBITIN_PACKED = 1,
+    DNP3_VARIATION_DBLBITIN_FLAGS = 2,
 
-    DNP3_VARIATION_AGGR = 3,
-    DNP3_VARIATION_MAC = 9,
+    DNP3_VARIATION_DBLBITINEV_NOTIME = 1,
+    DNP3_VARIATION_DBLBITINEV_ABSTIME = 2,
+    DNP3_VARIATION_DBLBITINEV_RELTIME = 3,
+
+    DNP3_VARIATION_BINOUT_PACKED = 1,
+    DNP3_VARIATION_BINOUT_FLAGS = 2,
+
+    DNP3_VARIATION_BINOUTEV_NOTIME = 1,
+    DNP3_VARIATION_BINOUTEV_ABSTIME = 2,
+
+    DNP3_VARIATION_BINOUTCMDEV_NOTIME = 1,
+    DNP3_VARIATION_BINOUTCMDEV_ABSTIME = 2,
+
+    DNP3_VARIATION_CTR_32BIT_FLAG = 1,
+    DNP3_VARIATION_CTR_16BIT_FLAG = 2,
+    DNP3_VARIATION_CTR_32BIT_NOFLAG = 5,
+    DNP3_VARIATION_CTR_16BIT_NOFLAG = 6,
+
+    DNP3_VARIATION_FROZENCTR_32BIT_FLAG = 1,
+    DNP3_VARIATION_FROZENCTR_16BIT_FLAG = 2,
+    DNP3_VARIATION_FROZENCTR_32BIT_FLAG_TIME = 5,
+    DNP3_VARIATION_FROZENCTR_16BIT_FLAG_TIME = 6,
+    DNP3_VARIATION_FROZENCTR_32BIT_NOFLAG = 9,
+    DNP3_VARIATION_FROZENCTR_16BIT_NOFLAG = 10,
+
+    DNP3_VARIATION_AUTH_AGGR = 3,
+    DNP3_VARIATION_AUTH_MAC = 9,
 } DNP3_Variation;
 
 typedef uint64_t DNP3_Time;     // milliseconds since 1970-01-01
@@ -188,6 +211,11 @@ typedef struct {
     DNP3_ControlStatus status:7;
 } DNP3_CommandEvent;
 
+typedef struct {
+    DNP3_Flags flags;
+    uint32_t value;
+} DNP3_Counter;
+
 typedef union {
     // g1v1, g10v1 (binary in- and outputs, packed format)
     uint8_t bit:1;
@@ -195,23 +223,21 @@ typedef union {
     // g3v1 (double-bit binary, packed format)
     DNP3_DblBit dblbit:2;
 
-    // g1v2, g2v1, g10v2 (binary in- and outputs, with flags)
+    // g1v2, g2v1, g3v2, g4v1, g10v2 (binary in- and outputs, with flags)
     DNP3_Flags flags;
 
     // g13v1 (binary output command event)
     DNP3_CommandEvent cmdev;
 
-    // g20v1 (counters)
-    struct {
-        DNP3_Flags flags;
-        uint32_t value;
-    } ctr;
+    // g20v1, g20v2, g20v5, g20v6, g21v1, g21v2, g21v9, g21v10 (counters)
+    DNP3_Counter ctr;
 
-    // g2v2, g2v3, g13v2 (events with timestamps)
+    // g2v2, g2v3, g4v2, g4v3, g13v2, g21v5, g21v6 (objects with timestamps)
     struct {
         union {
             DNP3_Flags flags;
             DNP3_CommandEvent cmdev;
+            DNP3_Counter ctr;
         };
         union {
             DNP3_Time abstime;  // ms since 1970-01-01

@@ -5,9 +5,10 @@
 void dnp3_p_init_app(void);
 
 // short-hands to save some noise in group/variation arguments
-#define G(x) DNP3_GROUP_##x
-#define V(x) DNP3_VARIATION_##x
-#define GV(g,v) (G(g) << 8 | V(v))
+#define G(g)     DNP3_GROUP_##g
+#define V(g,v)   DNP3_VARIATION_##g##_##v
+#define G_V(g,v) G(g),V(g,v)
+#define GV(g,v)  (G(g) << 8 | V(g,v))
 
 // parse an "rblock" of the given group/variations, that is a block of object
 // headers and possibly object prefixes, as used in read requests

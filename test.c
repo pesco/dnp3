@@ -493,6 +493,24 @@ static void test_obj_counter(void)
                                      "[0] RESPONSE {g21v9 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x0A\x17\x01\x01\x12\x34",11,
                                      "[0] RESPONSE {g21v10 qc=17 #1:13330}");
+
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
+                                     "[0] RESPONSE {g22v1 qc=17 #1:(online,discontinuity)2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x02\x17\x01\x01\x20\x12\x34",12,
+                                     "[0] RESPONSE {g22v2 qc=17 #1:13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x05\x17\x01\x01\x41\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
+                                     "[0] RESPONSE {g22v5 qc=17 #1:(online,discontinuity)2018915346@0}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x06\x17\x01\x01\x20\x12\x34\xA0\xFC\x7D\x7A\x4B\x01",18,
+                                     "[0] RESPONSE {g22v6 qc=17 #1:13330@1423689252}");
+
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
+                                     "[0] RESPONSE {g23v1 qc=17 #1:(online,discontinuity)2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x02\x17\x01\x01\x20\x12\x34",12,
+                                     "[0] RESPONSE {g23v2 qc=17 #1:13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x05\x17\x01\x01\x41\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
+                                     "[0] RESPONSE {g23v5 qc=17 #1:(online,discontinuity)2018915346@0}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x06\x17\x01\x01\x20\x12\x34\xA0\xFC\x7D\x7A\x4B\x01",18,
+                                     "[0] RESPONSE {g23v6 qc=17 #1:13330@1423689252}");
 }
 
 

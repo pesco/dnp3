@@ -10,6 +10,10 @@ HParser *dnp3_p_ctr_rblock;
 HParser *dnp3_p_ctr_oblock;
 HParser *dnp3_p_frozenctr_rblock;
 HParser *dnp3_p_frozenctr_oblock;
+HParser *dnp3_p_ctrev_rblock;
+HParser *dnp3_p_ctrev_oblock;
+HParser *dnp3_p_frozenctrev_rblock;
+HParser *dnp3_p_frozenctrev_oblock;
 
 
 static HParsedToken *act_flags(const HParseResult *p, void *user)
@@ -128,6 +132,39 @@ void dnp3_p_init_counter(void)
                                        oblock_frz32bit_noflag,
                                        oblock_frz16bit_noflag,
                                        NULL);
+
+    // group 22: counter events...
+    H_RULE(oblock_ev32bit_flag,   dnp3_p_oblock(G_V(CTREV, 32BIT_FLAG), ctr32_flag));
+    H_RULE(oblock_ev16bit_flag,   dnp3_p_oblock(G_V(CTREV, 16BIT_FLAG), ctr16_flag));
+    H_RULE(oblock_ev32bit_flag_t, dnp3_p_oblock(G_V(CTREV, 32BIT_FLAG_TIME), ctr32_flag_t));
+    H_RULE(oblock_ev16bit_flag_t, dnp3_p_oblock(G_V(CTREV, 16BIT_FLAG_TIME), ctr16_flag_t));
+
+    dnp3_p_ctrev_rblock = dnp3_p_rblock(G(CTREV), V(CTREV, 32BIT_FLAG),
+                                                  V(CTREV, 16BIT_FLAG),
+                                                  V(CTREV, 32BIT_FLAG_TIME),
+                                                  V(CTREV, 16BIT_FLAG_TIME), 0);
+    dnp3_p_ctrev_oblock = h_choice(oblock_ev32bit_flag,
+                                   oblock_ev16bit_flag,
+                                   oblock_ev32bit_flag_t,
+                                   oblock_ev16bit_flag_t,
+                                   NULL);
+
+    // group 21: frozen counter events...
+    H_RULE(oblock_frzev32bit_flag,   dnp3_p_oblock(G_V(FROZENCTREV, 32BIT_FLAG), ctr32_flag));
+    H_RULE(oblock_frzev16bit_flag,   dnp3_p_oblock(G_V(FROZENCTREV, 16BIT_FLAG), ctr16_flag));
+    H_RULE(oblock_frzev32bit_flag_t, dnp3_p_oblock(G_V(FROZENCTREV, 32BIT_FLAG_TIME), ctr32_flag_t));
+    H_RULE(oblock_frzev16bit_flag_t, dnp3_p_oblock(G_V(FROZENCTREV, 16BIT_FLAG_TIME), ctr16_flag_t));
+
+    dnp3_p_frozenctrev_rblock = dnp3_p_rblock(G(FROZENCTREV),
+                                              V(FROZENCTREV, 32BIT_FLAG),
+                                              V(FROZENCTREV, 16BIT_FLAG),
+                                              V(FROZENCTREV, 32BIT_FLAG_TIME),
+                                              V(FROZENCTREV, 16BIT_FLAG_TIME), 0);
+    dnp3_p_frozenctrev_oblock = h_choice(oblock_frzev32bit_flag,
+                                         oblock_frzev16bit_flag,
+                                         oblock_frzev32bit_flag_t,
+                                         oblock_frzev16bit_flag_t,
+                                         NULL);
 }
 
 

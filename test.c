@@ -470,7 +470,7 @@ static void test_obj_binoutcmdev(void)
                                      "[0] (fin,fir) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@1423689252}");
 }
 
-static void test_obj_counter(void)
+static void test_obj_ctr(void)
 {
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
                                      "[0] RESPONSE {g20v1 qc=17 #1:(online,discontinuity)2018915346}");
@@ -480,7 +480,10 @@ static void test_obj_counter(void)
                                      "[0] RESPONSE {g20v5 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x06\x17\x01\x01\x12\x34",11,
                                      "[0] RESPONSE {g20v6 qc=17 #1:13330}");
+}
 
+static void test_obj_frozenctr(void)
+{
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
                                      "[0] RESPONSE {g21v1 qc=17 #1:(online,discontinuity)2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x02\x17\x01\x01\x20\x12\x34",12,
@@ -493,7 +496,10 @@ static void test_obj_counter(void)
                                      "[0] RESPONSE {g21v9 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x0A\x17\x01\x01\x12\x34",11,
                                      "[0] RESPONSE {g21v10 qc=17 #1:13330}");
+}
 
+static void test_obj_ctrev(void)
+{
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
                                      "[0] RESPONSE {g22v1 qc=17 #1:(online,discontinuity)2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x02\x17\x01\x01\x20\x12\x34",12,
@@ -502,7 +508,10 @@ static void test_obj_counter(void)
                                      "[0] RESPONSE {g22v5 qc=17 #1:(online,discontinuity)2018915346@0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x06\x17\x01\x01\x20\x12\x34\xA0\xFC\x7D\x7A\x4B\x01",18,
                                      "[0] RESPONSE {g22v6 qc=17 #1:13330@1423689252}");
+}
 
+static void test_obj_frozenctrev(void)
+{
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
                                      "[0] RESPONSE {g23v1 qc=17 #1:(online,discontinuity)2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x02\x17\x01\x01\x20\x12\x34",12,
@@ -539,7 +548,10 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/binout", test_obj_binout);
     g_test_add_func("/app/obj/binoutev", test_obj_binoutev);
     g_test_add_func("/app/obj/binoutcmdev", test_obj_binoutcmdev);
-    g_test_add_func("/app/obj/counter", test_obj_counter);
+    g_test_add_func("/app/obj/ctr", test_obj_ctr);
+    g_test_add_func("/app/obj/ctrev", test_obj_ctrev);
+    g_test_add_func("/app/obj/frozenctr", test_obj_frozenctr);
+    g_test_add_func("/app/obj/frozenctrev", test_obj_frozenctrev);
 
     g_test_run();
 }

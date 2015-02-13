@@ -875,7 +875,7 @@ static char *format_flags(DNP3_Flags flags)
     if(flags.remote_forced)     appendf(&res, &n, ",remote_forced");
     if(flags.local_forced)      appendf(&res, &n, ",local_forced");
     if(flags.chatter_filter)    appendf(&res, &n, ",chatter_filter");
-    if(flags.rollover)          appendf(&res, &n, ",rollover");
+    //if(flags.rollover)          appendf(&res, &n, ",rollover");
     if(flags.discontinuity)     appendf(&res, &n, ",discontinuity");
 
     return res;

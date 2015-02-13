@@ -475,7 +475,7 @@ static void test_obj_counter(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x01\x17\x01\x01\x41\x12\x34\x56\x78",14,
                                      "[0] RESPONSE {g20v1 qc=17 #1:(online,discontinuity)2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x02\x17\x01\x01\x20\x12\x34",12,
-                                     "[0] RESPONSE {g20v2 qc=17 #1:(rollover)13330}");
+                                     "[0] RESPONSE {g20v2 qc=17 #1:13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x05\x17\x01\x01\x12\x34\x56\x78",13,
                                      "[0] RESPONSE {g20v5 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x14\x06\x17\x01\x01\x12\x34",11,

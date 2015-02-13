@@ -18,8 +18,7 @@ static HParsedToken *act_flags(const HParseResult *p, void *user)
     o->flags.comm_lost       = H_FIELD_UINT(2);
     o->flags.remote_forced   = H_FIELD_UINT(3);
     o->flags.local_forced    = H_FIELD_UINT(4);
-    o->flags.rollover        = H_FIELD_UINT(5);
-    o->flags.discontinuity   = H_FIELD_UINT(6);
+    o->flags.discontinuity   = H_FIELD_UINT(5);
 
     return H_MAKE(DNP3_Object, o);
 }
@@ -50,14 +49,18 @@ static HParsedToken *act_ctr(const HParseResult *p, void *user)
 
 void dnp3_p_init_counter(void)
 {
-    H_ARULE(flags,      h_sequence(h_bits(1,false),     // ONLINE
-                                   h_bits(1,false),     // RESTART
-                                   h_bits(1,false),     // COMM_LOST
-                                   h_bits(1,false),     // REMOTE_FORCED
-                                   h_bits(1,false),     // LOCAL_FORCED
-                                   h_bits(1,false),     // ROLLOVER
-                                   h_bits(1,false),     // DISCONTINUITY
-                                   dnp3_p_reserved(1),
+    H_RULE (bit,        h_bits(1,false));
+    H_RULE (ignore,     h_ignore(bit));
+    H_RULE (reserved,   dnp3_p_reserved(1));
+
+    H_ARULE(flags,      h_sequence(bit,         // ONLINE
+                                   bit,         // RESTART
+                                   bit,         // COMM_LOST
+                                   bit,         // REMOTE_FORCED
+                                   bit,         // LOCAL_FORCED
+                                   ignore,      // (ROLLOVER - obsolete)
+                                   bit,         // DISCONTINUITY
+                                   reserved,
                                    NULL));
     H_RULE (val32,      h_uint32());
     H_RULE (val16,      h_uint16());

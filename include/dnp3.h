@@ -177,7 +177,6 @@ typedef struct {
     uint8_t chatter_filter:1;
 
     // for counters
-    uint8_t rollover:1;
     uint8_t discontinuity:1;
 
     // XXX move 'state' out of this struct

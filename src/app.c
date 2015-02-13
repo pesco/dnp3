@@ -878,17 +878,19 @@ static char *format_flags(DNP3_Flags flags)
     char *res = NULL;
     size_t n;
 
-    if(flags.online)          appendf(&res, &n, ",online");
-    if(flags.restart)         appendf(&res, &n, ",restart");
-    if(flags.comm_lost)       appendf(&res, &n, ",comm_lost");
-    if(flags.remote_forced)   appendf(&res, &n, ",remote_forced");
-    if(flags.local_forced)    appendf(&res, &n, ",local_forced");
-    if(flags.chatter_filter)  appendf(&res, &n, ",chatter_filter");
+    if(flags.online)            appendf(&res, &n, ",online");
+    if(flags.restart)           appendf(&res, &n, ",restart");
+    if(flags.comm_lost)         appendf(&res, &n, ",comm_lost");
+    if(flags.remote_forced)     appendf(&res, &n, ",remote_forced");
+    if(flags.local_forced)      appendf(&res, &n, ",local_forced");
+    if(flags.chatter_filter)    appendf(&res, &n, ",chatter_filter");
+    if(flags.rollover)          appendf(&res, &n, ",rollover");
+    if(flags.discontinuity)     appendf(&res, &n, ",discontinuity");
 
     return res;
 }
 
-static int append_flags_(char **res, size_t *size, DNP3_Flags flags)
+static int append_flags(char **res, size_t *size, DNP3_Flags flags)
 {
     char *s = format_flags(flags);
     int x;
@@ -903,15 +905,15 @@ static int append_flags_(char **res, size_t *size, DNP3_Flags flags)
     return x;
 }
 
-static int append_flags(char **res, size_t *size, DNP3_Flags flags)
+static int append_bin_flags(char **res, size_t *size, DNP3_Flags flags)
 {
-    if(append_flags_(res, size, flags) < 0) return -1;
+    if(append_flags(res, size, flags) < 0) return -1;
     return appendf(res, size, "%d", (int)flags.state);
 }
 
-static int append_flags2(char **res, size_t *size, DNP3_Flags flags)
+static int append_dblbit_flags(char **res, size_t *size, DNP3_Flags flags)
 {
-    if(append_flags_(res, size, flags) < 0) return -1;
+    if(append_flags(res, size, flags) < 0) return -1;
     return appendf(res, size, "%c", (int)dblbit_sym[flags.state]);
 }
 
@@ -946,15 +948,15 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(BINOUT, FLAGS):
     case GV(BININEV, NOTIME):
     case GV(BINOUTEV, NOTIME):
-        append_flags(&res, &size, o.flags);
+        append_bin_flags(&res, &size, o.flags);
         break;
     case GV(BININEV, ABSTIME):
     case GV(BINOUTEV, ABSTIME):
-        append_flags(&res, &size, o.timed.flags);
+        append_bin_flags(&res, &size, o.timed.flags);
         append_abstime(&res, &size, o.timed.abstime);
         break;
     case GV(BININEV, RELTIME):
-        append_flags(&res, &size, o.timed.flags);
+        append_bin_flags(&res, &size, o.timed.flags);
         append_reltime(&res, &size, o.timed.reltime);
         break;
     case GV(DBLBITIN, PACKED):
@@ -962,14 +964,14 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         break;
     case GV(DBLBITIN, FLAGS):
     case GV(DBLBITINEV, NOTIME):
-        append_flags2(&res, &size, o.flags);
+        append_dblbit_flags(&res, &size, o.flags);
         break;
     case GV(DBLBITINEV, ABSTIME):
-        append_flags2(&res, &size, o.timed.flags);
+        append_dblbit_flags(&res, &size, o.timed.flags);
         append_abstime(&res, &size, o.timed.abstime);
         break;
     case GV(DBLBITINEV, RELTIME):
-        append_flags2(&res, &size, o.timed.flags);
+        append_dblbit_flags(&res, &size, o.timed.flags);
         append_reltime(&res, &size, o.timed.reltime);
         break;
     case GV(BINOUTCMDEV, NOTIME):
@@ -980,6 +982,14 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         appendf(&res, &size, "(cs=%d,status=%d)",
                 (int)o.timed.cmdev.cs, (int)o.timed.cmdev.status);
         append_abstime(&res, &size, o.timed.abstime);
+        break;
+    case GV(CTR, 32BIT_FLAG):
+    case GV(CTR, 16BIT_FLAG):
+        append_flags(&res, &size, o.ctr.flags);
+        // fall through to next case to append counter value
+    case GV(CTR, 32BIT_NOFLAG):
+    case GV(CTR, 16BIT_NOFLAG):
+        appendf(&res, &size, "%"PRIu64, o.ctr.value);
         break;
     }
 

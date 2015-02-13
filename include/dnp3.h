@@ -165,15 +165,23 @@ typedef enum {
     DNP3_CTL_NOT_PARTICIPATING = 126
 } DNP3_ControlStatus;
 
-// binary point data with flags
+// flags used with various objects
 typedef struct {
-        uint8_t online:1;
-        uint8_t restart:1;
-        uint8_t comm_lost:1;
-        uint8_t remote_forced:1;
-        uint8_t local_forced:1;
-        uint8_t chatter_filter:1;
-        uint8_t state:2;            // single-bit binary (0/1) or DNP3_DblBit!
+    uint8_t online:1;
+    uint8_t restart:1;
+    uint8_t comm_lost:1;
+    uint8_t remote_forced:1;
+    uint8_t local_forced:1;
+
+    // for binary inputs
+    uint8_t chatter_filter:1;
+
+    // for counters
+    uint8_t rollover:1;
+    uint8_t discontinuity:1;
+
+    // XXX move 'state' out of this struct
+    uint8_t state:2;            // single-bit binary (0/1) or DNP3_DblBit!
 } DNP3_Flags;
 
 typedef struct {
@@ -193,6 +201,12 @@ typedef union {
 
     // g13v1 (binary output command event)
     DNP3_CommandEvent cmdev;
+
+    // g20v1 (counters)
+    struct {
+        DNP3_Flags flags;
+        uint32_t value;
+    } ctr;
 
     // g2v2, g2v3, g13v2 (events with timestamps)
     struct {

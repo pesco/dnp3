@@ -522,6 +522,22 @@ static void test_obj_frozenctrev(void)
                                      "[0] RESPONSE {g23v6 qc=17 #1:13330@1423689252}");
 }
 
+static void test_obj_anain(void)
+{
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x01\x17\x01\x01\x21\x12\x34\x56\x78",14,
+                                     "[0] RESPONSE {g30v1 qc=17 #1:(online,over_range)2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x17\x01\x01\x40\x12\x34",12,
+                                     "[0] RESPONSE {g30v2 qc=17 #1:(reference_err)13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x03\x17\x01\x01\x12\x34\x56\x78",13,
+                                     "[0] RESPONSE {g30v3 qc=17 #1:2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x04\x17\x01\x01\x12\x34",11,
+                                     "[0] RESPONSE {g30v4 qc=17 #1:13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x05\x17\x01\x01\x21\x00\x00\x80\xBF",14,
+                                     "[0] RESPONSE {g30v5 qc=17 #1:(online,over_range)-1.0}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x06\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F",18,
+                                     "[0] RESPONSE {g30v6 qc=17 #1:(reference_err)1.0}");
+}
+
 
 
 /// ...
@@ -552,6 +568,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/ctrev", test_obj_ctrev);
     g_test_add_func("/app/obj/frozenctr", test_obj_frozenctr);
     g_test_add_func("/app/obj/frozenctrev", test_obj_frozenctrev);
+    g_test_add_func("/app/obj/anain", test_obj_anain);
 
     g_test_run();
 }

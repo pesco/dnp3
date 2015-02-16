@@ -168,6 +168,13 @@ typedef enum {
     DNP3_VARIATION_FROZENCTREV_32BIT_FLAG_TIME = 5,
     DNP3_VARIATION_FROZENCTREV_16BIT_FLAG_TIME = 6,
 
+    DNP3_VARIATION_ANAIN_32BIT_FLAG = 1,
+    DNP3_VARIATION_ANAIN_16BIT_FLAG = 2,
+    DNP3_VARIATION_ANAIN_32BIT_NOFLAG = 3,
+    DNP3_VARIATION_ANAIN_16BIT_NOFLAG = 4,
+    DNP3_VARIATION_ANAIN_FLOAT_FLAG = 5,
+    DNP3_VARIATION_ANAIN_DOUBLE_FLAG = 6,
+
     DNP3_VARIATION_AUTH_AGGR = 3,
     DNP3_VARIATION_AUTH_MAC = 9,
 } DNP3_Variation;
@@ -212,6 +219,10 @@ typedef struct {
     // for counters
     uint8_t discontinuity:1;
 
+    // for analog inputs
+    uint8_t over_range:1;
+    uint8_t reference_err:1;
+
     // XXX move 'state' out of this struct
     uint8_t state:2;            // single-bit binary (0/1) or DNP3_DblBit!
 } DNP3_Flags;
@@ -225,6 +236,14 @@ typedef struct {
     DNP3_Flags flags;
     uint32_t value;
 } DNP3_Counter;
+
+typedef struct {
+    DNP3_Flags flags;
+    union {
+        int32_t sint;
+        double  flt;
+    };
+} DNP3_Analog;
 
 typedef union {
     // g1v1, g10v1 (binary in- and outputs, packed format)
@@ -241,6 +260,9 @@ typedef union {
 
     // g20v1, g20v2, g20v5, g20v6, g21v1, g21v2, g21v9, g21v10 (counters)
     DNP3_Counter ctr;
+
+    // g30v1, g30v2, g30v3, g30v4, g30v5, g30v6 (analog inputs)
+    DNP3_Analog ana;
 
     // g2v2, g2v3, g4v2, g4v3, g13v2, g21v5, g21v6 (objects with timestamps)
     struct {

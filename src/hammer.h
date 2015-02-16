@@ -14,3 +14,7 @@ HParsedToken *h_make_err_uint(HArena *arena, HTokenType type, uint64_t value);
 
 // macro to test whether a token type represents an error
 #define H_ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)
+
+// parsing IEEE single and double precision floating point numbers
+HParser *h_float32(void);
+HParser *h_float64(void);

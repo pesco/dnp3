@@ -2,6 +2,7 @@ OBJS = src/app.o \
        src/obj/binary.o \
        src/g13_binoutcmdev.o \
        src/obj/counter.o \
+       src/obj/analog.o \
        src/g120_auth.o \
        src/hammer.o \
        src/util.o \

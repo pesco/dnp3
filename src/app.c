@@ -7,6 +7,7 @@
 #include "obj/binary.h"
 #include "g13_binoutcmdev.h"
 #include "obj/counter.h"
+#include "obj/analog.h"
 #include "g120_auth.h"
 #include "util.h"
 
@@ -497,7 +498,11 @@ static void init_odata(void)
                                      dnp3_p_frozenctr_oblock,
                                      dnp3_p_frozenctrev_oblock, NULL));
 
-//                                 g30...,    // analog inputs
+    // analog inputs
+    H_RULE(rblock_anain,    h_choice(dnp3_p_anain_rblock,
+                                     NULL));
+    H_RULE(oblock_anain,    h_choice(dnp3_p_anain_oblock,
+                                     NULL));
 //                                 g31...,
 //                                 g32...,
 //                                 g33...,
@@ -540,6 +545,7 @@ static void init_odata(void)
                                              rblock_binin,
                                              rblock_binout,
                                              rblock_ctr,
+                                             rblock_anain,
                                              NULL));
     H_RULE(read,            dnp3_p_many(read_oblock));
     // XXX NB parsing pseudocode in AN2012-004b does NOT work for READ requests.
@@ -557,6 +563,7 @@ static void init_odata(void)
                                              oblock_binin,
                                              oblock_binout,
                                              oblock_ctr,
+                                             oblock_anain,
                                              NULL));
     H_RULE(response,        dnp3_p_many(rsp_oblock));
 
@@ -738,6 +745,7 @@ void dnp3_p_init_app(void)
     dnp3_p_init_binary();
     dnp3_p_init_g13_binoutcmdev();
     dnp3_p_init_counter();
+    dnp3_p_init_analog();
 
     // initialize request-specific "object data" parsers
     init_odata();

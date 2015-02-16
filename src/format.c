@@ -90,6 +90,8 @@ static char *format_flags(DNP3_Flags flags)
     if(flags.chatter_filter)    appendf(&res, &n, ",chatter_filter");
     //if(flags.rollover)          appendf(&res, &n, ",rollover");
     if(flags.discontinuity)     appendf(&res, &n, ",discontinuity");
+    if(flags.over_range)        appendf(&res, &n, ",over_range");
+    if(flags.reference_err)     appendf(&res, &n, ",reference_err");
 
     return res;
 }
@@ -212,6 +214,19 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         append_flags(&res, &size, o.timed.ctr.flags);
         appendf(&res, &size, "%"PRIu64, o.timed.ctr.value);
         append_abstime(&res, &size, o.timed.abstime);
+        break;
+    case GV(ANAIN, 32BIT_FLAG):
+    case GV(ANAIN, 16BIT_FLAG):
+        append_flags(&res, &size, o.ana.flags);
+        // fall through to next case to append value
+    case GV(ANAIN, 32BIT_NOFLAG):
+    case GV(ANAIN, 16BIT_NOFLAG):
+        appendf(&res, &size, "%"PRIi32, o.ana.sint);
+        break;
+    case GV(ANAIN, FLOAT_FLAG):
+    case GV(ANAIN, DOUBLE_FLAG):
+        append_flags(&res, &size, o.ana.flags);
+        appendf(&res, &size, "%.1f", o.ana.flt);
         break;
     }
 

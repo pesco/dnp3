@@ -49,26 +49,30 @@ HParsedToken *h_make_err_uint(HArena *arena, HTokenType type, uint64_t value)
     return ret;
 }
 
-static HParsedToken *to_float(const HParseResult *p, void *user)
+static HParsedToken *act_float(const HParseResult *p, void *user)
 {
     HParsedToken *tok = H_ALLOC(HParsedToken);
-    tok->flt = *(float *)&H_CAST_UINT(p->ast);
+    tok->token_type = TT_FLOAT;
+    tok->dbl = *(float *)&H_CAST_UINT(p->ast);
+        // XXX act_float assumes compatible endianness for casting from uint64_t to double
     return tok;
 }
 
-static HParsedToken *to_double(const HParseResult *p, void *user)
+static HParsedToken *act_double(const HParseResult *p, void *user)
 {
     HParsedToken *tok = H_ALLOC(HParsedToken);
+    tok->token_type = TT_FLOAT;
     tok->dbl = *(double *)&H_CAST_UINT(p->ast);
+        // XXX act_double assumes compatible endianness for casting from uint64_t to double
     return tok;
 }
 
 HParser *h_float32(void)
 {
-    return h_action(h_uint32(), to_float, NULL);
+    return h_action(h_uint32(), act_float, NULL);
 }
 
 HParser *h_float64(void)
 {
-    return h_action(h_uint64(), to_double, NULL);
+    return h_action(h_uint64(), act_double, NULL);
 }

@@ -18,3 +18,10 @@ HParsedToken *h_make_err_uint(HArena *arena, HTokenType type, uint64_t value);
 // parsing IEEE single and double precision floating point numbers
 HParser *h_float32(void);
 HParser *h_float64(void);
+
+#define TT_FLOAT 9
+
+#define H_ASSERT_FLOAT(TOK) h_assert_type(TT_FLOAT, TOK)
+#define H_CAST_FLOAT(TOK) (H_ASSERT_FLOAT(TOK)->dbl)
+#define H_INDEX_FLOAT(SEQ, ...) H_CAST_FLOAT(H_INDEX_TOKEN(SEQ, __VA_ARGS__))
+#define H_FIELD_FLOAT(...) H_INDEX_FLOAT(p->ast, __VA_ARGS__)

@@ -65,7 +65,7 @@ static HParsedToken *act_flt32_flag(const HParseResult *p, void *user)
 
     // p = (flags, value)
     o->ana.flags = H_FIELD(DNP3_Object, 0)->flags;
-    o->ana.flt = H_INDEX_TOKEN(p->ast, 1)->flt;
+    o->ana.flt = H_FIELD_FLOAT(1);
 
     return H_MAKE(DNP3_Object, o);
 }
@@ -76,7 +76,7 @@ static HParsedToken *act_flt64_flag(const HParseResult *p, void *user)
 
     // p = (flags, value)
     o->ana.flags = H_FIELD(DNP3_Object, 0)->flags;
-    o->ana.flt = H_INDEX_TOKEN(p->ast, 1)->dbl;
+    o->ana.flt = H_FIELD_FLOAT(1);
 
     return H_MAKE(DNP3_Object, o);
 }
@@ -95,6 +95,30 @@ static HParsedToken *act_int_flag_time(const HParseResult *p, void *user)
 
 #define act_int32_flag_t act_int_flag_time
 #define act_int16_flag_t act_int_flag_time
+
+static HParsedToken *act_flt32_flag_t(const HParseResult *p, void *user)
+{
+    DNP3_Object *o = H_ALLOC(DNP3_Object);
+
+    // p = (flags, value, time)
+    o->timed.ana.flags = H_FIELD(DNP3_Object, 0)->flags;
+    o->timed.ana.flt = H_FIELD_FLOAT(1);
+    o->timed.abstime = H_FIELD_UINT(2);
+
+    return H_MAKE(DNP3_Object, o);
+}
+
+static HParsedToken *act_flt64_flag_t(const HParseResult *p, void *user)
+{
+    DNP3_Object *o = H_ALLOC(DNP3_Object);
+
+    // p = (flags, value, time)
+    o->timed.ana.flags = H_FIELD(DNP3_Object, 0)->flags;
+    o->timed.ana.flt = H_FIELD_FLOAT(1);
+    o->timed.abstime = H_FIELD_UINT(2);
+
+    return H_MAKE(DNP3_Object, o);
+}
 
 void dnp3_p_init_analog(void)
 {
@@ -124,6 +148,8 @@ void dnp3_p_init_analog(void)
     H_ARULE(int16_flag_t, h_sequence(flags, int16, dnp3_p_dnp3time, NULL));
     H_ARULE(flt32_flag,   h_sequence(flags, flt32, NULL));
     H_ARULE(flt64_flag,   h_sequence(flags, flt64, NULL));
+    H_ARULE(flt32_flag_t, h_sequence(flags, flt32, dnp3_p_dnp3time, NULL));
+    H_ARULE(flt64_flag_t, h_sequence(flags, flt64, dnp3_p_dnp3time, NULL));
 
     // group 30: analog inputs...
     H_RULE(oblock_i32fl,    dnp3_p_oblock(G_V(ANAIN, 32BIT_FLAG), int32_flag));
@@ -167,4 +193,26 @@ void dnp3_p_init_analog(void)
                                              oblock_frzi32fl_t, oblock_frzi16fl_t,
                                              oblock_frzi32nofl, oblock_frzi16nofl,
                                              oblock_frzf32fl, oblock_frzf64fl, NULL);
+
+    // group 32: analog input events...
+    H_RULE(oblock_evi32fl,    dnp3_p_oblock(G_V(ANAINEV, 32BIT_FLAG), int32_flag));
+    H_RULE(oblock_evi16fl,    dnp3_p_oblock(G_V(ANAINEV, 16BIT_FLAG), int16_flag));
+    H_RULE(oblock_evi32fl_t,  dnp3_p_oblock(G_V(ANAINEV, 32BIT_FLAG_TIME), int32_flag_t));
+    H_RULE(oblock_evi16fl_t,  dnp3_p_oblock(G_V(ANAINEV, 16BIT_FLAG_TIME), int16_flag_t));
+    H_RULE(oblock_evf32fl,    dnp3_p_oblock(G_V(ANAINEV, FLOAT_FLAG), flt32_flag));
+    H_RULE(oblock_evf64fl,    dnp3_p_oblock(G_V(ANAINEV, DOUBLE_FLAG), flt64_flag));
+    H_RULE(oblock_evf32fl_t,  dnp3_p_oblock(G_V(ANAINEV, FLOAT_FLAG_TIME), flt32_flag_t));
+    H_RULE(oblock_evf64fl_t,  dnp3_p_oblock(G_V(ANAINEV, DOUBLE_FLAG_TIME), flt64_flag_t));
+
+    dnp3_p_anainev_rblock     = dnp3_p_rblock(G(ANAINEV),
+                                              V(ANAINEV, 32BIT_FLAG_TIME),
+                                              V(ANAINEV, 16BIT_FLAG_TIME),
+                                              V(ANAINEV, FLOAT_FLAG),
+                                              V(ANAINEV, DOUBLE_FLAG),
+                                              V(ANAINEV, FLOAT_FLAG_TIME),
+                                              V(ANAINEV, DOUBLE_FLAG_TIME), 0);
+    dnp3_p_anainev_oblock     = h_choice(oblock_evi32fl, oblock_evi16fl,
+                                         oblock_evi32fl_t, oblock_evi16fl_t,
+                                         oblock_evf32fl, oblock_evf64fl,
+                                         oblock_evf32fl_t, oblock_evf64fl_t, NULL);
 }

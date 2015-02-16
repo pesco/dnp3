@@ -19,6 +19,10 @@ HParser *dnp3_p_anainev_oblock;
 HParser *dnp3_p_frozenanainev_rblock;
 HParser *dnp3_p_frozenanainev_oblock;
 
+HParser *dnp3_p_anaindeadband_rblock;
+HParser *dnp3_p_anaindeadband_wblock;
+HParser *dnp3_p_anaindeadband_oblock;
+
 
 static HParsedToken *act_int_noflag(const HParseResult *p, void *user)
 {
@@ -59,7 +63,7 @@ static HParsedToken *act_int_flag(const HParseResult *p, void *user)
 #define act_int32_flag act_int_flag
 #define act_int16_flag act_int_flag
 
-static HParsedToken *act_flt32_flag(const HParseResult *p, void *user)
+static HParsedToken *act_flt_flag(const HParseResult *p, void *user)
 {
     DNP3_Object *o = H_ALLOC(DNP3_Object);
 
@@ -70,16 +74,8 @@ static HParsedToken *act_flt32_flag(const HParseResult *p, void *user)
     return H_MAKE(DNP3_Object, o);
 }
 
-static HParsedToken *act_flt64_flag(const HParseResult *p, void *user)
-{
-    DNP3_Object *o = H_ALLOC(DNP3_Object);
-
-    // p = (flags, value)
-    o->ana.flags = H_FIELD(DNP3_Object, 0)->flags;
-    o->ana.flt = H_FIELD_FLOAT(1);
-
-    return H_MAKE(DNP3_Object, o);
-}
+#define act_flt32_flag act_flt_flag
+#define act_flt64_flag act_flt_flag
 
 static HParsedToken *act_int_flag_time(const HParseResult *p, void *user)
 {
@@ -96,7 +92,7 @@ static HParsedToken *act_int_flag_time(const HParseResult *p, void *user)
 #define act_int32_flag_t act_int_flag_time
 #define act_int16_flag_t act_int_flag_time
 
-static HParsedToken *act_flt32_flag_t(const HParseResult *p, void *user)
+static HParsedToken *act_flt_flag_t(const HParseResult *p, void *user)
 {
     DNP3_Object *o = H_ALLOC(DNP3_Object);
 
@@ -108,17 +104,33 @@ static HParsedToken *act_flt32_flag_t(const HParseResult *p, void *user)
     return H_MAKE(DNP3_Object, o);
 }
 
-static HParsedToken *act_flt64_flag_t(const HParseResult *p, void *user)
+#define act_flt32_flag_t act_flt_flag_t
+#define act_flt64_flag_t act_flt_flag_t
+
+static HParsedToken *act_deadband(const HParseResult *p, void *user)
 {
     DNP3_Object *o = H_ALLOC(DNP3_Object);
-
-    // p = (flags, value, time)
-    o->timed.ana.flags = H_FIELD(DNP3_Object, 0)->flags;
-    o->timed.ana.flt = H_FIELD_FLOAT(1);
-    o->timed.abstime = H_FIELD_UINT(2);
-
+    o->ana.uint = H_CAST_UINT(p->ast);
     return H_MAKE(DNP3_Object, o);
 }
+
+#define act_deadband_32 act_deadband
+#define act_deadband_16 act_deadband
+
+static HParsedToken *act_deadband_flt(const HParseResult *p, void *user)
+{
+    DNP3_Object *o = H_ALLOC(DNP3_Object);
+    o->ana.flt = H_CAST_FLOAT(p->ast);
+    assert(o->ana.flt >= 0);
+    return H_MAKE(DNP3_Object, o);
+}
+
+static bool validate_uflt(HParseResult *p, void *user)
+{
+    return (H_CAST_FLOAT(p->ast) >= 0);
+}
+
+#define validate_uflt32 validate_uflt
 
 void dnp3_p_init_analog(void)
 {
@@ -139,6 +151,7 @@ void dnp3_p_init_analog(void)
     H_RULE (int16,      h_int16());
     H_RULE (flt32,      h_float32());
     H_RULE (flt64,      h_float64());
+    H_VRULE(uflt32,     h_float32());   // "unsigned" float (nonnegative)
 
     H_ARULE(int32_noflag, int32);
     H_ARULE(int16_noflag, int16);
@@ -150,6 +163,10 @@ void dnp3_p_init_analog(void)
     H_ARULE(flt64_flag,   h_sequence(flags, flt64, NULL));
     H_ARULE(flt32_flag_t, h_sequence(flags, flt32, dnp3_p_dnp3time, NULL));
     H_ARULE(flt64_flag_t, h_sequence(flags, flt64, dnp3_p_dnp3time, NULL));
+
+    H_ARULE(deadband_16,    h_uint16());
+    H_ARULE(deadband_32,    h_uint32());
+    H_ARULE(deadband_flt,   uflt32);
 
     // group 30: analog inputs...
     H_RULE(oblock_i32fl,    dnp3_p_oblock(G_V(ANAIN, 32BIT_FLAG), int32_flag));
@@ -241,4 +258,17 @@ void dnp3_p_init_analog(void)
                                                oblock_frzevi32fl_t, oblock_frzevi16fl_t,
                                                oblock_frzevf32fl, oblock_frzevf64fl,
                                                oblock_frzevf32fl_t, oblock_frzevf64fl_t, NULL);
+
+    // group 34: analog input deadbands...
+    H_RULE(oblock_dbi16,    dnp3_p_oblock(G_V(ANAINDEADBAND, 16BIT), deadband_16));
+    H_RULE(oblock_dbi32,    dnp3_p_oblock(G_V(ANAINDEADBAND, 32BIT), deadband_32));
+    H_RULE(oblock_dbf32,    dnp3_p_oblock(G_V(ANAINDEADBAND, FLOAT), deadband_flt));
+
+    dnp3_p_anaindeadband_rblock = dnp3_p_rblock(G(ANAINDEADBAND),
+                                                V(ANAINDEADBAND, 16BIT),
+                                                V(ANAINDEADBAND, 32BIT),
+                                                V(ANAINDEADBAND, FLOAT), 0);
+    dnp3_p_anaindeadband_wblock = h_choice(oblock_dbi16, oblock_dbi32, oblock_dbf32, NULL);
+    dnp3_p_anaindeadband_oblock = h_choice(oblock_dbi16, oblock_dbi32, oblock_dbf32, NULL);
+                                      
 }

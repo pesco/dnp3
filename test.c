@@ -104,20 +104,20 @@ static void test_req_fail(void)
 {
     check_parse_fail(dnp3_p_app_request, "",0);
     check_parse_fail(dnp3_p_app_request, "\xC0",1);
-    check_parse(dnp3_p_app_request, "\xC0\x23",2, "FUNC_NOT_SUPP on [0] (fin,fir) 0x23");
-    check_parse(dnp3_p_app_request, "\xC0\x81",2, "FUNC_NOT_SUPP on [0] (fin,fir) RESPONSE");
+    check_parse(dnp3_p_app_request, "\xC0\x23",2, "FUNC_NOT_SUPP on [0] (fir,fin) 0x23");
+    check_parse(dnp3_p_app_request, "\xC0\x81",2, "FUNC_NOT_SUPP on [0] (fir,fin) RESPONSE");
 }
 
 static void test_req_ac(void)
 {
-    check_parse(dnp3_p_app_request, "\xC2\x00",2, "[2] (fin,fir) CONFIRM");
-    check_parse(dnp3_p_app_request, "\xC5\x00",2, "[5] (fin,fir) CONFIRM");
-    check_parse(dnp3_p_app_request, "\xD3\x00",2, "[3] (fin,fir,uns) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xC2\x00",2, "[2] (fir,fin) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xC5\x00",2, "[5] (fir,fin) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xD3\x00",2, "[3] (fir,fin,uns) CONFIRM");
     // XXX is it correct to fail the parse on invalid AC flags?
     check_parse_fail(dnp3_p_app_request, "\xE0\x23",2); // (con) ???
     check_parse_fail(dnp3_p_app_request, "\xE0\x81",2); // (con) RESPONSE
-    check_parse(dnp3_p_app_request, "\xD0\x23",2, "FUNC_NOT_SUPP on [0] (fin,fir,uns) 0x23");
-    check_parse(dnp3_p_app_request, "\xD0\x81",2, "FUNC_NOT_SUPP on [0] (fin,fir,uns) RESPONSE");
+    check_parse(dnp3_p_app_request, "\xD0\x23",2, "FUNC_NOT_SUPP on [0] (fir,fin,uns) 0x23");
+    check_parse(dnp3_p_app_request, "\xD0\x81",2, "FUNC_NOT_SUPP on [0] (fir,fin,uns) RESPONSE");
     check_parse_fail(dnp3_p_app_request, "\xE0\x23",2); // (con) ???
     check_parse_fail(dnp3_p_app_request, "\x80\x23",2); // not (fir) ???
     check_parse_fail(dnp3_p_app_request, "\xD0\x01",2); // (uns) READ
@@ -125,60 +125,60 @@ static void test_req_ac(void)
     check_parse_fail(dnp3_p_app_request, "\x80\x00",2); // not (fir)
     check_parse_fail(dnp3_p_app_request, "\xE0\x00",2); // (con) CONFIRM
     check_parse_fail(dnp3_p_app_request, "\xF0\x00",2); // (con,uns)
-    check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fin,fir) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fir,fin) CONFIRM");
 }
 
 static void test_req_ohdr(void)
 {
     // truncated (otherwise valid) object header
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01",3, "PARAM_ERROR on [0] (fin,fir) READ");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00",4, "PARAM_ERROR on [0] (fin,fir) READ");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17",5, "PARAM_ERROR on [0] (fin,fir) READ");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x01",6, "PARAM_ERROR on [0] (fin,fir) READ");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x7A",5, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01",3, "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00",4, "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17",5, "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x01",6, "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x7A",5, "PARAM_ERROR on [0] (fir,fin) READ");
 
     // truncated object header (invalid group)
-    check_parse(dnp3_p_app_request, "\xC0\x01\x05",3, "PARAM_ERROR on [0] (fin,fir) READ");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00",4, "PARAM_ERROR on [0] (fin,fir) READ");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41\x58",8, "PARAM_ERROR on [0] (fin,fir) READ");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x06\x05\x00",7, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05",3, "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00",4, "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41\x58",8, "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x06\x05\x00",7, "PARAM_ERROR on [0] (fir,fin) READ");
 
     // truncated object header (invalid variation)
-    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00",4, "PARAM_ERROR on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00",4, "PARAM_ERROR on [0] (fir,fin) READ");
 
     // invalid group / variation (complete header)
-    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00\x00\x03\x41",7, "OBJ_UNKNOWN on [0] (fin,fir) READ");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00\x06",5, "OBJ_UNKNOWN on [0] (fin,fir) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x05\x00\x00\x03\x41",7, "OBJ_UNKNOWN on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x32\x00\x06",5, "OBJ_UNKNOWN on [0] (fir,fin) READ");
 }
 
 static void test_req_confirm(void)
 {
-    check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fin,fir) CONFIRM");
-    check_parse(dnp3_p_app_request, "\xD0\x00",2, "[0] (fin,fir,uns) CONFIRM");
-    check_parse(dnp3_p_app_request, "\xC0\x00\x01\x00\x06",5, "PARAM_ERROR on [0] (fin,fir) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fir,fin) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xD0\x00",2, "[0] (fir,fin,uns) CONFIRM");
+    check_parse(dnp3_p_app_request, "\xC0\x00\x01\x00\x06",5, "PARAM_ERROR on [0] (fir,fin) CONFIRM");
         // XXX should a message with unexpected objects yield OBJ_UNKNOWN?
 }
 
 static void test_req_read(void)
 {
-    check_parse(dnp3_p_app_request, "\xC0\x01",2, "[0] (fin,fir) READ");  // XXX null READ valid?
+    check_parse(dnp3_p_app_request, "\xC0\x01",2, "[0] (fir,fin) READ");  // XXX null READ valid?
     check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x03\x41\x43\x42",9,
-                                    "[0] (fin,fir) READ {g1v0 qc=17 #65 #67 #66}");
+                                    "[0] (fir,fin) READ {g1v0 qc=17 #65 #67 #66}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x00",6,   // XXX is 0 a valid count?
-                                    "[0] (fin,fir) READ {g1v0 qc=17}");
+                                    "[0] (fir,fin) READ {g1v0 qc=17}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41",7,
-                                    "[0] (fin,fir) READ {g1v0 qc=00 #3..65}");
+                                    "[0] (fir,fin) READ {g1v0 qc=00 #3..65}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x02\x03\x00\x03\x41",7,
-                                    "[0] (fin,fir) READ {g2v3 qc=00 #3..65}");
+                                    "[0] (fir,fin) READ {g2v3 qc=00 #3..65}");
 }
 
 static void test_req_write(void)
 {
-    check_parse(dnp3_p_app_request, "\xC0\x02",2, "[0] (fin,fir) WRITE"); // XXX null WRITE valid?
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x00\x00\x03\x06",7, "OBJ_UNKNOWN on [1] (fin,fir) WRITE");
+    check_parse(dnp3_p_app_request, "\xC0\x02",2, "[0] (fir,fin) WRITE"); // XXX null WRITE valid?
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x00\x00\x03\x06",7, "OBJ_UNKNOWN on [1] (fir,fin) WRITE");
         // (variation 0 ("any") specified - not valid for writes)
     check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x03\x06\x0E",8,
-                                    "[1] (fin,fir) WRITE {g10v1 qc=00 #3..6: 0 1 1 1}");
+                                    "[1] (fir,fin) WRITE {g10v1 qc=00 #3..6: 0 1 1 1}");
 }
 
 static void test_rsp_fail(void)
@@ -191,10 +191,10 @@ static void test_rsp_fail(void)
     check_parse_fail(dnp3_p_app_response, "\xC0\x01",2);
     check_parse_fail(dnp3_p_app_response, "\xC0\x23",2);
     check_parse_fail(dnp3_p_app_response, "\xC0\xF0",2);
-    check_parse(dnp3_p_app_response, "\xC2\x00\x00\x00",4, "FUNC_NOT_SUPP on [2] (fin,fir) CONFIRM");
-    check_parse(dnp3_p_app_response, "\xC3\x01\x00\x00",4, "FUNC_NOT_SUPP on [3] (fin,fir) READ");
-    check_parse(dnp3_p_app_response, "\xC0\x23\x00\x00",4, "FUNC_NOT_SUPP on [0] (fin,fir) 0x23");
-    check_parse(dnp3_p_app_response, "\xC0\xF0\x00\x00",4, "FUNC_NOT_SUPP on [0] (fin,fir) 0xF0");
+    check_parse(dnp3_p_app_response, "\xC2\x00\x00\x00",4, "FUNC_NOT_SUPP on [2] (fir,fin) CONFIRM");
+    check_parse(dnp3_p_app_response, "\xC3\x01\x00\x00",4, "FUNC_NOT_SUPP on [3] (fir,fin) READ");
+    check_parse(dnp3_p_app_response, "\xC0\x23\x00\x00",4, "FUNC_NOT_SUPP on [0] (fir,fin) 0x23");
+    check_parse(dnp3_p_app_response, "\xC0\xF0\x00\x00",4, "FUNC_NOT_SUPP on [0] (fir,fin) 0xF0");
 }
 
 static void test_rsp_ac(void)
@@ -205,19 +205,19 @@ static void test_rsp_ac(void)
     check_parse(dnp3_p_app_response, "\xA2\x81\x00\x00",4, "[2] (fir,con) RESPONSE");
     check_parse(dnp3_p_app_response, "\x42\x81\x00\x00",4, "[2] (fin) RESPONSE");
     check_parse(dnp3_p_app_response, "\x64\x81\x00\x00",4, "[4] (fin,con) RESPONSE");
-    check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fin,fir) RESPONSE");
-    check_parse(dnp3_p_app_response, "\xE2\x81\x00\x00",4, "[2] (fin,fir,con) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fir,fin) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xE2\x81\x00\x00",4, "[2] (fir,fin,con) RESPONSE");
 
     check_parse(dnp3_p_app_response, "\x32\x82\x00\x00",4, "[2] (con,uns) UNSOLICITED_RESPONSE");
     check_parse(dnp3_p_app_response, "\xB2\x82\x00\x00",4, "[2] (fir,con,uns) UNSOLICITED_RESPONSE");
     check_parse(dnp3_p_app_response, "\x72\x82\x00\x00",4, "[2] (fin,con,uns) UNSOLICITED_RESPONSE");
-    check_parse(dnp3_p_app_response, "\xF2\x82\x00\x00",4, "[2] (fin,fir,con,uns) UNSOLICITED_RESPONSE");
+    check_parse(dnp3_p_app_response, "\xF2\x82\x00\x00",4, "[2] (fir,fin,con,uns) UNSOLICITED_RESPONSE");
 
     // XXX should unsol. responses with con=0 really be discarded?
     check_parse_fail(dnp3_p_app_response, "\x13\x82\x00\x00",4); // (uns)
     check_parse_fail(dnp3_p_app_response, "\x54\x82\x00\x00",4); // (fir,uns)
     check_parse_fail(dnp3_p_app_response, "\x9A\x82\x00\x00",4); // (fin,uns)
-    check_parse_fail(dnp3_p_app_response, "\xD0\x82\x00\x00",4); // (fin,fir,uns)
+    check_parse_fail(dnp3_p_app_response, "\xD0\x82\x00\x00",4); // (fir,fin,uns)
 
     check_parse_fail(dnp3_p_app_response, "\x13\x81\x00\x00",4); // (uns)
     check_parse_fail(dnp3_p_app_response, "\x32\x81\x00\x00",4); // (con,uns)
@@ -225,8 +225,8 @@ static void test_rsp_ac(void)
     check_parse_fail(dnp3_p_app_response, "\x72\x81\x00\x00",4); // (fir,con,uns)
     check_parse_fail(dnp3_p_app_response, "\x9A\x81\x00\x00",4); // (fin,uns)
     check_parse_fail(dnp3_p_app_response, "\xB2\x81\x00\x00",4); // (fin,con,uns)
-    check_parse_fail(dnp3_p_app_response, "\xD0\x81\x00\x00",4); // (fin,fir,uns)
-    check_parse_fail(dnp3_p_app_response, "\xF2\x81\x00\x00",4); // (fin,fir,con,uns)
+    check_parse_fail(dnp3_p_app_response, "\xD0\x81\x00\x00",4); // (fir,fin,uns)
+    check_parse_fail(dnp3_p_app_response, "\xF2\x81\x00\x00",4); // (fir,fin,con,uns)
 }
 
 static void test_rsp_iin(void)
@@ -244,64 +244,64 @@ static void test_rsp_iin(void)
 
 static void test_rsp_null(void)
 {
-    check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fin,fir) RESPONSE");
+    check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fir,fin) RESPONSE");
 }
 
 static void test_obj_binin(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g1v0 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g1v0 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x02\x03\x08",8,
-                                    "[0] (fin,fir) READ {g1v0 qc=17 #3 #8}");
+                                    "[0] (fir,fin) READ {g1v0 qc=17 #3 #8}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x01\x00\x03\x08\x19",10,
-                                     "[0] (fin,fir) RESPONSE {g1v1 qc=00 #3..8: 1 0 0 1 1 0}");
+                                     "[0] (fir,fin) RESPONSE {g1v1 qc=00 #3..8: 1 0 0 1 1 0}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x01\x17\x00",8,          // invalid qc
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x02\x17\x01\x03\x80",10,
-                                     "[0] (fin,fir) RESPONSE {g1v2 qc=17 #3:1}");
+                                     "[0] (fir,fin) RESPONSE {g1v2 qc=17 #3:1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x02\x17\x01\x03\x83",10,
-                                     "[0] (fin,fir) RESPONSE {g1v2 qc=17 #3:(online,restart)1}");
+                                     "[0] (fir,fin) RESPONSE {g1v2 qc=17 #3:(online,restart)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x02\x17\x01\x03\x89",10,
-                                     "[0] (fin,fir) RESPONSE {g1v2 qc=17 #3:(online,remote_forced)1}");
+                                     "[0] (fir,fin) RESPONSE {g1v2 qc=17 #3:(online,remote_forced)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x01\x02\x17\x01\x03\x40",10,  // reserved bit set
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 }
 
 static void test_obj_bininev(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x01\x02\x00\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g2v0 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g2v0 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x02\x01\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g2v1 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g2v1 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x02\x03\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g2v3 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g2v3 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x02\x04\x00\x03\x08",7,
-                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+                                    "OBJ_UNKNOWN on [0] (fir,fin) READ");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x01\x17\x01\x03\x80",10,
-                                     "[0] (fin,fir) RESPONSE {g2v1 qc=17 #3:1}");
+                                     "[0] (fir,fin) RESPONSE {g2v1 qc=17 #3:1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x01\x17\x01\x03\x83",10,
-                                     "[0] (fin,fir) RESPONSE {g2v1 qc=17 #3:(online,restart)1}");
+                                     "[0] (fir,fin) RESPONSE {g2v1 qc=17 #3:(online,restart)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x01\x17\x01\x03\xC3",10,
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fin,fir) RESPONSE {g2v2 qc=17 #3:1@0}");
+                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:1@0}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x02\x17\x01\x03\x01\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fin,fir) RESPONSE {g2v2 qc=17 #3:(online)0@140737488355.328}");
+                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:(online)0@140737488355.328}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x02\x17\x01\x03\x82\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fin,fir) RESPONSE {g2v2 qc=17 #3:(restart)1@1423689252}");
+                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:(restart)1@1423689252}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x02\x17\x01\x03\xC2\x00\x00\x00\x00\x00\x00",16,
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\x80\x00\x00",12,
-                                     "[0] (fin,fir) RESPONSE {g2v3 qc=17 #3:1@+0}");
+                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:1@+0}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\x01\x00\x80",12,
-                                     "[0] (fin,fir) RESPONSE {g2v3 qc=17 #3:(online)0@+32.768}");
+                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:(online)0@+32.768}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\x81\xE0\x56",12,
-                                     "[0] (fin,fir) RESPONSE {g2v3 qc=17 #3:(online)1@+22.240}");
+                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:(online)1@+22.240}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\xC1\x00\x00",12,
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
         // XXX should the relative time variants generate a PARAM_ERROR unless they are preceded by a
         //     Common Time-of-Occurance (CTO, group 50) object in the same message?
 }
@@ -309,64 +309,64 @@ static void test_obj_bininev(void)
 static void test_obj_dblbitin(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x01\x03\x00\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g3v0 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g3v0 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x03\x01\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g3v1 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g3v1 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x03\x02\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g3v2 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g3v2 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x03\x03\x00\x03\x08",7,
-                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+                                    "OBJ_UNKNOWN on [0] (fir,fin) READ");
 
     // v1 (packed)
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x03\x36",10,
-                                     "[0] (fin,fir) RESPONSE {g3v1 qc=00 #0..3: 1 0 - ~}");
+                                     "[0] (fir,fin) RESPONSE {g3v1 qc=00 #0..3: 1 0 - ~}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x02\x06",10,
-                                     "[0] (fin,fir) RESPONSE {g3v1 qc=00 #0..2: 1 0 ~}");
+                                     "[0] (fir,fin) RESPONSE {g3v1 qc=00 #0..2: 1 0 ~}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x01\x00\x00\x02\x46",10,
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");  // extra bit set
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");  // extra bit set
 
     // v2 (flags)
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\x80",10,
-                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:1}");
+                                     "[0] (fir,fin) RESPONSE {g3v2 qc=17 #3:1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\x03",10,
-                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online,restart)~}");
+                                     "[0] (fir,fin) RESPONSE {g3v2 qc=17 #3:(online,restart)~}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\xA1",10,
-                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online,chatter_filter)1}");
+                                     "[0] (fir,fin) RESPONSE {g3v2 qc=17 #3:(online,chatter_filter)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x03\x02\x17\x01\x03\xC1",10,
-                                     "[0] (fin,fir) RESPONSE {g3v2 qc=17 #3:(online)-}");
+                                     "[0] (fir,fin) RESPONSE {g3v2 qc=17 #3:(online)-}");
 }
 
 static void test_obj_dblbitinev(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x01\x04\x00\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g4v0 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g4v0 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x04\x01\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g4v1 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g4v1 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x04\x03\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g4v3 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g4v3 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x04\x04\x00\x03\x08",7,
-                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+                                    "OBJ_UNKNOWN on [0] (fir,fin) READ");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x01\x17\x01\x03\x80",10,
-                                     "[0] (fin,fir) RESPONSE {g4v1 qc=17 #3:1}");
+                                     "[0] (fir,fin) RESPONSE {g4v1 qc=17 #3:1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x01\x17\x01\x03\x03",10,
-                                     "[0] (fin,fir) RESPONSE {g4v1 qc=17 #3:(online,restart)~}");
+                                     "[0] (fir,fin) RESPONSE {g4v1 qc=17 #3:(online,restart)~}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x01\x17\x01\x03\xC1",10,
-                                     "[0] (fin,fir) RESPONSE {g4v1 qc=17 #3:(online)-}");
+                                     "[0] (fir,fin) RESPONSE {g4v1 qc=17 #3:(online)-}");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fin,fir) RESPONSE {g4v2 qc=17 #3:1@0}");
+                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:1@0}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x02\x17\x01\x03\x41\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fin,fir) RESPONSE {g4v2 qc=17 #3:(online)0@140737488355.328}");
+                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:(online)0@140737488355.328}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x02\x17\x01\x03\x02\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fin,fir) RESPONSE {g4v2 qc=17 #3:(restart)~@1423689252}");
+                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:(restart)~@1423689252}");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x03\x17\x01\x03\x80\x00\x00",12,
-                                     "[0] (fin,fir) RESPONSE {g4v3 qc=17 #3:1@+0}");
+                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:1@+0}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x03\x17\x01\x03\x41\x00\x80",12,
-                                     "[0] (fin,fir) RESPONSE {g4v3 qc=17 #3:(online)0@+32.768}");
+                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:(online)0@+32.768}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x03\x17\x01\x03\x81\xE0\x56",12,
-                                     "[0] (fin,fir) RESPONSE {g4v3 qc=17 #3:(online)1@+22.240}");
+                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:(online)1@+22.240}");
         // XXX should the relative time variants generate a PARAM_ERROR unless they are preceded by a
         //     Common Time-of-Occurance (CTO, group 50) object in the same message?
 }
@@ -375,12 +375,12 @@ static void test_obj_binout(void)
 {
     // v1 (packed)
     check_parse(dnp3_p_app_request, "\xC0\x01\x0A\x01\x00\x03\x41",7,
-                                    "[0] (fin,fir) READ {g10v1 qc=00 #3..65}");
+                                    "[0] (fir,fin) READ {g10v1 qc=00 #3..65}");
     check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x01",9,
-                                    "[1] (fin,fir) WRITE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x17\x00",6, "PARAM_ERROR on [1] (fin,fir) WRITE");
+                                    "[1] (fir,fin) WRITE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x17\x00",6, "PARAM_ERROR on [1] (fir,fin) WRITE");
         // XXX is qc=17 (index prefixes) valid for bit-packed variation? which encoding is correct?
-        //     e.g: "[1] (fin,fir) WRITE {g10v1 qc=17 #1:0,#4:1,#8:1}" "\x01\x02\x0A\x01\x17\x03...
+        //     e.g: "[1] (fir,fin) WRITE {g10v1 qc=17 #1:0,#4:1,#8:1}" "\x01\x02\x0A\x01\x17\x03...
         //     little-on-little
         //       00000001 0000100|0 001000|10 00000|100
         //       ...\x01\x08\x22\x04"
@@ -393,81 +393,81 @@ static void test_obj_binout(void)
         //     big-on-big
         //       00000001 0|0000010 01|000010 001|00000
         //       ...\x01\x02\x42\x20"
-    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9, "PARAM_ERROR on [1] (fin,fir) WRITE");
+    check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x00\x08\x5E\x02",9, "PARAM_ERROR on [1] (fir,fin) WRITE");
         // (an unused bit after the packed objects is not zero)
     check_parse(dnp3_p_app_response, "\xC1\x81\x00\x00\x0A\x01\x00\x00\x08\x5E\x01",11,
-                                     "[1] (fin,fir) RESPONSE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
+                                     "[1] (fir,fin) RESPONSE {g10v1 qc=00 #0..8: 0 1 1 1 1 0 1 0 1}");
     check_parse(dnp3_p_app_response, "\xC1\x81\x00\x00\x0A\x01\x00\x00\x08\x5E\x02",11,
-                                     "PARAM_ERROR on [1] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [1] (fir,fin) RESPONSE");
         // (an unused bit after the packed objects is not zero)
 
     // v2 (flags)
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x80",10,
-                                     "[0] (fin,fir) RESPONSE {g10v2 qc=17 #3:1}");
+                                     "[0] (fir,fin) RESPONSE {g10v2 qc=17 #3:1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x83",10,
-                                     "[0] (fin,fir) RESPONSE {g10v2 qc=17 #3:(online,restart)1}");
+                                     "[0] (fir,fin) RESPONSE {g10v2 qc=17 #3:(online,restart)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x89",10,
-                                     "[0] (fin,fir) RESPONSE {g10v2 qc=17 #3:(online,remote_forced)1}");
+                                     "[0] (fir,fin) RESPONSE {g10v2 qc=17 #3:(online,remote_forced)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x20",10,  // reserved bit set
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0A\x02\x17\x01\x03\x40",10,  // reserved bit set
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
     check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x02\x17\x01\x03\x80",9,
-                                    "OBJ_UNKNOWN on [1] (fin,fir) WRITE");
+                                    "OBJ_UNKNOWN on [1] (fir,fin) WRITE");
 }
 
 static void test_obj_binoutev(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x01\x0B\x00\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g11v0 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g11v0 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x0B\x01\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g11v1 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g11v1 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x0B\x02\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g11v2 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g11v2 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x0B\x03\x00\x03\x08",7,
-                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+                                    "OBJ_UNKNOWN on [0] (fir,fin) READ");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x01\x17\x01\x03\x80",10,
-                                     "[0] (fin,fir) RESPONSE {g11v1 qc=17 #3:1}");
+                                     "[0] (fir,fin) RESPONSE {g11v1 qc=17 #3:1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x01\x17\x01\x03\x83",10,
-                                     "[0] (fin,fir) RESPONSE {g11v1 qc=17 #3:(online,restart)1}");
+                                     "[0] (fir,fin) RESPONSE {g11v1 qc=17 #3:(online,restart)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x01\x17\x01\x03\xC3",10,
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x01\x17\x01\x03\xE3",10,
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fin,fir) RESPONSE {g11v2 qc=17 #3:1@0}");
+                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:1@0}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x01\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fin,fir) RESPONSE {g11v2 qc=17 #3:(online)0@140737488355.328}");
+                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:(online)0@140737488355.328}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x82\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fin,fir) RESPONSE {g11v2 qc=17 #3:(restart)1@1423689252}");
+                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:(restart)1@1423689252}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\xC2\x00\x00\x00\x00\x00\x00",16,
-                                     "PARAM_ERROR on [0] (fin,fir) RESPONSE");
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 }
 
 static void test_obj_binoutcmdev(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x01\x0D\x00\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g13v0 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g13v0 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x0D\x01\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g13v1 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g13v1 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x0D\x02\x00\x03\x08",7,
-                                    "[0] (fin,fir) READ {g13v2 qc=00 #3..8}");
+                                    "[0] (fir,fin) READ {g13v2 qc=00 #3..8}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x0D\x03\x00\x03\x08",7,
-                                    "OBJ_UNKNOWN on [0] (fin,fir) READ");
+                                    "OBJ_UNKNOWN on [0] (fir,fin) READ");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x01\x17\x01\x03\xFF",10,
-                                     "[0] (fin,fir) RESPONSE {g13v1 qc=17 #3:(cs=1,status=127)}");
+                                     "[0] (fir,fin) RESPONSE {g13v1 qc=17 #3:(cs=1,status=127)}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x01\x17\x01\x03\x00",10,
-                                     "[0] (fin,fir) RESPONSE {g13v1 qc=17 #3:(cs=0,status=0)}");
+                                     "[0] (fir,fin) RESPONSE {g13v1 qc=17 #3:(cs=0,status=0)}");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fin,fir) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@0}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@0}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fin,fir) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@140737488355.328}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@140737488355.328}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fin,fir) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@1423689252}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@1423689252}");
 }
 
 static void test_obj_ctr(void)
@@ -598,6 +598,27 @@ static void test_obj_frozenanainev(void)
                                      "[0] RESPONSE {g33v8 qc=17 #1:(reference_err)1.0@0}");
 }
 
+static void test_obj_anaindeadband(void)
+{
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x22\x01\x17\x01\x01\x12\x34",11,
+                                     "[0] RESPONSE {g34v1 qc=17 #1:13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x22\x02\x17\x01\x01\x12\x34\x56\x78",13,
+                                     "[0] RESPONSE {g34v2 qc=17 #1:2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x22\x03\x17\x01\x01\x00\x00\x80\xBF",13,
+                                     "PARAM_ERROR on [0] RESPONSE");    // negative deadband value
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x22\x03\x17\x01\x01\x00\x00\x80\x3F",13,
+                                     "[0] RESPONSE {g34v3 qc=17 #1:1.0}");
+
+    check_parse(dnp3_p_app_request, "\xC0\x02\x22\x01\x17\x01\x01\x12\x34",9,
+                                    "[0] (fir,fin) WRITE {g34v1 qc=17 #1:13330}");
+    check_parse(dnp3_p_app_request, "\xC0\x02\x22\x02\x17\x01\x01\x12\x34\x56\x78",11,
+                                    "[0] (fir,fin) WRITE {g34v2 qc=17 #1:2018915346}");
+    check_parse(dnp3_p_app_request, "\xC0\x02\x22\x03\x17\x01\x01\x00\x00\x80\xBF",11,
+                                    "PARAM_ERROR on [0] (fir,fin) WRITE");    // negative deadband value
+    check_parse(dnp3_p_app_request, "\xC0\x02\x22\x03\x17\x01\x01\x00\x00\x80\x3F",11,
+                                    "[0] (fir,fin) WRITE {g34v3 qc=17 #1:1.0}");
+}
+
 
 
 /// ...
@@ -632,6 +653,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/frozenanain", test_obj_frozenanain);
     g_test_add_func("/app/obj/anainev", test_obj_anainev);
     g_test_add_func("/app/obj/frozenanainev", test_obj_frozenanainev);
+    g_test_add_func("/app/obj/anaindeadband", test_obj_anaindeadband);
 
     g_test_run();
 }

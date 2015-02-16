@@ -16,5 +16,9 @@ extern HParser *dnp3_p_anainev_oblock;
 extern HParser *dnp3_p_frozenanainev_rblock;
 extern HParser *dnp3_p_frozenanainev_oblock;
 
+extern HParser *dnp3_p_anaindeadband_rblock;
+extern HParser *dnp3_p_anaindeadband_wblock;
+extern HParser *dnp3_p_anaindeadband_oblock;
+
 
 #endif // DNP3_ANALOG_H_SEEN

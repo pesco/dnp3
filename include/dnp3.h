@@ -202,6 +202,10 @@ typedef enum {
     DNP3_VARIATION_FROZENANAINEV_FLOAT_FLAG_TIME = 7,
     DNP3_VARIATION_FROZENANAINEV_DOUBLE_FLAG_TIME = 8,
 
+    DNP3_VARIATION_ANAINDEADBAND_16BIT = 1,
+    DNP3_VARIATION_ANAINDEADBAND_32BIT = 2,
+    DNP3_VARIATION_ANAINDEADBAND_FLOAT = 3,
+
     DNP3_VARIATION_AUTH_AGGR = 3,
     DNP3_VARIATION_AUTH_MAC = 9,
 } DNP3_Variation;
@@ -267,8 +271,9 @@ typedef struct {
 typedef struct {
     DNP3_Flags flags;
     union {
-        int32_t sint;
-        double  flt;
+        int32_t  sint;
+        uint32_t uint;  // only used for deadband values (g34v1, g34v2)
+        double   flt;   // also used for deadband values (g34v3)
     };
 } DNP3_Analog;
 

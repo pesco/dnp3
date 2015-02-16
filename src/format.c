@@ -229,6 +229,8 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(ANAIN, 16BIT_NOFLAG):
     case GV(FROZENANAIN, 32BIT_NOFLAG):
     case GV(FROZENANAIN, 16BIT_NOFLAG):
+    case GV(ANAINDEADBAND, 32BIT):
+    case GV(ANAINDEADBAND, 16BIT):
         appendf(&res, &size, "%"PRIi32, o.ana.sint);
         break;
     case GV(ANAIN, FLOAT_FLAG):
@@ -240,6 +242,8 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(FROZENANAINEV, FLOAT_FLAG):
     case GV(FROZENANAINEV, DOUBLE_FLAG):
         append_flags(&res, &size, o.ana.flags);
+        // fall through to append value
+    case GV(ANAINDEADBAND, FLOAT):
         appendf(&res, &size, "%.1f", o.ana.flt);
         break;
     case GV(ANAINEV, 32BIT_FLAG_TIME):
@@ -331,8 +335,8 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
     // flags string
     char flags[20]; // need 4*3(names)+3(seps)+2(parens)+1(space)+1(null)
     char *p = flags;
-    if(frag->ac.fin) { strcpy(p, ",fin"); p+=4; }
     if(frag->ac.fir) { strcpy(p, ",fir"); p+=4; }
+    if(frag->ac.fin) { strcpy(p, ",fin"); p+=4; }
     if(frag->ac.con) { strcpy(p, ",con"); p+=4; }
     if(frag->ac.uns) { strcpy(p, ",uns"); p+=4; }
     if(p > flags) {

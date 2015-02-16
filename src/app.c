@@ -503,11 +503,13 @@ static void init_odata(void)
                                      dnp3_p_anainev_rblock,
                                      dnp3_p_frozenanain_rblock,
                                      dnp3_p_frozenanainev_rblock,
+                                     dnp3_p_anaindeadband_rblock,
                                      NULL));
     H_RULE(oblock_anain,    h_choice(dnp3_p_anain_oblock,
                                      dnp3_p_anainev_oblock,
                                      dnp3_p_frozenanain_oblock,
                                      dnp3_p_frozenanainev_oblock,
+                                     dnp3_p_anaindeadband_oblock,
                                      NULL));
 //                                 g31...,
 //                                 g32...,
@@ -560,8 +562,10 @@ static void init_odata(void)
     //     variations but not others (e.g. g70v5 file transmission).
 
     H_RULE(wblock_binout,   dnp3_p_binout_wblock);
+    H_RULE(wblock_anain,    dnp3_p_anaindeadband_wblock);
     H_RULE(write_oblock,    dnp3_p_objchoice(//wblock_attr,
                                              wblock_binout,
+                                             wblock_anain,
                                              NULL));
     H_RULE(write,           dnp3_p_many(write_oblock));
 

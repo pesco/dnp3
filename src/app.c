@@ -502,10 +502,12 @@ static void init_odata(void)
     H_RULE(rblock_anain,    h_choice(dnp3_p_anain_rblock,
                                      dnp3_p_anainev_rblock,
                                      dnp3_p_frozenanain_rblock,
+                                     dnp3_p_frozenanainev_rblock,
                                      NULL));
     H_RULE(oblock_anain,    h_choice(dnp3_p_anain_oblock,
                                      dnp3_p_anainev_oblock,
                                      dnp3_p_frozenanain_oblock,
+                                     dnp3_p_frozenanainev_oblock,
                                      NULL));
 //                                 g31...,
 //                                 g32...,

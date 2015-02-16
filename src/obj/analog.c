@@ -205,6 +205,8 @@ void dnp3_p_init_analog(void)
     H_RULE(oblock_evf64fl_t,  dnp3_p_oblock(G_V(ANAINEV, DOUBLE_FLAG_TIME), flt64_flag_t));
 
     dnp3_p_anainev_rblock     = dnp3_p_rblock(G(ANAINEV),
+                                              V(ANAINEV, 32BIT_FLAG),
+                                              V(ANAINEV, 16BIT_FLAG),
                                               V(ANAINEV, 32BIT_FLAG_TIME),
                                               V(ANAINEV, 16BIT_FLAG_TIME),
                                               V(ANAINEV, FLOAT_FLAG),
@@ -215,4 +217,28 @@ void dnp3_p_init_analog(void)
                                          oblock_evi32fl_t, oblock_evi16fl_t,
                                          oblock_evf32fl, oblock_evf64fl,
                                          oblock_evf32fl_t, oblock_evf64fl_t, NULL);
+
+    // group 33: frozen analog input events...
+    H_RULE(oblock_frzevi32fl,    dnp3_p_oblock(G_V(FROZENANAINEV, 32BIT_FLAG), int32_flag));
+    H_RULE(oblock_frzevi16fl,    dnp3_p_oblock(G_V(FROZENANAINEV, 16BIT_FLAG), int16_flag));
+    H_RULE(oblock_frzevi32fl_t,  dnp3_p_oblock(G_V(FROZENANAINEV, 32BIT_FLAG_TIME), int32_flag_t));
+    H_RULE(oblock_frzevi16fl_t,  dnp3_p_oblock(G_V(FROZENANAINEV, 16BIT_FLAG_TIME), int16_flag_t));
+    H_RULE(oblock_frzevf32fl,    dnp3_p_oblock(G_V(FROZENANAINEV, FLOAT_FLAG), flt32_flag));
+    H_RULE(oblock_frzevf64fl,    dnp3_p_oblock(G_V(FROZENANAINEV, DOUBLE_FLAG), flt64_flag));
+    H_RULE(oblock_frzevf32fl_t,  dnp3_p_oblock(G_V(FROZENANAINEV, FLOAT_FLAG_TIME), flt32_flag_t));
+    H_RULE(oblock_frzevf64fl_t,  dnp3_p_oblock(G_V(FROZENANAINEV, DOUBLE_FLAG_TIME), flt64_flag_t));
+
+    dnp3_p_frozenanainev_rblock     = dnp3_p_rblock(G(FROZENANAINEV),
+                                                    V(FROZENANAINEV, 32BIT_FLAG),
+                                                    V(FROZENANAINEV, 16BIT_FLAG),
+                                                    V(FROZENANAINEV, 32BIT_FLAG_TIME),
+                                                    V(FROZENANAINEV, 16BIT_FLAG_TIME),
+                                                    V(FROZENANAINEV, FLOAT_FLAG),
+                                                    V(FROZENANAINEV, DOUBLE_FLAG),
+                                                    V(FROZENANAINEV, FLOAT_FLAG_TIME),
+                                                    V(FROZENANAINEV, DOUBLE_FLAG_TIME), 0);
+    dnp3_p_frozenanainev_oblock     = h_choice(oblock_frzevi32fl, oblock_frzevi16fl,
+                                               oblock_frzevi32fl_t, oblock_frzevi16fl_t,
+                                               oblock_frzevf32fl, oblock_frzevf64fl,
+                                               oblock_frzevf32fl_t, oblock_frzevf64fl_t, NULL);
 }

@@ -503,19 +503,13 @@ static void init_odata(void)
                                      dnp3_p_anainev_rblock,
                                      dnp3_p_frozenanain_rblock,
                                      dnp3_p_frozenanainev_rblock,
-                                     dnp3_p_anaindeadband_rblock,
-                                     NULL));
+                                     dnp3_p_anaindeadband_rblock, NULL));
     H_RULE(oblock_anain,    h_choice(dnp3_p_anain_oblock,
                                      dnp3_p_anainev_oblock,
                                      dnp3_p_frozenanain_oblock,
                                      dnp3_p_frozenanainev_oblock,
-                                     dnp3_p_anaindeadband_oblock,
-                                     NULL));
-//                                 g31...,
-//                                 g32...,
-//                                 g33...,
-//                                 g34...,
-//
+                                     dnp3_p_anaindeadband_oblock, NULL));
+
 //                                 g40...,    // analog outputs
 //                                 g41...,
 //                                 g42...,

@@ -500,8 +500,10 @@ static void init_odata(void)
 
     // analog inputs
     H_RULE(rblock_anain,    h_choice(dnp3_p_anain_rblock,
+                                     dnp3_p_frozenanain_rblock,
                                      NULL));
     H_RULE(oblock_anain,    h_choice(dnp3_p_anain_oblock,
+                                     dnp3_p_frozenanain_oblock,
                                      NULL));
 //                                 g31...,
 //                                 g32...,

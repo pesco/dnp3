@@ -538,6 +538,26 @@ static void test_obj_anain(void)
                                      "[0] RESPONSE {g30v6 qc=17 #1:(reference_err)1.0}");
 }
 
+static void test_obj_frozenanain(void)
+{
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x01\x17\x01\x01\x21\x12\x34\x56\x78",14,
+                                     "[0] RESPONSE {g31v1 qc=17 #1:(online,over_range)2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x02\x17\x01\x01\x40\x12\x34",12,
+                                     "[0] RESPONSE {g31v2 qc=17 #1:(reference_err)13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x03\x17\x01\x01\x21\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
+                                     "[0] RESPONSE {g31v3 qc=17 #1:(online,over_range)2018915346@0}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x04\x17\x01\x01\x40\x12\x34\x00\x00\x00\x00\x00\x00",18,
+                                     "[0] RESPONSE {g31v4 qc=17 #1:(reference_err)13330@0}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x05\x17\x01\x01\x12\x34\x56\x78",13,
+                                     "[0] RESPONSE {g31v5 qc=17 #1:2018915346}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x06\x17\x01\x01\x12\x34",11,
+                                     "[0] RESPONSE {g31v6 qc=17 #1:13330}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x07\x17\x01\x01\x21\x00\x00\x80\xBF",14,
+                                     "[0] RESPONSE {g31v7 qc=17 #1:(online,over_range)-1.0}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x08\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F",18,
+                                     "[0] RESPONSE {g31v8 qc=17 #1:(reference_err)1.0}");
+}
+
 
 
 /// ...
@@ -569,6 +589,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/frozenctr", test_obj_frozenctr);
     g_test_add_func("/app/obj/frozenctrev", test_obj_frozenctrev);
     g_test_add_func("/app/obj/anain", test_obj_anain);
+    g_test_add_func("/app/obj/frozenanain", test_obj_frozenanain);
 
     g_test_run();
 }

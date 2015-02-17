@@ -223,6 +223,10 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(FROZENANAIN, 16BIT_FLAG):
     case GV(FROZENANAINEV, 32BIT_FLAG):
     case GV(FROZENANAINEV, 16BIT_FLAG):
+    case GV(ANAOUTSTATUS, 32BIT):
+    case GV(ANAOUTSTATUS, 16BIT):
+    case GV(ANAOUTEV, 32BIT):
+    case GV(ANAOUTEV, 16BIT):
         append_flags(&res, &size, o.ana.flags);
         // fall through to next case to append value
     case GV(ANAIN, 32BIT_NOFLAG):
@@ -241,6 +245,10 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(FROZENANAIN, DOUBLE_FLAG):
     case GV(FROZENANAINEV, FLOAT_FLAG):
     case GV(FROZENANAINEV, DOUBLE_FLAG):
+    case GV(ANAOUTSTATUS, FLOAT):
+    case GV(ANAOUTSTATUS, DOUBLE):
+    case GV(ANAOUTEV, FLOAT):
+    case GV(ANAOUTEV, DOUBLE):
         append_flags(&res, &size, o.ana.flags);
         // fall through to append value
     case GV(ANAINDEADBAND, FLOAT):
@@ -252,6 +260,8 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(FROZENANAIN, 16BIT_FLAG_TIME):
     case GV(FROZENANAINEV, 32BIT_FLAG_TIME):
     case GV(FROZENANAINEV, 16BIT_FLAG_TIME):
+    case GV(ANAOUTEV, 32BIT_TIME):
+    case GV(ANAOUTEV, 16BIT_TIME):
         append_flags(&res, &size, o.timed.ana.flags);
         appendf(&res, &size, "%"PRIi32, o.timed.ana.sint);
         append_abstime(&res, &size, o.timed.abstime);
@@ -260,7 +270,35 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(ANAINEV, DOUBLE_FLAG_TIME):
     case GV(FROZENANAINEV, FLOAT_FLAG_TIME):
     case GV(FROZENANAINEV, DOUBLE_FLAG_TIME):
+    case GV(ANAOUTEV, FLOAT_TIME):
+    case GV(ANAOUTEV, DOUBLE_TIME):
         append_flags(&res, &size, o.ana.flags);
+        appendf(&res, &size, "%.1f", o.ana.flt);
+        append_abstime(&res, &size, o.timed.abstime);
+        break;
+    case GV(ANAOUTCMDEV, 32BIT):
+    case GV(ANAOUTCMDEV, 16BIT):
+    case GV(ANAOUT, 32BIT):
+    case GV(ANAOUT, 16BIT):
+        appendf(&res, &size, "(status=%d)", (int)o.ana.status);
+        appendf(&res, &size, "%"PRIi32, o.ana.sint);
+        break;
+    case GV(ANAOUTCMDEV, 32BIT_TIME):
+    case GV(ANAOUTCMDEV, 16BIT_TIME):
+        appendf(&res, &size, "(status=%d)", (int)o.ana.status);
+        appendf(&res, &size, "%"PRIi32, o.ana.sint);
+        append_abstime(&res, &size, o.timed.abstime);
+        break;
+    case GV(ANAOUTCMDEV, FLOAT):
+    case GV(ANAOUTCMDEV, DOUBLE):
+    case GV(ANAOUT, FLOAT):
+    case GV(ANAOUT, DOUBLE):
+        appendf(&res, &size, "(status=%d)", (int)o.ana.status);
+        appendf(&res, &size, "%.1f", o.ana.flt);
+        break;
+    case GV(ANAOUTCMDEV, FLOAT_TIME):
+    case GV(ANAOUTCMDEV, DOUBLE_TIME):
+        appendf(&res, &size, "(status=%d)", (int)o.ana.status);
         appendf(&res, &size, "%.1f", o.ana.flt);
         append_abstime(&res, &size, o.timed.abstime);
         break;

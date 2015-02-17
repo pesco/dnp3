@@ -510,11 +510,15 @@ static void init_odata(void)
                                      dnp3_p_frozenanainev_oblock,
                                      dnp3_p_anaindeadband_oblock, NULL));
 
-//                                 g40...,    // analog outputs
-//                                 g41...,
-//                                 g42...,
-//                                 g43...,
-//
+    // analog outputs
+    H_RULE(rblock_anaout,   h_choice(dnp3_p_anaoutstatus_rblock,
+                                     dnp3_p_anaoutev_rblock,
+                                     dnp3_p_anaoutcmdev_rblock, NULL));
+    H_RULE(oblock_anaout,   h_choice(dnp3_p_anaoutstatus_oblock,
+                                     dnp3_p_anaout_oblock,
+                                     dnp3_p_anaoutev_oblock,
+                                     dnp3_p_anaoutcmdev_oblock, NULL));
+
 //                                 g50v1...,  // times   XXX single object (qc 07, count 1)
 //                                 g50v4...,
 //
@@ -548,6 +552,7 @@ static void init_odata(void)
                                              rblock_binout,
                                              rblock_ctr,
                                              rblock_anain,
+                                             rblock_anaout,
                                              NULL));
     H_RULE(read,            dnp3_p_many(read_oblock));
     // XXX NB parsing pseudocode in AN2012-004b does NOT work for READ requests.
@@ -568,6 +573,7 @@ static void init_odata(void)
                                              oblock_binout,
                                              oblock_ctr,
                                              oblock_anain,
+                                             oblock_anaout,
                                              NULL));
     H_RULE(response,        dnp3_p_many(rsp_oblock));
 

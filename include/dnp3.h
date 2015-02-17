@@ -7,8 +7,8 @@
 /// TYPES ///
 
 typedef struct {
-    uint8_t fin:1;  // note: ignore on unsolicited responses (treat as 1)!
     uint8_t fir:1;  // note: ignore on unsolicited responses (treat as 1)!
+    uint8_t fin:1;  // note: ignore on unsolicited responses (treat as 1)!
     uint8_t con:1;
     uint8_t uns:1;
     uint8_t seq:4;
@@ -206,6 +206,34 @@ typedef enum {
     DNP3_VARIATION_ANAINDEADBAND_32BIT = 2,
     DNP3_VARIATION_ANAINDEADBAND_FLOAT = 3,
 
+    DNP3_VARIATION_ANAOUTSTATUS_32BIT = 1,
+    DNP3_VARIATION_ANAOUTSTATUS_16BIT = 2,
+    DNP3_VARIATION_ANAOUTSTATUS_FLOAT = 3,
+    DNP3_VARIATION_ANAOUTSTATUS_DOUBLE = 4,
+
+    DNP3_VARIATION_ANAOUT_32BIT = 1,
+    DNP3_VARIATION_ANAOUT_16BIT = 2,
+    DNP3_VARIATION_ANAOUT_FLOAT = 3,
+    DNP3_VARIATION_ANAOUT_DOUBLE = 4,
+
+    DNP3_VARIATION_ANAOUTEV_32BIT = 1,
+    DNP3_VARIATION_ANAOUTEV_16BIT = 2,
+    DNP3_VARIATION_ANAOUTEV_32BIT_TIME = 3,
+    DNP3_VARIATION_ANAOUTEV_16BIT_TIME = 4,
+    DNP3_VARIATION_ANAOUTEV_FLOAT = 5,
+    DNP3_VARIATION_ANAOUTEV_DOUBLE = 6,
+    DNP3_VARIATION_ANAOUTEV_FLOAT_TIME = 7,
+    DNP3_VARIATION_ANAOUTEV_DOUBLE_TIME = 8,
+
+    DNP3_VARIATION_ANAOUTCMDEV_32BIT = 1,
+    DNP3_VARIATION_ANAOUTCMDEV_16BIT = 2,
+    DNP3_VARIATION_ANAOUTCMDEV_32BIT_TIME = 3,
+    DNP3_VARIATION_ANAOUTCMDEV_16BIT_TIME = 4,
+    DNP3_VARIATION_ANAOUTCMDEV_FLOAT = 5,
+    DNP3_VARIATION_ANAOUTCMDEV_DOUBLE = 6,
+    DNP3_VARIATION_ANAOUTCMDEV_FLOAT_TIME = 7,
+    DNP3_VARIATION_ANAOUTCMDEV_DOUBLE_TIME = 8,
+
     DNP3_VARIATION_AUTH_AGGR = 3,
     DNP3_VARIATION_AUTH_MAC = 9,
 } DNP3_Variation;
@@ -270,6 +298,7 @@ typedef struct {
 
 typedef struct {
     DNP3_Flags flags;
+    DNP3_ControlStatus status;
     union {
         int32_t  sint;
         uint32_t uint;  // only used for deadband values (g34v1, g34v2)
@@ -293,10 +322,10 @@ typedef union {
     // g20v1, g20v2, g20v5, g20v6, g21v1, g21v2, g21v9, g21v10 (counters)
     DNP3_Counter ctr;
 
-    // g30v1, g30v2, g30v3, g30v4, g30v5, g30v6 (analog inputs)
+    // analog in- and outputs
     DNP3_Analog ana;
 
-    // g2v2, g2v3, g4v2, g4v3, g13v2, g21v5, g21v6 (objects with timestamps)
+    // objects with timestamps
     struct {
         union {
             DNP3_Flags flags;

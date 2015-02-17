@@ -189,14 +189,14 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
                 (int)o.timed.cmdev.cs, (int)o.timed.cmdev.status);
         append_abstime(&res, &size, o.timed.abstime);
         break;
-    case GV(CTR, 32BIT_FLAG):
-    case GV(CTR, 16BIT_FLAG):
-    case GV(CTREV, 16BIT_FLAG):
-    case GV(CTREV, 32BIT_FLAG):
-    case GV(FROZENCTR, 32BIT_FLAG):
-    case GV(FROZENCTR, 16BIT_FLAG):
-    case GV(FROZENCTREV, 32BIT_FLAG):
-    case GV(FROZENCTREV, 16BIT_FLAG):
+    case GV(CTR, 32BIT):
+    case GV(CTR, 16BIT):
+    case GV(CTREV, 16BIT):
+    case GV(CTREV, 32BIT):
+    case GV(FROZENCTR, 32BIT):
+    case GV(FROZENCTR, 16BIT):
+    case GV(FROZENCTREV, 32BIT):
+    case GV(FROZENCTREV, 16BIT):
         append_flags(&res, &size, o.ctr.flags);
         // fall through to next case to append counter value
     case GV(CTR, 32BIT_NOFLAG):
@@ -205,24 +205,24 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(FROZENCTR, 16BIT_NOFLAG):
         appendf(&res, &size, "%"PRIu64, o.ctr.value);
         break;
-    case GV(CTREV, 16BIT_FLAG_TIME):
-    case GV(CTREV, 32BIT_FLAG_TIME):
-    case GV(FROZENCTR, 32BIT_FLAG_TIME):
-    case GV(FROZENCTR, 16BIT_FLAG_TIME):
-    case GV(FROZENCTREV, 32BIT_FLAG_TIME):
-    case GV(FROZENCTREV, 16BIT_FLAG_TIME):
+    case GV(CTREV, 16BIT_TIME):
+    case GV(CTREV, 32BIT_TIME):
+    case GV(FROZENCTR, 32BIT_TIME):
+    case GV(FROZENCTR, 16BIT_TIME):
+    case GV(FROZENCTREV, 32BIT_TIME):
+    case GV(FROZENCTREV, 16BIT_TIME):
         append_flags(&res, &size, o.timed.ctr.flags);
         appendf(&res, &size, "%"PRIu64, o.timed.ctr.value);
         append_abstime(&res, &size, o.timed.abstime);
         break;
-    case GV(ANAIN, 32BIT_FLAG):
-    case GV(ANAIN, 16BIT_FLAG):
-    case GV(ANAINEV, 32BIT_FLAG):
-    case GV(ANAINEV, 16BIT_FLAG):
-    case GV(FROZENANAIN, 32BIT_FLAG):
-    case GV(FROZENANAIN, 16BIT_FLAG):
-    case GV(FROZENANAINEV, 32BIT_FLAG):
-    case GV(FROZENANAINEV, 16BIT_FLAG):
+    case GV(ANAIN, 32BIT):
+    case GV(ANAIN, 16BIT):
+    case GV(ANAINEV, 32BIT):
+    case GV(ANAINEV, 16BIT):
+    case GV(FROZENANAIN, 32BIT):
+    case GV(FROZENANAIN, 16BIT):
+    case GV(FROZENANAINEV, 32BIT):
+    case GV(FROZENANAINEV, 16BIT):
     case GV(ANAOUTSTATUS, 32BIT):
     case GV(ANAOUTSTATUS, 16BIT):
     case GV(ANAOUTEV, 32BIT):
@@ -237,14 +237,14 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(ANAINDEADBAND, 16BIT):
         appendf(&res, &size, "%"PRIi32, o.ana.sint);
         break;
-    case GV(ANAIN, FLOAT_FLAG):
-    case GV(ANAIN, DOUBLE_FLAG):
-    case GV(ANAINEV, FLOAT_FLAG):
-    case GV(ANAINEV, DOUBLE_FLAG):
-    case GV(FROZENANAIN, FLOAT_FLAG):
-    case GV(FROZENANAIN, DOUBLE_FLAG):
-    case GV(FROZENANAINEV, FLOAT_FLAG):
-    case GV(FROZENANAINEV, DOUBLE_FLAG):
+    case GV(ANAIN, FLOAT):
+    case GV(ANAIN, DOUBLE):
+    case GV(ANAINEV, FLOAT):
+    case GV(ANAINEV, DOUBLE):
+    case GV(FROZENANAIN, FLOAT):
+    case GV(FROZENANAIN, DOUBLE):
+    case GV(FROZENANAINEV, FLOAT):
+    case GV(FROZENANAINEV, DOUBLE):
     case GV(ANAOUTSTATUS, FLOAT):
     case GV(ANAOUTSTATUS, DOUBLE):
     case GV(ANAOUTEV, FLOAT):
@@ -254,22 +254,22 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(ANAINDEADBAND, FLOAT):
         appendf(&res, &size, "%.1f", o.ana.flt);
         break;
-    case GV(ANAINEV, 32BIT_FLAG_TIME):
-    case GV(ANAINEV, 16BIT_FLAG_TIME):
-    case GV(FROZENANAIN, 32BIT_FLAG_TIME):
-    case GV(FROZENANAIN, 16BIT_FLAG_TIME):
-    case GV(FROZENANAINEV, 32BIT_FLAG_TIME):
-    case GV(FROZENANAINEV, 16BIT_FLAG_TIME):
+    case GV(ANAINEV, 32BIT_TIME):
+    case GV(ANAINEV, 16BIT_TIME):
+    case GV(FROZENANAIN, 32BIT_TIME):
+    case GV(FROZENANAIN, 16BIT_TIME):
+    case GV(FROZENANAINEV, 32BIT_TIME):
+    case GV(FROZENANAINEV, 16BIT_TIME):
     case GV(ANAOUTEV, 32BIT_TIME):
     case GV(ANAOUTEV, 16BIT_TIME):
         append_flags(&res, &size, o.timed.ana.flags);
         appendf(&res, &size, "%"PRIi32, o.timed.ana.sint);
         append_abstime(&res, &size, o.timed.abstime);
         break;
-    case GV(ANAINEV, FLOAT_FLAG_TIME):
-    case GV(ANAINEV, DOUBLE_FLAG_TIME):
-    case GV(FROZENANAINEV, FLOAT_FLAG_TIME):
-    case GV(FROZENANAINEV, DOUBLE_FLAG_TIME):
+    case GV(ANAINEV, FLOAT_TIME):
+    case GV(ANAINEV, DOUBLE_TIME):
+    case GV(FROZENANAINEV, FLOAT_TIME):
+    case GV(FROZENANAINEV, DOUBLE_TIME):
     case GV(ANAOUTEV, FLOAT_TIME):
     case GV(ANAOUTEV, DOUBLE_TIME):
         append_flags(&res, &size, o.ana.flags);

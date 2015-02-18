@@ -70,13 +70,13 @@ static HParser *odata[256] = {NULL};
 //-------------------------------------------------------------------------
 //   129     ???   0,1-4*,10*,11*,13*,20-23*,30-34*,40-43*,50/1,50/4,51,52,
 //                 70/2,70/4-7,80,81,82,83,85*,86,87,88*,91,101,102,110,
-//                 111,113*,120/3,120/9,121*,122*
+//                 111,113*,121*,122*, (120/3,120/9)
 //                 XXX can also include 120/1 (authentication challenge)!
 //   130     -/-   2*,4*,11*,13*,22*,23*,32*,33*,42*,43*,51,70/4-7,82,83/1,
-//                 85*,88*,111,113*,120/3,120/9,122*
+//                 85*,88*,111,113*,122*, (120/3,120/9)
 //   131     ???   120/1-2,120/5,120/7,120/12,120/15
 //                 * excluding variation 0 ("any")
-
+//
 // request function codes and associated (possible) object types
 //
 // this table is an inversion of table 3 ("Object definition summary")
@@ -123,10 +123,11 @@ static HParser *odata[256] = {NULL};
 //    32   120/1-2,120/4,120/6,120/8,120/10-11,120/13-15
 //    33   120/7
 //
-// as seen above, all request function codes except 32 (AUTHENTICATE_REQ) and
-// 33 (AUTH_REQ_NO_ACK) can include the "aggressive mode authentication"
-// objects g120v3 and g120v9. the combinator 'ama' defined at the top of the
-// file is used to add the authentication object parsing.
+// as can be seen from the above tables, all function codes except 32
+// (AUTHENTICATE_REQ), 33 (AUTH_REQ_NO_ACK), and 313 (AUTHENTICATE_RESP) can
+// include the "aggressive mode authentication" objects g120v3 and g120v9. the
+// combinator 'ama' defined at the top of this file is used to generically add
+// the authentication object parsing.
 
 // XXX note about errors:
 // dnp3 has three types of errors (cf. dnp3.h):

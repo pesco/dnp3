@@ -10,12 +10,20 @@ void dnp3_p_init_app(void);
 #define G_V(g,v) G(g),V(g,v)
 #define GV(g,v)  (G(g) << 8 | V(g,v))
 
-// parse an "rblock" of the given group/variations, that is a block of object
-// headers and possibly object prefixes, as used in read requests
+// parse an "rblock" for the given group/variations, that is a block of object
+// headers and possibly object prefixes, as used in read requests.
+// allows variation 0 ("any").
+// the value 0 is also used to terminate the argument list.
 HParser *dnp3_p_rblock(DNP3_Group g, ...);
+
+// parse an "rblock" for exactly the given group/variation.
+HParser *dnp3_p_specific_rblock(DNP3_Group g, DNP3_Variation v);
 
 // parse an "oblock" of a single object of the given type.
 HParser *dnp3_p_single(DNP3_Group g, DNP3_Variation v, HParser *obj);
+
+// parse an "rblock" for a single object of the given type.
+HParser *dnp3_p_single_rblock(DNP3_Group g, DNP3_Variation v);
 
 // parse an "oblock" of a single variable-format object of the given type.
 HParser *dnp3_p_single_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t));

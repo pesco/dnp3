@@ -3,6 +3,7 @@ OBJS = src/app.o \
        src/g13_binoutcmdev.o \
        src/obj/counter.o \
        src/obj/analog.o \
+       src/obj/time.o \
        src/g120_auth.o \
        src/hammer.o \
        src/util.o \

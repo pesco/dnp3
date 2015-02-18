@@ -130,14 +130,36 @@ static int append_time(char **res, size_t *size, uint64_t time, bool relative)
     const char *fmt;
 
     if(relative)
-        fmt = ms ? "@+%"PRIu64".%.3"PRIu64 : "@+%"PRIu64;
+        fmt = ms ? "@+%"PRIu64".%.3"PRIu64"s" : "@+%"PRIu64"s";
     else
-        fmt = ms ? "@%"PRIu64".%.3"PRIu64 : "@%"PRIu64;
+        fmt = ms ? "@%"PRIu64".%.3"PRIu64"s" : "@%"PRIu64"s";
     return appendf(res, size, fmt, s, ms);
 }
 
 #define append_abstime(res, size, time) append_time(res, size, time, false)
 #define append_reltime(res, size, time) append_time(res, size, time, true)
+
+static int append_interval(char **res, size_t *size, uint32_t val, DNP3_IntervalUnit unit)
+{
+    const char *u = NULL;
+
+    switch(unit) {
+    case DNP3_INTERVAL_NONE:                return 0;
+    case DNP3_INTERVAL_MILLISECONDS:        u = "ms"; break;
+    case DNP3_INTERVAL_SECONDS:             u = "s"; break;
+    case DNP3_INTERVAL_MINUTES:             u = "min"; break;
+    case DNP3_INTERVAL_HOURS:               u = "h"; break;
+    case DNP3_INTERVAL_DAYS:                u = "d"; break;
+    case DNP3_INTERVAL_WEEKS:               u = "w"; break;
+    case DNP3_INTERVAL_MONTHS:              u = "months"; break;
+    case DNP3_INTERVAL_MONTHS_START_DOW:    u = "months(same-dow-from-start)"; break;
+    case DNP3_INTERVAL_MONTHS_END_DOW:      u = "months(same-dow-from-end)"; break;
+    case DNP3_INTERVAL_SEASONS:             u = "seasons"; break;
+    default:                                u = "[?]";
+    }
+
+    return appendf(res, size, "+%"PRIu32"%s", val, u);
+}
 
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
 {
@@ -301,6 +323,28 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         appendf(&res, &size, "(status=%d)", (int)o.ana.status);
         appendf(&res, &size, "%.1f", o.ana.flt);
         append_abstime(&res, &size, o.timed.abstime);
+        break;
+    case GV(TIME, TIME):
+    case GV(TIME, RECORDED_TIME):
+        append_abstime(&res, &size, o.time.abstime);
+        break;
+    case GV(TIME, TIME_INTERVAL):
+        append_abstime(&res, &size, o.time.abstime);
+        append_reltime(&res, &size, o.time.interval);
+        break;
+    case GV(TIME, INDEXED_TIME):
+        append_abstime(&res, &size, o.time.abstime);
+        append_interval(&res, &size, o.time.interval, o.time.unit);
+        break;
+    case GV(CTO, UNSYNC):
+        appendf(&res, &size, "(unsynchronized)");
+        // fall through and append time
+    case GV(CTO, SYNC):
+        append_abstime(&res, &size, o.time.abstime);
+        break;
+    case GV(DELAY, S):
+    case GV(DELAY, MS):
+        appendf(&res, &size, "%"PRIu32"ms", o.delay);
         break;
     }
 

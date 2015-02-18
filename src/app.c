@@ -8,6 +8,7 @@
 #include "g13_binoutcmdev.h"
 #include "obj/counter.h"
 #include "obj/analog.h"
+#include "obj/time.h"
 #include "g120_auth.h"
 #include "util.h"
 
@@ -328,6 +329,7 @@ static void init_oblock(void)
     ohdr_arange = noprefix(range_addr);
     ohdr_all    = noprefix(range_none);
     ohdr_count  = noprefix(range_count);
+    ohdr_count1 = noprefix(range_count1);
 
     H_RULE(rblock_index, oblock_index_(NULL));
     rblock_ = h_choice(ohdr_irange, ohdr_arange, ohdr_all, ohdr_count,
@@ -427,10 +429,22 @@ HParser *dnp3_p_rblock(DNP3_Group g, ...)
     return block(group(g), h_choice__a((void **)vs), rblock_);
 }
 
+HParser *dnp3_p_specific_rblock(DNP3_Group g, DNP3_Variation v)
+{
+    return block(group(g), variation(v), rblock_);
+}
+
 HParser *dnp3_p_single(DNP3_Group g, DNP3_Variation v, HParser *obj)
 {
-    return block(group(g), variation(v),
-                 noprefix(h_right(range_count1, obj)));
+    H_RULE(objs_, h_length_value(range_count1, obj));
+    H_RULE(objs,  h_action(objs_, act_objects_only, NULL));
+
+    return block(group(g), variation(v), noprefix(objs));
+}
+
+HParser *dnp3_p_single_rblock(DNP3_Group g, DNP3_Variation v)
+{
+    return block(group(g), variation(v), ohdr_count1);
 }
 
 HParser *dnp3_p_single_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t))
@@ -487,6 +501,7 @@ static void init_odata(void)
     H_RULE(oblock_binout,   h_choice(dnp3_p_binout_oblock,
                                      dnp3_p_binoutev_oblock,
                                      dnp3_p_binoutcmdev_oblock, NULL));
+    H_RULE(wblock_binout,   dnp3_p_binout_wblock);
 
     // counters
     H_RULE(rblock_ctr,      h_choice(dnp3_p_ctr_rblock,
@@ -509,6 +524,7 @@ static void init_odata(void)
                                      dnp3_p_frozenanain_oblock,
                                      dnp3_p_frozenanainev_oblock,
                                      dnp3_p_anaindeadband_oblock, NULL));
+    H_RULE(wblock_anain,    dnp3_p_anaindeadband_wblock);
 
     // analog outputs
     H_RULE(rblock_anaout,   h_choice(dnp3_p_anaoutstatus_rblock,
@@ -519,9 +535,17 @@ static void init_odata(void)
                                      dnp3_p_anaoutev_oblock,
                                      dnp3_p_anaoutcmdev_oblock, NULL));
 
-//                                 g50v1...,  // times   XXX single object (qc 07, count 1)
-//                                 g50v4...,
-//
+    // times
+    H_RULE(rblock_time,     h_choice(dnp3_p_g50v1_time_rblock,
+                                     dnp3_p_g50v4_indexed_time_rblock, NULL));
+    H_RULE(oblock_time,     h_choice(dnp3_p_g50v1_time_oblock,
+                                     dnp3_p_g50v4_indexed_time_oblock,
+                                     dnp3_p_cto_oblock,
+                                     dnp3_p_delay_oblock, NULL));
+    H_RULE(wblock_time,     h_choice(dnp3_p_g50v1_time_oblock,
+                                     dnp3_p_g50v3_recorded_time_oblock,
+                                     dnp3_p_g50v4_indexed_time_oblock, NULL));
+
 //                                 g60...,    // event class data
 //
 //                                 g70v5...,  // files   XXX oblock!!!
@@ -553,6 +577,7 @@ static void init_odata(void)
                                              rblock_ctr,
                                              rblock_anain,
                                              rblock_anaout,
+                                             rblock_time,
                                              NULL));
     H_RULE(read,            dnp3_p_many(read_oblock));
     // XXX NB parsing pseudocode in AN2012-004b does NOT work for READ requests.
@@ -560,11 +585,10 @@ static void init_odata(void)
     //     but no objects. never mind that it might require an object with some
     //     variations but not others (e.g. g70v5 file transmission).
 
-    H_RULE(wblock_binout,   dnp3_p_binout_wblock);
-    H_RULE(wblock_anain,    dnp3_p_anaindeadband_wblock);
     H_RULE(write_oblock,    dnp3_p_objchoice(//wblock_attr,
                                              wblock_binout,
                                              wblock_anain,
+                                             wblock_time,   // XXX multiple blocks ok?!
                                              NULL));
     H_RULE(write,           dnp3_p_many(write_oblock));
 
@@ -574,6 +598,7 @@ static void init_odata(void)
                                              oblock_ctr,
                                              oblock_anain,
                                              oblock_anaout,
+                                             oblock_time,
                                              NULL));
     H_RULE(response,        dnp3_p_many(rsp_oblock));
 
@@ -756,6 +781,7 @@ void dnp3_p_init_app(void)
     dnp3_p_init_g13_binoutcmdev();
     dnp3_p_init_counter();
     dnp3_p_init_analog();
+    dnp3_p_init_time();
 
     // initialize request-specific "object data" parsers
     init_odata();
@@ -821,7 +847,7 @@ void dnp3_p_init_app(void)
 //
 // rspfc | reqfc | grp(/var)...
 //-------------------------------------------------------------------------
-//   129     ???   0,1-4*,10*,11*,13*,20-23*,30-34*,40-43*,50/1,50/4,51,
+//   129     ???   0,1-4*,10*,11*,13*,20-23*,30-34*,40-43*,50/1,50/4,51,52,
 //                 70/2,70/4-7,80,81,82,83,85*,86,87,88*,91,101,102,110,
 //                 111,113*,120/3,120/9,121*,122*
 //                 XXX can also include 120/1 (authentication challenge)!

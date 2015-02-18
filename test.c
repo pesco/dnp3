@@ -286,20 +286,20 @@ static void test_obj_bininev(void)
                                      "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:1@0}");
+                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:1@0s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x02\x17\x01\x03\x01\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:(online)0@140737488355.328}");
+                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:(online)0@140737488355.328s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x02\x17\x01\x03\x82\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:(restart)1@1423689252}");
+                                     "[0] (fir,fin) RESPONSE {g2v2 qc=17 #3:(restart)1@1423689252s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x02\x17\x01\x03\xC2\x00\x00\x00\x00\x00\x00",16,
                                      "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\x80\x00\x00",12,
-                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:1@+0}");
+                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:1@+0s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\x01\x00\x80",12,
-                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:(online)0@+32.768}");
+                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:(online)0@+32.768s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\x81\xE0\x56",12,
-                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:(online)1@+22.240}");
+                                     "[0] (fir,fin) RESPONSE {g2v3 qc=17 #3:(online)1@+22.240s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x02\x03\x17\x01\x03\xC1\x00\x00",12,
                                      "PARAM_ERROR on [0] (fir,fin) RESPONSE");
         // XXX should the relative time variants generate a PARAM_ERROR unless they are preceded by a
@@ -355,18 +355,18 @@ static void test_obj_dblbitinev(void)
                                      "[0] (fir,fin) RESPONSE {g4v1 qc=17 #3:(online)-}");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:1@0}");
+                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:1@0s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x02\x17\x01\x03\x41\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:(online)0@140737488355.328}");
+                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:(online)0@140737488355.328s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x02\x17\x01\x03\x02\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:(restart)~@1423689252}");
+                                     "[0] (fir,fin) RESPONSE {g4v2 qc=17 #3:(restart)~@1423689252s}");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x03\x17\x01\x03\x80\x00\x00",12,
-                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:1@+0}");
+                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:1@+0s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x03\x17\x01\x03\x41\x00\x80",12,
-                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:(online)0@+32.768}");
+                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:(online)0@+32.768s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x04\x03\x17\x01\x03\x81\xE0\x56",12,
-                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:(online)1@+22.240}");
+                                     "[0] (fir,fin) RESPONSE {g4v3 qc=17 #3:(online)1@+22.240s}");
         // XXX should the relative time variants generate a PARAM_ERROR unless they are preceded by a
         //     Common Time-of-Occurance (CTO, group 50) object in the same message?
 }
@@ -437,11 +437,11 @@ static void test_obj_binoutev(void)
                                      "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:1@0}");
+                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:1@0s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x01\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:(online)0@140737488355.328}");
+                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:(online)0@140737488355.328s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\x82\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:(restart)1@1423689252}");
+                                     "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:(restart)1@1423689252s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\xC2\x00\x00\x00\x00\x00\x00",16,
                                      "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 }
@@ -463,11 +463,11 @@ static void test_obj_binoutcmdev(void)
                                      "[0] (fir,fin) RESPONSE {g13v1 qc=17 #3:(cs=0,status=0)}");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@0}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@0s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@140737488355.328}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@140737488355.328s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@1423689252}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@1423689252s}");
 }
 
 static void test_obj_ctr(void)
@@ -489,9 +489,9 @@ static void test_obj_frozenctr(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x02\x17\x01\x01\x20\x12\x34",12,
                                      "[0] RESPONSE {g21v2 qc=17 #1:13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x05\x17\x01\x01\x41\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g21v5 qc=17 #1:(online,discontinuity)2018915346@0}");
+                                     "[0] RESPONSE {g21v5 qc=17 #1:(online,discontinuity)2018915346@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x06\x17\x01\x01\x20\x12\x34\xA0\xFC\x7D\x7A\x4B\x01",18,
-                                     "[0] RESPONSE {g21v6 qc=17 #1:13330@1423689252}");
+                                     "[0] RESPONSE {g21v6 qc=17 #1:13330@1423689252s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x09\x17\x01\x01\x12\x34\x56\x78",13,
                                      "[0] RESPONSE {g21v9 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x15\x0A\x17\x01\x01\x12\x34",11,
@@ -505,9 +505,9 @@ static void test_obj_ctrev(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x02\x17\x01\x01\x20\x12\x34",12,
                                      "[0] RESPONSE {g22v2 qc=17 #1:13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x05\x17\x01\x01\x41\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g22v5 qc=17 #1:(online,discontinuity)2018915346@0}");
+                                     "[0] RESPONSE {g22v5 qc=17 #1:(online,discontinuity)2018915346@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x16\x06\x17\x01\x01\x20\x12\x34\xA0\xFC\x7D\x7A\x4B\x01",18,
-                                     "[0] RESPONSE {g22v6 qc=17 #1:13330@1423689252}");
+                                     "[0] RESPONSE {g22v6 qc=17 #1:13330@1423689252s}");
 }
 
 static void test_obj_frozenctrev(void)
@@ -517,9 +517,9 @@ static void test_obj_frozenctrev(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x02\x17\x01\x01\x20\x12\x34",12,
                                      "[0] RESPONSE {g23v2 qc=17 #1:13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x05\x17\x01\x01\x41\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g23v5 qc=17 #1:(online,discontinuity)2018915346@0}");
+                                     "[0] RESPONSE {g23v5 qc=17 #1:(online,discontinuity)2018915346@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x17\x06\x17\x01\x01\x20\x12\x34\xA0\xFC\x7D\x7A\x4B\x01",18,
-                                     "[0] RESPONSE {g23v6 qc=17 #1:13330@1423689252}");
+                                     "[0] RESPONSE {g23v6 qc=17 #1:13330@1423689252s}");
 }
 
 static void test_obj_anain(void)
@@ -545,9 +545,9 @@ static void test_obj_frozenanain(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x02\x17\x01\x01\x40\x12\x34",12,
                                      "[0] RESPONSE {g31v2 qc=17 #1:(reference_err)13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x03\x17\x01\x01\x21\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g31v3 qc=17 #1:(online,over_range)2018915346@0}");
+                                     "[0] RESPONSE {g31v3 qc=17 #1:(online,over_range)2018915346@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x04\x17\x01\x01\x40\x12\x34\x00\x00\x00\x00\x00\x00",18,
-                                     "[0] RESPONSE {g31v4 qc=17 #1:(reference_err)13330@0}");
+                                     "[0] RESPONSE {g31v4 qc=17 #1:(reference_err)13330@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x05\x17\x01\x01\x12\x34\x56\x78",13,
                                      "[0] RESPONSE {g31v5 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x06\x17\x01\x01\x12\x34",11,
@@ -565,17 +565,17 @@ static void test_obj_anainev(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x20\x02\x17\x01\x01\x40\x12\x34",12,
                                      "[0] RESPONSE {g32v2 qc=17 #1:(reference_err)13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x20\x03\x17\x01\x01\x21\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g32v3 qc=17 #1:(online,over_range)2018915346@0}");
+                                     "[0] RESPONSE {g32v3 qc=17 #1:(online,over_range)2018915346@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x20\x04\x17\x01\x01\x40\x12\x34\x00\x00\x00\x00\x00\x00",18,
-                                     "[0] RESPONSE {g32v4 qc=17 #1:(reference_err)13330@0}");
+                                     "[0] RESPONSE {g32v4 qc=17 #1:(reference_err)13330@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x20\x05\x17\x01\x01\x21\x00\x00\x80\xBF",14,
                                      "[0] RESPONSE {g32v5 qc=17 #1:(online,over_range)-1.0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x20\x06\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F",18,
                                      "[0] RESPONSE {g32v6 qc=17 #1:(reference_err)1.0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x20\x07\x17\x01\x01\x21\x00\x00\x80\xBF\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g32v7 qc=17 #1:(online,over_range)-1.0@0}");
+                                     "[0] RESPONSE {g32v7 qc=17 #1:(online,over_range)-1.0@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x20\x08\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F\x00\x00\x00\x00\x00\x00",24,
-                                     "[0] RESPONSE {g32v8 qc=17 #1:(reference_err)1.0@0}");
+                                     "[0] RESPONSE {g32v8 qc=17 #1:(reference_err)1.0@0s}");
 }
 
 static void test_obj_frozenanainev(void)
@@ -585,17 +585,17 @@ static void test_obj_frozenanainev(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x21\x02\x17\x01\x01\x40\x12\x34",12,
                                      "[0] RESPONSE {g33v2 qc=17 #1:(reference_err)13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x21\x03\x17\x01\x01\x21\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g33v3 qc=17 #1:(online,over_range)2018915346@0}");
+                                     "[0] RESPONSE {g33v3 qc=17 #1:(online,over_range)2018915346@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x21\x04\x17\x01\x01\x40\x12\x34\x00\x00\x00\x00\x00\x00",18,
-                                     "[0] RESPONSE {g33v4 qc=17 #1:(reference_err)13330@0}");
+                                     "[0] RESPONSE {g33v4 qc=17 #1:(reference_err)13330@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x21\x05\x17\x01\x01\x21\x00\x00\x80\xBF",14,
                                      "[0] RESPONSE {g33v5 qc=17 #1:(online,over_range)-1.0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x21\x06\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F",18,
                                      "[0] RESPONSE {g33v6 qc=17 #1:(reference_err)1.0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x21\x07\x17\x01\x01\x21\x00\x00\x80\xBF\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g33v7 qc=17 #1:(online,over_range)-1.0@0}");
+                                     "[0] RESPONSE {g33v7 qc=17 #1:(online,over_range)-1.0@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x21\x08\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F\x00\x00\x00\x00\x00\x00",24,
-                                     "[0] RESPONSE {g33v8 qc=17 #1:(reference_err)1.0@0}");
+                                     "[0] RESPONSE {g33v8 qc=17 #1:(reference_err)1.0@0s}");
 }
 
 static void test_obj_anaindeadband(void)
@@ -650,17 +650,17 @@ static void test_obj_anaoutev(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2A\x02\x17\x01\x01\x40\x12\x34",12,
                                      "[0] RESPONSE {g42v2 qc=17 #1:(reference_err)13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2A\x03\x17\x01\x01\x21\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g42v3 qc=17 #1:(online,over_range)2018915346@0}");
+                                     "[0] RESPONSE {g42v3 qc=17 #1:(online,over_range)2018915346@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2A\x04\x17\x01\x01\x40\x12\x34\x00\x00\x00\x00\x00\x00",18,
-                                     "[0] RESPONSE {g42v4 qc=17 #1:(reference_err)13330@0}");
+                                     "[0] RESPONSE {g42v4 qc=17 #1:(reference_err)13330@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2A\x05\x17\x01\x01\x21\x00\x00\x80\xBF",14,
                                      "[0] RESPONSE {g42v5 qc=17 #1:(online,over_range)-1.0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2A\x06\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F",18,
                                      "[0] RESPONSE {g42v6 qc=17 #1:(reference_err)1.0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2A\x07\x17\x01\x01\x21\x00\x00\x80\xBF\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g42v7 qc=17 #1:(online,over_range)-1.0@0}");
+                                     "[0] RESPONSE {g42v7 qc=17 #1:(online,over_range)-1.0@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2A\x08\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F\x00\x00\x00\x00\x00\x00",24,
-                                     "[0] RESPONSE {g42v8 qc=17 #1:(reference_err)1.0@0}");
+                                     "[0] RESPONSE {g42v8 qc=17 #1:(reference_err)1.0@0s}");
 }
 
 static void test_obj_anaoutcmdev(void)
@@ -670,17 +670,45 @@ static void test_obj_anaoutcmdev(void)
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2B\x02\x17\x01\x01\x40\x12\x34",12,
                                      "[0] RESPONSE {g43v2 qc=17 #1:(status=64)13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2B\x03\x17\x01\x01\x21\x12\x34\x56\x78\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g43v3 qc=17 #1:(status=33)2018915346@0}");
+                                     "[0] RESPONSE {g43v3 qc=17 #1:(status=33)2018915346@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2B\x04\x17\x01\x01\x40\x12\x34\x00\x00\x00\x00\x00\x00",18,
-                                     "[0] RESPONSE {g43v4 qc=17 #1:(status=64)13330@0}");
+                                     "[0] RESPONSE {g43v4 qc=17 #1:(status=64)13330@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2B\x05\x17\x01\x01\x21\x00\x00\x80\xBF",14,
                                      "[0] RESPONSE {g43v5 qc=17 #1:(status=33)-1.0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2B\x06\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F",18,
                                      "[0] RESPONSE {g43v6 qc=17 #1:(status=64)1.0}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2B\x07\x17\x01\x01\x21\x00\x00\x80\xBF\x00\x00\x00\x00\x00\x00",20,
-                                     "[0] RESPONSE {g43v7 qc=17 #1:(status=33)-1.0@0}");
+                                     "[0] RESPONSE {g43v7 qc=17 #1:(status=33)-1.0@0s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x2B\x08\x17\x01\x01\x40\x00\x00\x00\x00\x00\x00\xF0\x3F\x00\x00\x00\x00\x00\x00",24,
-                                     "[0] RESPONSE {g43v8 qc=17 #1:(status=64)1.0@0}");
+                                     "[0] RESPONSE {g43v8 qc=17 #1:(status=64)1.0@0s}");
+}
+
+static void test_time(void)
+{
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x32\x01\x07\x01\x00\x04\x00\x00\x00\x00",14,
+                                     "[0] RESPONSE {g50v1 qc=07 @1.024s}");
+    //check_parse(dnp3_p_app_request,  "\xC0\x81\x32\x02\x17\x01\x01\x00\x04\x00\x00\x00\x00\x3C\x00\x00\x00",17,
+    // XXX                             "[0] (fir,fin) FREEZE {g50v2 qc=17 #1:@1.024s+60s}");
+    check_parse(dnp3_p_app_request,  "\xC0\x02\x32\x03\x07\x01\x00\x04\x00\x00\x00\x00",12,
+                                     "[0] (fir,fin) WRITE {g50v3 qc=07 @1.024s}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x32\x04\x17\x01\x01\x00\x04\x00\x00\x00\x00\x0A\x00\x00\x00\x05",20,
+                                     "[0] RESPONSE {g50v4 qc=17 #1:@1.024s+10d}");
+}
+
+static void test_cto(void)
+{
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x33\x01\x07\x01\x00\x04\x00\x00\x00\x00",14,
+                                     "[0] RESPONSE {g51v1 qc=07 @1.024s}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x33\x02\x07\x01\x00\x04\x00\x00\x00\x00",14,
+                                     "[0] RESPONSE {g51v2 qc=07 (unsynchronized)@1.024s}");
+}
+
+static void test_delay(void)
+{
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x34\x01\x07\x01\x10\x00",10,
+                                     "[0] RESPONSE {g52v1 qc=07 16000ms}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x34\x02\x07\x01\x00\x04",10,
+                                     "[0] RESPONSE {g52v2 qc=07 1024ms}");
 }
 
 
@@ -722,6 +750,9 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/anaout", test_obj_anaout);
     g_test_add_func("/app/obj/anaoutev", test_obj_anaoutev);
     g_test_add_func("/app/obj/anaoutcmdev", test_obj_anaoutcmdev);
+    g_test_add_func("/app/obj/time", test_time);
+    g_test_add_func("/app/obj/cto", test_cto);
+    g_test_add_func("/app/obj/delay", test_delay);
 
     g_test_run();
 }

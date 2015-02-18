@@ -234,6 +234,17 @@ typedef enum {
     DNP3_VARIATION_ANAOUTCMDEV_FLOAT_TIME = 7,
     DNP3_VARIATION_ANAOUTCMDEV_DOUBLE_TIME = 8,
 
+    DNP3_VARIATION_TIME_TIME = 1,
+    DNP3_VARIATION_TIME_TIME_INTERVAL = 2,
+    DNP3_VARIATION_TIME_RECORDED_TIME = 3,
+    DNP3_VARIATION_TIME_INDEXED_TIME = 4,
+
+    DNP3_VARIATION_CTO_SYNC = 1,
+    DNP3_VARIATION_CTO_UNSYNC = 2,
+
+    DNP3_VARIATION_DELAY_S = 1,
+    DNP3_VARIATION_DELAY_MS = 2,
+
     DNP3_VARIATION_AUTH_AGGR = 3,
     DNP3_VARIATION_AUTH_MAC = 9,
 } DNP3_Variation;
@@ -263,6 +274,24 @@ typedef enum {
     DNP3_CTL_OUT_OF_RANGE = 12,
     DNP3_CTL_NOT_PARTICIPATING = 126
 } DNP3_ControlStatus;
+
+typedef enum {
+    DNP3_INTERVAL_NONE = 0,
+    DNP3_INTERVAL_MILLISECONDS = 1,
+    DNP3_INTERVAL_SECONDS = 2,
+    DNP3_INTERVAL_MINUTES = 3,
+    DNP3_INTERVAL_HOURS = 4,
+    DNP3_INTERVAL_DAYS = 5,
+    DNP3_INTERVAL_WEEKS = 6,
+    DNP3_INTERVAL_MONTHS = 7,
+    DNP3_INTERVAL_MONTHS_START_DOW = 8,
+    DNP3_INTERVAL_MONTHS_END_DOW = 9,
+    DNP3_INTERVAL_SEASONS = 10,
+    // 11-127 reserved
+    // 128-255 reserved for supplier-specific uses
+    DNP3_INTERVAL_SUPPLIER = 128,
+    DNP3_INTERVAL_MAX = 255
+} DNP3_IntervalUnit;
 
 // flags used with various objects
 typedef struct {
@@ -325,7 +354,17 @@ typedef union {
     // analog in- and outputs
     DNP3_Analog ana;
 
-    // objects with timestamps
+    // g50, g51 (time objects)
+    struct {
+        DNP3_Time           abstime;
+        uint32_t            interval;
+        DNP3_IntervalUnit   unit:8;
+    } time;
+
+    // g52v1, g52v2 (delays)
+    uint32_t delay;             // always in milliseconds!
+
+    // objects with timestamps (not group 50!)
     struct {
         union {
             DNP3_Flags flags;

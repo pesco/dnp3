@@ -1,4 +1,5 @@
 OBJS = src/app.o \
+       src/oblock.o \
        src/obj/binary.o \
        src/g13_binoutcmdev.o \
        src/obj/counter.o \

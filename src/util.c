@@ -16,6 +16,11 @@ HParser *dnp3_p_reserved(size_t n)
     return h_ignore(h_attr_bool(h_bits(n, false), is_zero, NULL));
 }
 
+HParser *dnp3_p_int_exact(HParser *p, uint64_t x)
+{
+    return h_int_range(p, x, x);
+}
+
 HParser *dnp3_p_objchoice(HParser *p, ...)
 {
     va_list ap;

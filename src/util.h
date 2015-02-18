@@ -3,7 +3,6 @@
 #ifndef DNP3_UTIL_H_SEEN
 #define DNP3_UTIL_H_SEEN
 
-
 // pad with zero bits until the next byte boundary
 extern HParser *dnp3_p_pad;
 
@@ -12,6 +11,9 @@ extern HParser *dnp3_p_reltime;     // 16-bit [ms since CTO]
 
 // parse n reserved bits; must be zero, ignored in sequences
 HParser *dnp3_p_reserved(size_t n);
+
+// parse an (unsigned) integer x via parser p
+HParser *dnp3_p_int_exact(HParser *p, uint64_t x);
 
 // like h_choice but defaults to a TT_ERR_OBJ_UNKNOWN case
 HParser *dnp3_p_objchoice(HParser *p, ...);

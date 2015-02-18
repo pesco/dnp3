@@ -19,6 +19,12 @@ HParser *dnp3_p_rblock(DNP3_Group g, ...);
 // parse an "rblock" for exactly the given group/variation.
 HParser *dnp3_p_specific_rblock(DNP3_Group g, DNP3_Variation v);
 
+// parse an "rblock" for all objects (qc=06) of the given group/variation.
+HParser *dnp3_p_rblock_all(DNP3_Group g, DNP3_Variation v);
+
+// parse an "rblock" for all or a maximum number of objects (qc=06-08)
+HParser *dnp3_p_rblock_max(DNP3_Group g, DNP3_Variation v);
+
 // parse an "oblock" of a single object of the given type.
 HParser *dnp3_p_single(DNP3_Group g, DNP3_Variation v, HParser *obj);
 

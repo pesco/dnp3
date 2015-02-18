@@ -399,6 +399,11 @@ char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
                 if(x<0) goto err;
             }
         }
+    } else if(ob->prefixcode == 0 && ob->rangespec >= 7 && ob->rangespec <= 9) {
+        // count field but no objects or indexes
+        // (presumably this is on a request giving a maximum number of objects.)
+        x = appendf(&res, &size, " range=%d", ob->count);
+        if(x<0) goto err;
     }
 
     return res;

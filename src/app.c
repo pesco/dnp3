@@ -9,6 +9,7 @@
 #include "obj/counter.h"
 #include "obj/analog.h"
 #include "obj/time.h"
+#include "obj/class.h"
 #include "g120_auth.h"
 #include "util.h"
 
@@ -85,6 +86,7 @@ static HParser *range_index;
 static HParser *range_addr;
 static HParser *range_none;
 static HParser *range_count;
+static HParser *range_max;
 static HParser *range_count1;
 static HParser *range_vfcount;
 static HParser *range_vfcount1;
@@ -93,9 +95,11 @@ static HParser *ohdr_irange;
 static HParser *ohdr_arange;
 static HParser *ohdr_all;
 static HParser *ohdr_count;
+static HParser *ohdr_max;
 static HParser *ohdr_count1;
 
 static HParser *rblock_;
+static HParser *rblock_max;
 
 static HParser *get_rsc;
 static HParser *get_base;
@@ -320,6 +324,8 @@ static void init_oblock(void)
     range_count =  h_choice(count(0x7, h_uint8()),
                             count(0x8, h_uint16()),
                             count(0x9, h_uint32()), NULL);
+    range_max =    h_choice(count(0x7, h_uint8()),
+                            count(0x8, h_uint16()), NULL);
     range_count1 =          count(0x7, h_ch(1)),    // a single object
                                // 0xA = reserved
     range_vfcount =         count(0xB, h_uint8());  // count of var-size objects
@@ -329,11 +335,14 @@ static void init_oblock(void)
     ohdr_arange = noprefix(range_addr);
     ohdr_all    = noprefix(range_none);
     ohdr_count  = noprefix(range_count);
+    ohdr_max    = noprefix(range_max);
     ohdr_count1 = noprefix(range_count1);
 
     H_RULE(rblock_index, oblock_index_(NULL));
     rblock_ = h_choice(ohdr_irange, ohdr_arange, ohdr_all, ohdr_count,
                        rblock_index, NULL);
+
+    rblock_max = h_choice(ohdr_all, ohdr_count, NULL);
 
     // parsers to fetch the saved range values (used in block())
     get_rsc =   h_get_value("rsc");
@@ -432,6 +441,16 @@ HParser *dnp3_p_rblock(DNP3_Group g, ...)
 HParser *dnp3_p_specific_rblock(DNP3_Group g, DNP3_Variation v)
 {
     return block(group(g), variation(v), rblock_);
+}
+
+HParser *dnp3_p_rblock_all(DNP3_Group g, DNP3_Variation v)
+{
+    return block(group(g), variation(v), ohdr_all);
+}
+
+HParser *dnp3_p_rblock_max(DNP3_Group g, DNP3_Variation v)
+{
+    return block(group(g), variation(v), rblock_max);
 }
 
 HParser *dnp3_p_single(DNP3_Group g, DNP3_Variation v, HParser *obj)
@@ -546,8 +565,12 @@ static void init_odata(void)
                                      dnp3_p_g50v3_recorded_time_oblock,
                                      dnp3_p_g50v4_indexed_time_oblock, NULL));
 
-//                                 g60...,    // event class data
-//
+    // class data
+    H_RULE(rblock_class,    h_choice(dnp3_p_g60v1_class0_rblock,
+                                     dnp3_p_g60v2_class1_rblock,
+                                     dnp3_p_g60v3_class2_rblock,
+                                     dnp3_p_g60v4_class3_rblock, NULL));
+
 //                                 g70v5...,  // files   XXX oblock!!!
 //                                 g70v6...,
 //
@@ -578,6 +601,7 @@ static void init_odata(void)
                                              rblock_anain,
                                              rblock_anaout,
                                              rblock_time,
+                                             rblock_class,
                                              NULL));
     H_RULE(read,            dnp3_p_many(read_oblock));
     // XXX NB parsing pseudocode in AN2012-004b does NOT work for READ requests.
@@ -782,6 +806,7 @@ void dnp3_p_init_app(void)
     dnp3_p_init_counter();
     dnp3_p_init_analog();
     dnp3_p_init_time();
+    dnp3_p_init_class();
 
     // initialize request-specific "object data" parsers
     init_odata();

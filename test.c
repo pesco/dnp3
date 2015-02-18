@@ -711,6 +711,14 @@ static void test_delay(void)
                                      "[0] RESPONSE {g52v2 qc=07 1024ms}");
 }
 
+static void test_class(void)
+{
+    check_parse(dnp3_p_app_request, "\xC0\x01\x3C\x01\x06",5,         "[0] (fir,fin) READ {g60v1 qc=06}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x3C\x02\x06",5,         "[0] (fir,fin) READ {g60v2 qc=06}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x3C\x03\x07\x23",6,     "[0] (fir,fin) READ {g60v3 qc=07 range=35}");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x3C\x04\x08\x04\x01",7, "[0] (fir,fin) READ {g60v4 qc=08 range=260}");
+}
+
 
 
 /// ...
@@ -753,6 +761,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/time", test_time);
     g_test_add_func("/app/obj/cto", test_cto);
     g_test_add_func("/app/obj/delay", test_delay);
+    g_test_add_func("/app/obj/class", test_class);
 
     g_test_run();
 }

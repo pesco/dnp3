@@ -435,7 +435,10 @@ extern HParser *dnp3_p_app_response;
 
 void dnp3_p_init(void);
 
-// formatting for human-readable output - caller must free result!
+
+/// FORMATTING FOR HUMAN-READABLE OUTPUT ///
+
+// caller must free result on all of the following!
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o);
 char *dnp3_format_oblock(const DNP3_ObjectBlock *ob);
 char *dnp3_format_fragment(const DNP3_Fragment *req);

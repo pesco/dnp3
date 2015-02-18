@@ -170,6 +170,7 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     switch(g << 8 | v) {
     case GV(BININ, PACKED):
     case GV(BINOUT, PACKED):
+    case GV(IIN, PACKED):
         appendf(&res, &size, "%d", (int)o.bit);
         break;
     case GV(BININ, FLAGS):

@@ -9,6 +9,7 @@
 #include "obj/analog.h"
 #include "obj/time.h"
 #include "obj/class.h"
+#include "obj/iin.h"
 #include "g120_auth.h"
 #include "util.h"
 
@@ -176,7 +177,6 @@ static void init_odata(void)
     H_RULE(oblock_binout,   h_choice(dnp3_p_binout_oblock,
                                      dnp3_p_binoutev_oblock,
                                      dnp3_p_binoutcmdev_oblock, NULL));
-    H_RULE(wblock_binout,   dnp3_p_binout_wblock);
 
     // counters
     H_RULE(rblock_ctr,      h_choice(dnp3_p_ctr_rblock,
@@ -199,7 +199,6 @@ static void init_odata(void)
                                      dnp3_p_frozenanain_oblock,
                                      dnp3_p_frozenanainev_oblock,
                                      dnp3_p_anaindeadband_oblock, NULL));
-    H_RULE(wblock_anain,    dnp3_p_anaindeadband_wblock);
 
     // analog outputs
     H_RULE(rblock_anaout,   h_choice(dnp3_p_anaoutstatus_rblock,
@@ -258,6 +257,7 @@ static void init_odata(void)
                                              rblock_anaout,
                                              rblock_time,
                                              rblock_class,
+                                             dnp3_p_iin_rblock,
                                              NULL));
     H_RULE(read,            dnp3_p_many(read_oblock));
     // XXX NB parsing pseudocode in AN2012-004b does NOT work for READ requests.
@@ -266,9 +266,10 @@ static void init_odata(void)
     //     variations but not others (e.g. g70v5 file transmission).
 
     H_RULE(write_oblock,    dnp3_p_objchoice(//wblock_attr,
-                                             wblock_binout,
-                                             wblock_anain,
+                                             dnp3_p_g10v1_binout_packed_oblock,
+                                             dnp3_p_anaindeadband_oblock,
                                              wblock_time,   // XXX multiple blocks ok?!
+                                             dnp3_p_iin_oblock,
                                              NULL));
     H_RULE(write,           dnp3_p_many(write_oblock));
 
@@ -279,6 +280,7 @@ static void init_odata(void)
                                              oblock_anain,
                                              oblock_anaout,
                                              oblock_time,
+                                             dnp3_p_iin_oblock,
                                              NULL));
     H_RULE(response,        dnp3_p_many(rsp_oblock));
 
@@ -406,20 +408,20 @@ static HParsedToken *act_iin(const HParseResult *p, void *user)
 {
     DNP3_IntIndications *iin = H_ALLOC(DNP3_IntIndications);
 
-    iin->broadcast  = H_FIELD_UINT(0);
-    iin->class1     = H_FIELD_UINT(1);
-    iin->class2     = H_FIELD_UINT(2);
-    iin->class3     = H_FIELD_UINT(3);
-    iin->need_time  = H_FIELD_UINT(4);
-    iin->local_ctrl = H_FIELD_UINT(5);
-    iin->device_trouble = H_FIELD_UINT(6);
-    iin->device_restart = H_FIELD_UINT(7);
-    iin->func_not_supp  = H_FIELD_UINT(8);
-    iin->obj_unknown    = H_FIELD_UINT(9);
-    iin->param_error    = H_FIELD_UINT(10);
-    iin->eventbuf_overflow  = H_FIELD_UINT(11);
-    iin->already_executing  = H_FIELD_UINT(12);
-    iin->config_corrupt     = H_FIELD_UINT(13);
+    iin->broadcast          = H_FIELD_UINT(DNP3_IIN_BROADCAST);
+    iin->class1             = H_FIELD_UINT(DNP3_IIN_CLASS1);
+    iin->class2             = H_FIELD_UINT(DNP3_IIN_CLASS2);
+    iin->class3             = H_FIELD_UINT(DNP3_IIN_CLASS3);
+    iin->need_time          = H_FIELD_UINT(DNP3_IIN_NEED_TIME);
+    iin->local_ctrl         = H_FIELD_UINT(DNP3_IIN_LOCAL_CTRL);
+    iin->device_trouble     = H_FIELD_UINT(DNP3_IIN_DEVICE_TROUBLE);
+    iin->device_restart     = H_FIELD_UINT(DNP3_IIN_DEVICE_RESTART);
+    iin->func_not_supp      = H_FIELD_UINT(DNP3_IIN_FUNC_NOT_SUPP);
+    iin->obj_unknown        = H_FIELD_UINT(DNP3_IIN_OBJ_UNKNOWN);
+    iin->param_error        = H_FIELD_UINT(DNP3_IIN_PARAM_ERROR);
+    iin->eventbuf_overflow  = H_FIELD_UINT(DNP3_IIN_EVENTBUF_OVERFLOW);
+    iin->already_executing  = H_FIELD_UINT(DNP3_IIN_ALREADY_EXECUTING);
+    iin->config_corrupt     = H_FIELD_UINT(DNP3_IIN_CONFIG_CORRUPT);
     // 14 bits total
 
     return H_MAKE(DNP3_IntIndications, iin);
@@ -463,6 +465,7 @@ void dnp3_p_init_app(void)
     dnp3_p_init_analog();
     dnp3_p_init_time();
     dnp3_p_init_class();
+    dnp3_p_init_iin();
 
     // initialize request-specific "object data" parsers
     init_odata();

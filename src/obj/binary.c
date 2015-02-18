@@ -19,8 +19,8 @@ HParser *dnp3_p_dblbitinev_rblock;
 HParser *dnp3_p_dblbitinev_oblock;
 
 HParser *dnp3_p_binout_rblock;
-HParser *dnp3_p_binout_wblock;
 HParser *dnp3_p_binout_oblock;
+HParser *dnp3_p_g10v1_binout_packed_oblock;
 
 HParser *dnp3_p_binoutev_rblock;
 HParser *dnp3_p_binoutev_oblock;
@@ -189,8 +189,8 @@ void dnp3_p_init_binary(void)
     dnp3_p_binout_rblock    = dnp3_p_rblock(G(BINOUT),
                                             V(BINOUT, PACKED),
                                             V(BINOUT, FLAGS), 0);
-    dnp3_p_binout_wblock    = oblock_outpacked;
     dnp3_p_binout_oblock    = h_choice(oblock_outpacked, oblock_outflags, NULL);
+    dnp3_p_g10v1_binout_packed_oblock = oblock_outpacked;
 
     // group 11: binary output events...
     H_RULE (oblock_outnotime,   dnp3_p_oblock(G_V(BINOUTEV, NOTIME), flags));

@@ -34,6 +34,24 @@ typedef struct {
     uint16_t config_corrupt:1;
 } DNP3_IntIndications;
 
+// bit indexes of internal indication flags, also used in g80v1
+typedef enum {
+    DNP3_IIN_BROADCAST = 0,
+    DNP3_IIN_CLASS1 = 1,
+    DNP3_IIN_CLASS2 = 2,
+    DNP3_IIN_CLASS3 = 3,
+    DNP3_IIN_NEED_TIME = 4,
+    DNP3_IIN_LOCAL_CTRL = 5,
+    DNP3_IIN_DEVICE_TROUBLE = 6,
+    DNP3_IIN_DEVICE_RESTART = 7,
+    DNP3_IIN_FUNC_NOT_SUPP = 8,
+    DNP3_IIN_OBJ_UNKNOWN = 9,
+    DNP3_IIN_PARAM_ERROR = 10,
+    DNP3_IIN_EVENTBUF_OVERFLOW = 11,
+    DNP3_IIN_ALREADY_EXECUTING = 12,
+    DNP3_IIN_CONFIG_CORRUPT = 13
+} DNP3_IntIndicationIndex;
+
 typedef enum {
     ERR_FUNC_NOT_SUPP = TT_ERR+1,
     ERR_OBJ_UNKNOWN,
@@ -249,6 +267,8 @@ typedef enum {
     DNP3_VARIATION_CLASS_1 = 2,
     DNP3_VARIATION_CLASS_2 = 3,
     DNP3_VARIATION_CLASS_3 = 4,
+
+    DNP3_VARIATION_IIN_PACKED = 1,
 
     DNP3_VARIATION_AUTH_AGGR = 3,
     DNP3_VARIATION_AUTH_MAC = 9,

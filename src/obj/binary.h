@@ -17,8 +17,8 @@ extern HParser *dnp3_p_dblbitinev_rblock;
 extern HParser *dnp3_p_dblbitinev_oblock;
 
 extern HParser *dnp3_p_binout_rblock;
-extern HParser *dnp3_p_binout_wblock;
 extern HParser *dnp3_p_binout_oblock;
+extern HParser *dnp3_p_g10v1_binout_packed_oblock;
 
 extern HParser *dnp3_p_binoutev_rblock;
 extern HParser *dnp3_p_binoutev_oblock;

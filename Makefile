@@ -6,6 +6,7 @@ OBJS = src/app.o \
        src/obj/analog.o \
        src/obj/time.o \
        src/obj/class.o \
+       src/obj/iin.o \
        src/g120_auth.o \
        src/hammer.o \
        src/util.o \

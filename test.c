@@ -179,6 +179,14 @@ static void test_req_write(void)
         // (variation 0 ("any") specified - not valid for writes)
     check_parse(dnp3_p_app_request, "\xC1\x02\x0A\x01\x00\x03\x06\x0E",8,
                                     "[1] (fir,fin) WRITE {g10v1 qc=00 #3..6: 0 1 1 1}");
+
+    // examples given in IEEE 1815-2012 (subclause 4.4.3.2)
+    check_parse(dnp3_p_app_request, "\xC3\x02\x50\x01\x00\x07\x07\x00",8,
+                                    "[3] (fir,fin) WRITE {g80v1 qc=00 #7..7: 0}");
+    check_parse(dnp3_p_app_request, "\xC3\x02\x22\x01\x17\x03\x06\x12\x00\x08\x4A\x00\x14\xFF\xFF",15,
+                                    "[3] (fir,fin) WRITE {g34v1 qc=17 #6:18 #8:74 #20:65535}");
+    check_parse(dnp3_p_app_request, "\xC3\x02\x32\x01\x07\x01\xAC\xE9\x00\x40\x08\x01",12,
+                                    "[3] (fir,fin) WRITE {g50v1 qc=07 @1134945167.788s}");
 }
 
 static void test_rsp_fail(void)
@@ -683,7 +691,7 @@ static void test_obj_anaoutcmdev(void)
                                      "[0] RESPONSE {g43v8 qc=17 #1:(status=64)1.0@0s}");
 }
 
-static void test_time(void)
+static void test_obj_time(void)
 {
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x32\x01\x07\x01\x00\x04\x00\x00\x00\x00",14,
                                      "[0] RESPONSE {g50v1 qc=07 @1.024s}");
@@ -695,7 +703,7 @@ static void test_time(void)
                                      "[0] RESPONSE {g50v4 qc=17 #1:@1.024s+10d}");
 }
 
-static void test_cto(void)
+static void test_obj_cto(void)
 {
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x33\x01\x07\x01\x00\x04\x00\x00\x00\x00",14,
                                      "[0] RESPONSE {g51v1 qc=07 @1.024s}");
@@ -703,7 +711,7 @@ static void test_cto(void)
                                      "[0] RESPONSE {g51v2 qc=07 (unsynchronized)@1.024s}");
 }
 
-static void test_delay(void)
+static void test_obj_delay(void)
 {
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x34\x01\x07\x01\x10\x00",10,
                                      "[0] RESPONSE {g52v1 qc=07 16000ms}");
@@ -711,12 +719,22 @@ static void test_delay(void)
                                      "[0] RESPONSE {g52v2 qc=07 1024ms}");
 }
 
-static void test_class(void)
+static void test_obj_class(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x01\x3C\x01\x06",5,         "[0] (fir,fin) READ {g60v1 qc=06}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x3C\x02\x06",5,         "[0] (fir,fin) READ {g60v2 qc=06}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x3C\x03\x07\x23",6,     "[0] (fir,fin) READ {g60v3 qc=07 range=35}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x3C\x04\x08\x04\x01",7, "[0] (fir,fin) READ {g60v4 qc=08 range=260}");
+}
+
+static void test_obj_iin(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC0\x01\x50\x01\x17\x03\x10\x08\x01",9,
+                                     "[0] (fir,fin) READ {g80v1 qc=17 #16 #8 #1}");
+    check_parse(dnp3_p_app_request,  "\xC0\x02\x50\x01\x00\x07\x07\x00",8,
+                                     "[0] (fir,fin) WRITE {g80v1 qc=00 #7..7: 0}");
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x50\x01\x00\x00\x02\x06",10,
+                                     "[0] RESPONSE {g80v1 qc=00 #0..2: 0 1 1}");
 }
 
 
@@ -758,10 +776,11 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/anaout", test_obj_anaout);
     g_test_add_func("/app/obj/anaoutev", test_obj_anaoutev);
     g_test_add_func("/app/obj/anaoutcmdev", test_obj_anaoutcmdev);
-    g_test_add_func("/app/obj/time", test_time);
-    g_test_add_func("/app/obj/cto", test_cto);
-    g_test_add_func("/app/obj/delay", test_delay);
-    g_test_add_func("/app/obj/class", test_class);
+    g_test_add_func("/app/obj/time", test_obj_time);
+    g_test_add_func("/app/obj/cto", test_obj_cto);
+    g_test_add_func("/app/obj/delay", test_obj_delay);
+    g_test_add_func("/app/obj/class", test_obj_class);
+    g_test_add_func("/app/obj/iin", test_obj_iin);
 
     g_test_run();
 }

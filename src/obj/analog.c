@@ -20,7 +20,6 @@ HParser *dnp3_p_frozenanainev_rblock;
 HParser *dnp3_p_frozenanainev_oblock;
 
 HParser *dnp3_p_anaindeadband_rblock;
-HParser *dnp3_p_anaindeadband_wblock;
 HParser *dnp3_p_anaindeadband_oblock;
 
 HParser *dnp3_p_anaoutstatus_rblock;
@@ -394,7 +393,6 @@ void dnp3_p_init_analog(void)
                                                 V(ANAINDEADBAND, 16BIT),
                                                 V(ANAINDEADBAND, 32BIT),
                                                 V(ANAINDEADBAND, FLOAT), 0);
-    dnp3_p_anaindeadband_wblock = h_choice(oblock_dbi16, oblock_dbi32, oblock_dbf32, NULL);
     dnp3_p_anaindeadband_oblock = h_choice(oblock_dbi16, oblock_dbi32, oblock_dbf32, NULL);
 
     // group 40: analog output status...

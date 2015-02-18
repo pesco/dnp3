@@ -15,7 +15,8 @@
 #include "app.h"
 
 
-/// APPLICATION HEADER ///
+HParser *dnp3_p_app_request;
+HParser *dnp3_p_app_response;
 
 
 /// AGGRESSIVE-MODE AUTHENTICATION ///
@@ -60,6 +61,73 @@ static HParser *ama(HParser *base)
 // object data parsers, indexed by function code
 static HParser *odata[256] = {NULL};
 
+// response function codes and associated (possible) object types
+//
+// this table is an inversion of table 3 ("Object definition summary")
+// of AN2013-004b.
+//
+// rspfc | reqfc | grp(/var)...
+//-------------------------------------------------------------------------
+//   129     ???   0,1-4*,10*,11*,13*,20-23*,30-34*,40-43*,50/1,50/4,51,52,
+//                 70/2,70/4-7,80,81,82,83,85*,86,87,88*,91,101,102,110,
+//                 111,113*,120/3,120/9,121*,122*
+//                 XXX can also include 120/1 (authentication challenge)!
+//   130     -/-   2*,4*,11*,13*,22*,23*,32*,33*,42*,43*,51,70/4-7,82,83/1,
+//                 85*,88*,111,113*,120/3,120/9,122*
+//   131     ???   120/1-2,120/5,120/7,120/12,120/15
+//                 * excluding variation 0 ("any")
+
+// request function codes and associated (possible) object types
+//
+// this table is an inversion of table 3 ("Object definition summary")
+// of AN2013-004b.
+//
+// reqfc | grp(/var)...
+//----------------------------------------------------------------------
+//     0   (120/3,120/9) // XXX missing from AN2013-004b (cf. IEEE 1815-2012 7.5.1.4 Figure 7-16)
+//     1   0-4,10,11,13,20-23,30-34,40,42,43,50/1,50/4,60,70/5-6,
+//         80,81,83,85,86/1-3,87,88,101,102,110,111,113/0,121,122,
+//         (120/3,120/9)
+//     2   0/240,0/245-247,10/1,34/1-3,50/1,50/3-4,70/5,80,85/0,86/1,
+//         86/3,87/1,101,102,110,112, (120/3,120/9)
+//     3   12/1-3,41/1-4,87/1, (120/3,120/9)
+//     4   12/1-3,41/1-4,87/1, (120/3,120/9)
+//     5   12/1-3,41/1-4,87/1, (120/3,120/9)
+//     6   12/1-3,41/1-4,87/1, (120/3,120/9)
+//     7   20/0,30/0, (120/3,120/9)
+//     8   20/0,30/0, (120/3,120/9)
+//     9   20/0, (120/3,120/9)
+//    10   20/0, (120/3,120/9)
+//    11   20/0,30/0,50/2, (120/3,120/9)
+//    12   20/0,30/0(?),50/2, (120/3,120/9) // XXX 30/0 missing from AN2013-004b?!
+//    13   (120/3,120/9)
+//    14   (120/3,120/9)
+//    15   (120/3,120/9)
+//    16   90/1, (120/3,120/9)
+//    17   90/1, (120/3,120/9)
+//    18   90/1, (120/3,120/9)
+//    19   (120/3,120/9)
+//    20   60/2-4, (120/3,120/9)
+//    21   60/2-4, (120/3,120/9)
+//    22   1/0,3/0,10/0,12/0,20/0,21/0,30/0,31/0,40/0,41/0,60,86/0,110,
+//         113/0,120/0,121/0, (120/3,120/9)
+//    23   (120/3,120/9)
+//    24   (120/3,120/9)
+//    25   70/3, (120/3,120/9)
+//    26   70/3, (120/3,120/9)
+//    27   70/3, (120/3,120/9)
+//    28   70/7, (120/3,120/9)
+//    29   70/2, (120/3,120/9)
+//    30   70/4, (120/3,120/9)
+//    31   70/8, (120/3,120/9)
+//    32   120/1-2,120/4,120/6,120/8,120/10-11,120/13-15
+//    33   120/7
+//
+// as seen above, all request function codes except 32 (AUTHENTICATE_REQ) and
+// 33 (AUTH_REQ_NO_ACK) can include the "aggressive mode authentication"
+// objects g120v3 and g120v9. the combinator 'ama' defined at the top of the
+// file is used to add the authentication object parsing.
+
 // XXX note about errors:
 // dnp3 has three types of errors (cf. dnp3.h):
 // FUNC_NOT_SUPP, OBJ_UNKNOWN, PARAM_ERROR.
@@ -77,9 +145,6 @@ static HParser *odata[256] = {NULL};
 // in case none of the branches match, the h_choice has the OBJ_UNKNOWN case as
 // a catch-all. this must be the case for all such h_choices. we use the
 // dnp3_p_objchoice combinator to abstract that.
-
-HParser *dnp3_p_app_request;
-HParser *dnp3_p_app_response;
 
 static void init_odata(void)
 {
@@ -451,73 +516,3 @@ void dnp3_p_init_app(void)
     dnp3_p_app_request  = little_endian(request);
     dnp3_p_app_response = little_endian(response);
 }
-
-
-// XXX move these tables someplace sensible
-
-// response function codes and associated (possible) object types
-//
-// this table is an inversion of table 3 ("Object definition summary")
-// of AN2013-004b.
-//
-// rspfc | reqfc | grp(/var)...
-//-------------------------------------------------------------------------
-//   129     ???   0,1-4*,10*,11*,13*,20-23*,30-34*,40-43*,50/1,50/4,51,52,
-//                 70/2,70/4-7,80,81,82,83,85*,86,87,88*,91,101,102,110,
-//                 111,113*,120/3,120/9,121*,122*
-//                 XXX can also include 120/1 (authentication challenge)!
-//   130     -/-   2*,4*,11*,13*,22*,23*,32*,33*,42*,43*,51,70/4-7,82,83/1,
-//                 85*,88*,111,113*,120/3,120/9,122*
-//   131     ???   120/1-2,120/5,120/7,120/12,120/15
-//                 * excluding variation 0 ("any")
-
-// request function codes and associated (possible) object types
-//
-// this table is an inversion of table 3 ("Object definition summary")
-// of AN2013-004b.
-//
-// reqfc | grp(/var)...
-//----------------------------------------------------------------------
-//     0   (120/3,120/9) // XXX missing from AN2013-004b (cf. IEEE 1815-2012 7.5.1.4 Figure 7-16)
-//     1   0-4,10,11,13,20-23,30-34,40,42,43,50/1,50/4,60,70/5-6,
-//         80,81,83,85,86/1-3,87,88,101,102,110,111,113/0,121,122,
-//         (120/3,120/9)
-//     2   0/240,0/245-247,10/1,34/1-3,50/1,50/3-4,70/5,80,85/0,86/1,
-//         86/3,87/1,101,102,110,112, (120/3,120/9)
-//     3   12/1-3,41/1-4,87/1, (120/3,120/9)
-//     4   12/1-3,41/1-4,87/1, (120/3,120/9)
-//     5   12/1-3,41/1-4,87/1, (120/3,120/9)
-//     6   12/1-3,41/1-4,87/1, (120/3,120/9)
-//     7   20/0,30/0, (120/3,120/9)
-//     8   20/0,30/0, (120/3,120/9)
-//     9   20/0, (120/3,120/9)
-//    10   20/0, (120/3,120/9)
-//    11   20/0,30/0,50/2, (120/3,120/9)
-//    12   20/0,30/0(?),50/2, (120/3,120/9) // XXX 30/0 missing from AN2013-004b?!
-//    13   (120/3,120/9)
-//    14   (120/3,120/9)
-//    15   (120/3,120/9)
-//    16   90/1, (120/3,120/9)
-//    17   90/1, (120/3,120/9)
-//    18   90/1, (120/3,120/9)
-//    19   (120/3,120/9)
-//    20   60/2-4, (120/3,120/9)
-//    21   60/2-4, (120/3,120/9)
-//    22   1/0,3/0,10/0,12/0,20/0,21/0,30/0,31/0,40/0,41/0,60,86/0,110,
-//         113/0,120/0,121/0, (120/3,120/9)
-//    23   (120/3,120/9)
-//    24   (120/3,120/9)
-//    25   70/3, (120/3,120/9)
-//    26   70/3, (120/3,120/9)
-//    27   70/3, (120/3,120/9)
-//    28   70/7, (120/3,120/9)
-//    29   70/2, (120/3,120/9)
-//    30   70/4, (120/3,120/9)
-//    31   70/8, (120/3,120/9)
-//    32   120/1-2,120/4,120/6,120/8,120/10-11,120/13-15
-//    33   120/7
-//
-// as seen above, all request function codes except 32 (AUTHENTICATE_REQ) and
-// 33 (AUTH_REQ_NO_ACK) can include the "aggressive mode authentication"
-// objects g120v3 and g120v9. the combinator 'ama' defined below adds the
-// authentication object parsing.

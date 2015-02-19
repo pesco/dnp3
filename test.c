@@ -204,6 +204,38 @@ static void test_req_select(void)
                                                      "\x0C\x03\x00\x05\x0F",24,
                                      "[3] (fir,fin) RESPONSE (param_error) {g12v2 qc=07 (CLOSE PULSE_ON 3x on=500ms off=2000ms status=4)}"
                                                          " {g12v3 qc=00 #5..15}");
+
+    // mixing CROBs, analog output, and PCBs
+    check_parse(dnp3_p_app_request,  "\xC3\x03\x0C\x02\x07\x01\x41\x03\xF4\x01\x00\x00\xD0\x07\x00\x00\x00"
+                                             "\x0C\x03\x00\x05\x0F\x21\x04"
+                                             "\x29\x01\x17\x01\x01\x12\x34\x56\x78\x00",34,
+                                     "[3] (fir,fin) SELECT {g12v2 qc=07 (CLOSE PULSE_ON 3x on=500ms off=2000ms)}"
+                                                         " {g12v3 qc=00 #5..15: 1 0 0 0 0 1 0 0 0 0 1}"
+                                                         " {g41v1 qc=17 #1:(status=0)2018915346}");
+    check_parse(dnp3_p_app_request,  "\xC3\x03\x0C\x01\x17\x01\x0A\x41\x01\xFA\x00\x00\x00\x00\x00\x00\x00\x00"
+                                             "\x0C\x02\x07\x01\x41\x03\xF4\x01\x00\x00\xD0\x07\x00\x00\x00"
+                                             "\x0C\x03\x00\x05\x0F\x21\x04"
+                                             "\x29\x01\x17\x01\x01\x12\x34\x56\x78\x00",50,
+                                     "[3] (fir,fin) SELECT {g12v1 qc=17 #10:(CLOSE PULSE_ON 1x on=250ms off=0ms)}"
+                                                         " {g12v2 qc=07 (CLOSE PULSE_ON 3x on=500ms off=2000ms)}"
+                                                         " {g12v3 qc=00 #5..15: 1 0 0 0 0 1 0 0 0 0 1}"
+                                                         " {g41v1 qc=17 #1:(status=0)2018915346}");
+
+    // error cases...
+    // unexpected object type
+    check_parse(dnp3_p_app_request,  "\xC3\x03\x01\x01\x00\x03\x08\x00",8,
+                                     "OBJ_UNKNOWN on [3] (fir,fin) SELECT");
+    // missing PCM
+    check_parse(dnp3_p_app_request,  "\xC3\x03\x0C\x02\x07\x01\x41\x03\xF4\x01\x00\x00\xD0\x07\x00\x00\x00",17,
+                                     "PARAM_ERROR on [3] (fir,fin) SELECT");
+    // corrupt PCM
+    check_parse(dnp3_p_app_request,  "\xC3\x03\x0C\x02\x07\x01\x41\x03\xF4\x01\x00\x00\xD0\x07\x00\x00\x00"
+                                             "\x0C\x03\x00\x05\x0F\x21\x84",24, // padding bit set
+                                     "PARAM_ERROR on [3] (fir,fin) SELECT");
+    // unexpected object in place of PCM
+    check_parse(dnp3_p_app_request,  "\xC3\x03\x0C\x02\x07\x01\x41\x03\xF4\x01\x00\x00\xD0\x07\x00\x00\x00"
+                                             "\x01\x01\x00\x03\x08\x00",23,
+                                     "PARAM_ERROR on [3] (fir,fin) SELECT");
 }
 
 static void test_req_operate(void)

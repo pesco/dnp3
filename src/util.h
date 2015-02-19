@@ -15,14 +15,20 @@ HParser *dnp3_p_reserved(size_t n);
 // parse an (unsigned) integer x via parser p
 HParser *dnp3_p_int_exact(HParser *p, uint64_t x);
 
-// like h_choice but defaults to a TT_ERR_OBJ_UNKNOWN case
+// like h_choice but defaults to a ERR_OBJ_UNKNOWN case
 HParser *dnp3_p_objchoice(HParser *p, ...);
 
-// like h_many but stops on and propagates TT_ERR and friends
+// like h_many/h_many1 but stops on and propagates TT_ERR and friends
 HParser *dnp3_p_many(HParser *p);
+HParser *dnp3_p_many1(HParser *p);
 
 // like h_sequence but stops on and propagates TT_ERR and friends
+// also yields ERR_PARAM_ERROR if p parses but q does not.
 HParser *dnp3_p_seq(HParser *p, HParser *q);
+
+// like h_act_flatten but returns original token if it is not a sequence
+// instead of wrapping it
+HParsedToken *dnp3_p_act_flatten(const HParseResult *p, void* user);
 
 // like h_left(p, h_end_p()) but propagates TT_ERR and friends
 HParser *dnp3_p_packet(HParser *p);

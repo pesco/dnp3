@@ -277,13 +277,18 @@ static void init_odata(void)
                                              NULL));
     H_RULE(write,           dnp3_p_many(write_oblock));
 
-    H_RULE(select_crob,     dnp3_p_many(dnp3_p_g12v1_binoutcmd_crob_oblock));
-    H_RULE(select_pcb,      dnp3_p_seq(dnp3_p_g12v2_binoutcmd_pcb_oblock,
-                                       dnp3_p_g12v3_binoutcmd_pcm_oblock));
-                                // XXX many pcm oblocks after the same pcb?
-    H_RULE(select,          h_choice(select_pcb, select_crob, NULL));
+    #define act_select dnp3_p_act_flatten
+
+    H_RULE(pcb,             dnp3_p_g12v2_binoutcmd_pcb_oblock);
+    H_RULE(pcm,             dnp3_p_g12v3_binoutcmd_pcm_oblock);
+    H_RULE(select_pcb,      dnp3_p_seq(pcb, dnp3_p_many1(pcm)));
+    H_RULE(select_oblock,   dnp3_p_objchoice(select_pcb,
+                                             dnp3_p_g12v1_binoutcmd_crob_oblock,
+                                             dnp3_p_anaout_oblock,
+                                             NULL));
+    H_ARULE(select,         dnp3_p_many(select_oblock));
         // XXX empty select requests valid?
-        // XXX many pcb-pcm blocks in the same request? mix pcbs and crobs?
+        // XXX is it valid to have many pcb-pcm blocks in the same request? to mix pcbs and crobs?
 
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
                                              oblock_binin,

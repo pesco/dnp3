@@ -211,7 +211,7 @@ static void test_req_select(void)
                                              "\x29\x01\x17\x01\x01\x12\x34\x56\x78\x00",34,
                                      "[3] (fir,fin) SELECT {g12v2 qc=07 (CLOSE PULSE_ON 3x on=500ms off=2000ms)}"
                                                          " {g12v3 qc=00 #5..15: 1 0 0 0 0 1 0 0 0 0 1}"
-                                                         " {g41v1 qc=17 #1:(status=0)2018915346}");
+                                                         " {g41v1 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_request,  "\xC3\x03\x0C\x01\x17\x01\x0A\x41\x01\xFA\x00\x00\x00\x00\x00\x00\x00\x00"
                                              "\x0C\x02\x07\x01\x41\x03\xF4\x01\x00\x00\xD0\x07\x00\x00\x00"
                                              "\x0C\x03\x00\x05\x0F\x21\x04"
@@ -219,7 +219,7 @@ static void test_req_select(void)
                                      "[3] (fir,fin) SELECT {g12v1 qc=17 #10:(CLOSE PULSE_ON 1x on=250ms off=0ms)}"
                                                          " {g12v2 qc=07 (CLOSE PULSE_ON 3x on=500ms off=2000ms)}"
                                                          " {g12v3 qc=00 #5..15: 1 0 0 0 0 1 0 0 0 0 1}"
-                                                         " {g41v1 qc=17 #1:(status=0)2018915346}");
+                                                         " {g41v1 qc=17 #1:2018915346}");
 
     // error cases...
     // unexpected object type
@@ -548,16 +548,16 @@ static void test_obj_binoutcmdev(void)
                                     "OBJ_UNKNOWN on [0] (fir,fin) READ");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x01\x17\x01\x03\xFF",10,
-                                     "[0] (fir,fin) RESPONSE {g13v1 qc=17 #3:(cs=1,status=127)}");
+                                     "[0] (fir,fin) RESPONSE {g13v1 qc=17 #3:(status=127)1}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x01\x17\x01\x03\x00",10,
-                                     "[0] (fir,fin) RESPONSE {g13v1 qc=17 #3:(cs=0,status=0)}");
+                                     "[0] (fir,fin) RESPONSE {g13v1 qc=17 #3:0}");
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x00",16,
-                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@0s}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:1@0s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\x00\x00\x00\x00\x00\x80",16,
-                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@140737488355.328s}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:1@140737488355.328s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0D\x02\x17\x01\x03\x80\xA0\xFC\x7D\x7A\x4B\x01",16,
-                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:(cs=1,status=0)@1423689252s}");
+                                     "[0] (fir,fin) RESPONSE {g13v2 qc=17 #3:1@1423689252s}");
 }
 
 static void test_obj_ctr(void)
@@ -724,7 +724,7 @@ static void test_obj_anaoutstatus(void)
 static void test_obj_anaout(void)
 {
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x29\x01\x17\x01\x01\x12\x34\x56\x78\x00",14,
-                                     "[0] RESPONSE {g41v1 qc=17 #1:(status=0)2018915346}");
+                                     "[0] RESPONSE {g41v1 qc=17 #1:2018915346}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x29\x02\x17\x01\x01\x12\x34\x7F",12,
                                      "[0] RESPONSE {g41v2 qc=17 #1:(status=127)13330}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x29\x03\x17\x01\x01\x00\x00\x80\xBF\x08",14,

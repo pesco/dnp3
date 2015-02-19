@@ -230,12 +230,14 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         append_crob(&res, &size, o.cmd);
         break;
     case GV(BINOUTCMDEV, NOTIME):
-        appendf(&res, &size, "(cs=%d,status=%d)",
-                (int)o.cmdev.cs, (int)o.cmdev.status);
+        if(o.cmdev.status)
+            appendf(&res, &size, "(status=%d)", (int)o.cmdev.status);
+        appendf(&res, &size, "%d", (int)o.cmdev.cs);
         break;
     case GV(BINOUTCMDEV, ABSTIME):
-        appendf(&res, &size, "(cs=%d,status=%d)",
-                (int)o.timed.cmdev.cs, (int)o.timed.cmdev.status);
+        if(o.timed.cmdev.status)
+            appendf(&res, &size, "(status=%d)", (int)o.timed.cmdev.status);
+        appendf(&res, &size, "%d", (int)o.timed.cmdev.cs);
         append_abstime(&res, &size, o.timed.abstime);
         break;
     case GV(CTR, 32BIT):
@@ -329,26 +331,30 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(ANAOUTCMDEV, 16BIT):
     case GV(ANAOUT, 32BIT):
     case GV(ANAOUT, 16BIT):
-        appendf(&res, &size, "(status=%d)", (int)o.ana.status);
+        if(o.ana.status)
+            appendf(&res, &size, "(status=%d)", (int)o.ana.status);
         appendf(&res, &size, "%"PRIi32, o.ana.sint);
         break;
     case GV(ANAOUTCMDEV, 32BIT_TIME):
     case GV(ANAOUTCMDEV, 16BIT_TIME):
-        appendf(&res, &size, "(status=%d)", (int)o.ana.status);
-        appendf(&res, &size, "%"PRIi32, o.ana.sint);
+        if(o.ana.status)
+            appendf(&res, &size, "(status=%d)", (int)o.timed.ana.status);
+        appendf(&res, &size, "%"PRIi32, o.timed.ana.sint);
         append_abstime(&res, &size, o.timed.abstime);
         break;
     case GV(ANAOUTCMDEV, FLOAT):
     case GV(ANAOUTCMDEV, DOUBLE):
     case GV(ANAOUT, FLOAT):
     case GV(ANAOUT, DOUBLE):
-        appendf(&res, &size, "(status=%d)", (int)o.ana.status);
+        if(o.ana.status)
+            appendf(&res, &size, "(status=%d)", (int)o.ana.status);
         appendf(&res, &size, "%.1f", o.ana.flt);
         break;
     case GV(ANAOUTCMDEV, FLOAT_TIME):
     case GV(ANAOUTCMDEV, DOUBLE_TIME):
-        appendf(&res, &size, "(status=%d)", (int)o.ana.status);
-        appendf(&res, &size, "%.1f", o.ana.flt);
+        if(o.timed.ana.status)
+            appendf(&res, &size, "(status=%d)", (int)o.timed.ana.status);
+        appendf(&res, &size, "%.1f", o.timed.ana.flt);
         append_abstime(&res, &size, o.timed.abstime);
         break;
     case GV(TIME, TIME):

@@ -277,6 +277,14 @@ static void init_odata(void)
                                              NULL));
     H_RULE(write,           dnp3_p_many(write_oblock));
 
+    H_RULE(select_crob,     dnp3_p_many(dnp3_p_g12v1_binoutcmd_crob_oblock));
+    H_RULE(select_pcb,      dnp3_p_seq(dnp3_p_g12v2_binoutcmd_pcb_oblock,
+                                       dnp3_p_g12v3_binoutcmd_pcm_oblock));
+                                // XXX many pcm oblocks after the same pcb?
+    H_RULE(select,          h_choice(select_pcb, select_crob, NULL));
+        // XXX empty select requests valid?
+        // XXX many pcb-pcm blocks in the same request? mix pcbs and crobs?
+
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
                                              oblock_binin,
                                              oblock_binout,
@@ -294,6 +302,7 @@ static void init_odata(void)
     odata[DNP3_CONFIRM] = ama(confirm);
     odata[DNP3_READ]    = ama(read);
     odata[DNP3_WRITE]   = ama(write);
+    odata[DNP3_SELECT]  = ama(select);
 
         // read_rsp_object:
         //   may not use variation 0

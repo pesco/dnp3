@@ -21,6 +21,9 @@ HParser *dnp3_p_objchoice(HParser *p, ...);
 // like h_many but stops on and propagates TT_ERR and friends
 HParser *dnp3_p_many(HParser *p);
 
+// like h_sequence but stops on and propagates TT_ERR and friends
+HParser *dnp3_p_seq(HParser *p, HParser *q);
+
 // like h_left(p, h_end_p()) but propagates TT_ERR and friends
 HParser *dnp3_p_packet(HParser *p);
 

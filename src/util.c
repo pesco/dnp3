@@ -54,6 +54,18 @@ HParser *dnp3_p_many(HParser *p)
     return many;
 }
 
+HParser *dnp3_p_seq(HParser *p, HParser *q)
+{
+    H_RULE(p_ok,    h_attr_bool(p, not_err, NULL));
+    H_RULE(q_ok,    h_attr_bool(q, not_err, NULL));
+    H_RULE(pq_ok,   h_sequence(p_ok, q_ok, NULL));
+
+    H_RULE(p_err,   h_right(p_ok, q));
+    H_RULE(err,     p);
+
+    return h_choice(pq_ok, p_err, err, NULL);
+}
+
 static bool is_err(HParseResult *p, void *user)
 {
     return H_ISERR(p->ast->token_type);

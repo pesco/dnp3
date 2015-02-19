@@ -302,7 +302,10 @@ static void init_odata(void)
     odata[DNP3_CONFIRM] = ama(confirm);
     odata[DNP3_READ]    = ama(read);
     odata[DNP3_WRITE]   = ama(write);
-    odata[DNP3_SELECT]  = ama(select);
+    odata[DNP3_SELECT]  =           // vvv
+    odata[DNP3_OPERATE] =           // vvv
+    odata[DNP3_DIRECT_OPERATE] =    // vvv
+    odata[DNP3_DIRECT_OPERATE_NR] = ama(select);
 
         // read_rsp_object:
         //   may not use variation 0

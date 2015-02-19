@@ -206,6 +206,27 @@ static void test_req_select(void)
                                                          " {g12v3 qc=00 #5..15}");
 }
 
+static void test_req_operate(void)
+{
+    // examples given in IEEE 1815-2012 (subclause 4.4.4.4)
+    check_parse(dnp3_p_app_request,  "\xC4\x04\x0C\x01\x17\x01\x0A\x41\x01\xFA\x00\x00\x00\x00\x00\x00\x00\x00",18,
+                                     "[4] (fir,fin) OPERATE {g12v1 qc=17 #10:(CLOSE PULSE_ON 1x on=250ms off=0ms)}");
+    check_parse(dnp3_p_app_response, "\xC4\x81\x00\x00\x0C\x01\x17\x01\x0A\x41\x01\xFA\x00\x00\x00\x00\x00\x00\x00\x00",20,
+                                     "[4] (fir,fin) RESPONSE {g12v1 qc=17 #10:(CLOSE PULSE_ON 1x on=250ms off=0ms)}");
+}
+
+static void test_req_direct_operate(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC4\x05\x0C\x01\x17\x01\x0A\x41\x01\xFA\x00\x00\x00\x00\x00\x00\x00\x00",18,
+                                     "[4] (fir,fin) DIRECT_OPERATE {g12v1 qc=17 #10:(CLOSE PULSE_ON 1x on=250ms off=0ms)}");
+}
+
+static void test_req_direct_operate_nr(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC4\x06\x0C\x01\x17\x01\x0A\x41\x01\xFA\x00\x00\x00\x00\x00\x00\x00\x00",18,
+                                     "[4] (fir,fin) DIRECT_OPERATE_NR {g12v1 qc=17 #10:(CLOSE PULSE_ON 1x on=250ms off=0ms)}");
+}
+
 static void test_rsp_fail(void)
 {
     check_parse_fail(dnp3_p_app_response, "",0);
@@ -782,6 +803,9 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/read", test_req_read);
     g_test_add_func("/app/req/write", test_req_write);
     g_test_add_func("/app/req/select", test_req_select);
+    g_test_add_func("/app/req/operate", test_req_operate);
+    g_test_add_func("/app/req/direct_operate", test_req_direct_operate);
+    g_test_add_func("/app/req/direct_operate_nr", test_req_direct_operate_nr);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);

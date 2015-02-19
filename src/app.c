@@ -4,7 +4,7 @@
 #include <hammer/glue.h>
 #include "hammer.h" // XXX placeholder for extensions
 #include "obj/binary.h"
-#include "g13_binoutcmdev.h"
+#include "obj/binoutcmd.h"
 #include "obj/counter.h"
 #include "obj/analog.h"
 #include "obj/time.h"
@@ -69,9 +69,9 @@ static HParser *odata[256] = {NULL};
 //
 // rspfc | reqfc | grp(/var)...
 //-------------------------------------------------------------------------
-//   129     ???   0,1-4*,10*,11*,13*,20-23*,30-34*,40-43*,50/1,50/4,51,52,
-//                 70/2,70/4-7,80,81,82,83,85*,86,87,88*,91,101,102,110,
-//                 111,113*,121*,122*, (120/3,120/9)
+//   129     ???   0,1-4*,10*,11*,12*,13*,20-23*,30-34*,40-43*,50/1,50/4,
+//                 51,52,70/2,70/4-7,80,81,82,83,85*,86,87,88*,91,101,102,
+//                 110,111,113*,121*,122*, (120/3,120/9)
 //                 XXX can also include 120/1 (authentication challenge)!
 //   130     -/-   2*,4*,11*,13*,22*,23*,32*,33*,42*,43*,51,70/4-7,82,83/1,
 //                 85*,88*,111,113*,122*, (120/3,120/9)
@@ -176,6 +176,10 @@ static void init_odata(void)
                                      dnp3_p_binoutcmdev_rblock, NULL));
     H_RULE(oblock_binout,   h_choice(dnp3_p_binout_oblock,
                                      dnp3_p_binoutev_oblock,
+                                     dnp3_p_g12v1_binoutcmd_crob_oblock,
+                                     dnp3_p_g12v2_binoutcmd_pcb_oblock,
+                                     dnp3_p_g12v3_binoutcmd_pcm_rblock,
+                                        // XXX stricter rules for PCB/PCM in responses?
                                      dnp3_p_binoutcmdev_oblock, NULL));
 
     // counters
@@ -376,7 +380,7 @@ static HParsedToken *act_fragment_errfc(const HParseResult *p, void *user)
     frag->ac = *H_CAST(DNP3_AppControl, ac);
     frag->fc = p->ast->uint;
 
-    return h_make_err(p->arena, p->ast->token_type, frag);
+    return h_make_err(p->arena, ERR_FUNC_NOT_SUPP, frag);
 }
 
 // parse the rest of a fragment, after the application header
@@ -384,16 +388,15 @@ static HParser *f_fragment(const HParsedToken *hdr, void *env)
 {
     // propagate TT_ERR on function code
     HParsedToken *fc_ = H_INDEX_TOKEN(hdr, 1);
-    if(H_ISERR(fc_->token_type)) {
-        HParsedToken *ac = H_INDEX_TOKEN(hdr, 0);
-        return h_action(h_unit(fc_), act_fragment_errfc, (void *)ac);
-    }
+    if(H_ISERR(fc_->token_type))
+        goto err;
 
     int fc = H_CAST_UINT(fc_);
 
     // basic object data parser
     HParser *p = odata[fc];
-    assert(p != NULL);
+    if(p == NULL)
+        goto err;
 
     // odata must always parse the entire rest of the fragment
     p = dnp3_p_packet(p);
@@ -402,6 +405,11 @@ static HParser *f_fragment(const HParsedToken *hdr, void *env)
     p = h_choice(p, h_error(ERR_PARAM_ERROR), NULL);
 
     return h_action(p, act_fragment, (void *)hdr);
+
+    err: {
+        HParsedToken *ac = H_INDEX_TOKEN(hdr, 0);
+        return h_action(h_unit(fc_), act_fragment_errfc, (void *)ac);
+    }
 }
 
 static HParsedToken *act_iin(const HParseResult *p, void *user)
@@ -460,7 +468,7 @@ void dnp3_p_init_app(void)
 
     // initialize object parsers
     dnp3_p_init_binary();
-    dnp3_p_init_g13_binoutcmdev();
+    dnp3_p_init_binoutcmd();
     dnp3_p_init_counter();
     dnp3_p_init_analog();
     dnp3_p_init_time();

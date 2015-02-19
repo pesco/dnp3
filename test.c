@@ -189,6 +189,11 @@ static void test_req_write(void)
                                     "[3] (fir,fin) WRITE {g50v1 qc=07 @1134945167.788s}");
 }
 
+static void test_req_select(void)
+{
+    // XXX
+}
+
 static void test_rsp_fail(void)
 {
     check_parse_fail(dnp3_p_app_response, "",0);
@@ -452,6 +457,18 @@ static void test_obj_binoutev(void)
                                      "[0] (fir,fin) RESPONSE {g11v2 qc=17 #3:(restart)1@1423689252s}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x0B\x02\x17\x01\x03\xC2\x00\x00\x00\x00\x00\x00",16,
                                      "PARAM_ERROR on [0] (fir,fin) RESPONSE");
+}
+
+static void test_obj_binoutcmd(void)
+{
+    check_parse(dnp3_p_app_response, "\x03\x81\x00\x00\x0C\x01\x00\x07\x07\x61\x03\x0A\x00\x00\x00\x2C\x01\x00\x00\x00",20,
+                                     "[3] RESPONSE {g12v1 qc=00 #7..7: (CLOSE PULSE_ON clear 3x on=10ms off=300ms)}");
+    check_parse(dnp3_p_app_response, "\x03\x81\x00\x00\x0C\x01\x00\x07\x07\x81\x03\x0A\x00\x00\x00\x2C\x01\x00\x00\x7F",20,
+                                     "[3] RESPONSE {g12v1 qc=00 #7..7: (TRIP PULSE_ON 3x on=10ms off=300ms status=127)}");
+    check_parse(dnp3_p_app_response, "\x03\x81\x00\x00\x0C\x02\x07\x01\x81\x03\x0A\x00\x00\x00\x2C\x01\x00\x00\x7F"
+                                                     "\x0C\x03\x00\x01\x05",24,
+                                     "[3] RESPONSE {g12v2 qc=07 (TRIP PULSE_ON 3x on=10ms off=300ms status=127)}"
+                                                 " {g12v3 qc=00 #1..5}");
 }
 
 static void test_obj_binoutcmdev(void)
@@ -752,6 +769,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/confirm", test_req_confirm);
     g_test_add_func("/app/req/read", test_req_read);
     g_test_add_func("/app/req/write", test_req_write);
+    g_test_add_func("/app/req/select", test_req_select);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);
@@ -762,6 +780,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/dblbitinev", test_obj_dblbitinev);
     g_test_add_func("/app/obj/binout", test_obj_binout);
     g_test_add_func("/app/obj/binoutev", test_obj_binoutev);
+    g_test_add_func("/app/obj/binoutcmd", test_obj_binoutcmd);
     g_test_add_func("/app/obj/binoutcmdev", test_obj_binoutcmdev);
     g_test_add_func("/app/obj/ctr", test_obj_ctr);
     g_test_add_func("/app/obj/ctrev", test_obj_ctrev);

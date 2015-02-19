@@ -161,6 +161,27 @@ static int append_interval(char **res, size_t *size, uint32_t val, DNP3_Interval
     return appendf(res, size, "+%"PRIu32"%s", val, u);
 }
 
+static int append_crob(char **res, size_t *size, DNP3_Command crob)
+{
+    static const char *tcc_s[] = {"", "CLOSE ", "TRIP ", "XXX "};
+    static const char *optype_s[] = {
+        "", "PULSE_ON ", "PULSE_OFF ", "LATCH_ON ", "LATCH_OFF ",
+        "OP 5 ", "OP 6 ", "OP 7 ", "OP 8 ", "OP 9 ", "OP 10 ",
+        "OP 11 ", "OP 12 ", "OP 13 ", "OP 14 ", "OP 15 " };
+
+    const char *tcc = tcc_s[crob.tcc];
+    const char *optype = optype_s[crob.optype];
+    const char *queue = crob.queue? "queue " : "";
+    const char *clear = crob.clear? "clear " : "";
+
+    char status[16] = {0};
+    if(crob.status)
+        snprintf(status, sizeof(status), " status=%d", crob.status);
+
+    return appendf(res, size, "(%s%s%s%s%dx on=%dms off=%dms%s)", tcc, optype,
+                   queue, clear, crob.count, crob.on, crob.off, status);
+}
+
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
 {
     size_t size;
@@ -170,6 +191,7 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     switch(g << 8 | v) {
     case GV(BININ, PACKED):
     case GV(BINOUT, PACKED):
+    case GV(BINOUTCMD, PCM):
     case GV(IIN, PACKED):
         appendf(&res, &size, "%d", (int)o.bit);
         break;
@@ -202,6 +224,10 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(DBLBITINEV, RELTIME):
         append_dblbit_flags(&res, &size, o.timed.flags);
         append_reltime(&res, &size, o.timed.reltime);
+        break;
+    case GV(BINOUTCMD, CROB):
+    case GV(BINOUTCMD, PCB):
+        append_crob(&res, &size, o.cmd);
         break;
     case GV(BINOUTCMDEV, NOTIME):
         appendf(&res, &size, "(cs=%d,status=%d)",

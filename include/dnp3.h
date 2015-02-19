@@ -161,6 +161,10 @@ typedef enum {
     DNP3_VARIATION_BINOUTEV_NOTIME = 1,
     DNP3_VARIATION_BINOUTEV_ABSTIME = 2,
 
+    DNP3_VARIATION_BINOUTCMD_CROB = 1,
+    DNP3_VARIATION_BINOUTCMD_PCB = 2,
+    DNP3_VARIATION_BINOUTCMD_PCM = 3,
+
     DNP3_VARIATION_BINOUTCMDEV_NOTIME = 1,
     DNP3_VARIATION_BINOUTCMDEV_ABSTIME = 2,
 
@@ -346,6 +350,17 @@ typedef struct {
 } DNP3_CommandEvent;
 
 typedef struct {
+    uint8_t optype:4;
+    uint8_t queue:1;
+    uint8_t clear:1;
+    uint8_t tcc:2;
+    uint8_t count;
+    uint32_t on;        // [ms]
+    uint32_t off;       // [ms]
+    DNP3_ControlStatus status;
+} DNP3_Command;
+
+typedef struct {
     DNP3_Flags flags;
     uint32_t value;
 } DNP3_Counter;
@@ -369,6 +384,9 @@ typedef union {
 
     // g1v2, g2v1, g3v2, g4v1, g10v2 (binary in- and outputs, with flags)
     DNP3_Flags flags;
+
+    // g12v1, g12v2 (binary output command)
+    DNP3_Command cmd;
 
     // g13v1 (binary output command event)
     DNP3_CommandEvent cmdev;

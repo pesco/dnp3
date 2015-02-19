@@ -1,7 +1,7 @@
 OBJS = src/app.o \
        src/oblock.o \
        src/obj/binary.o \
-       src/g13_binoutcmdev.o \
+       src/obj/binoutcmd.o \
        src/obj/counter.o \
        src/obj/analog.o \
        src/obj/time.o \

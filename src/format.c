@@ -2,6 +2,7 @@
 #include <stdlib.h>     // malloc
 #include <string.h>     // strlen
 #include <inttypes.h>   // PRIu32 etc.
+#include <ctype.h>
 #include <assert.h>
 #include "app.h"        // GV()
 
@@ -181,6 +182,19 @@ static int append_crob(char **res, size_t *size, DNP3_Command crob)
 
     return appendf(res, size, "(%s%s%s%s%dx on=%dms off=%dms%s)", tcc, optype,
                    queue, clear, crob.count, crob.on, crob.off, status);
+}
+
+static int append_string(char **res, size_t *size, const char *s, size_t n)
+{
+    char *t = malloc(n+1);
+    if(!t) return -1;
+
+    for(size_t i=0; i<n; i++) {
+        t[i] = isalnum(s[i]) ? s[i] : '.'; // XXX escape properly
+    }
+    t[n] = '\0';
+
+    appendf(res, size, "'%s'", t);
 }
 
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
@@ -380,6 +394,9 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(DELAY, MS):
         appendf(&res, &size, "%"PRIu32"ms", o.delay);
         break;
+    case GV(APPL, ID):
+        append_string(&res, &size, o.applid.str, o.applid.len);
+        break;
     }
 
     if(!res)
@@ -396,7 +413,7 @@ char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
     int x;
 
     // group, variation, qc
-    x = appendf(&res, &size, "g%dv%d qc=%x%x",
+    x = appendf(&res, &size, "g%dv%d qc=%X%X",
                 (int)ob->group, (int)ob->variation,
                 (unsigned int)ob->prefixcode, (unsigned int)ob->rangespec);
     if(x<0) goto err;

@@ -10,6 +10,7 @@
 #include "obj/time.h"
 #include "obj/class.h"
 #include "obj/iin.h"
+#include "obj/application.h"
 #include "g120_auth.h"
 #include "util.h"
 
@@ -303,6 +304,9 @@ static void init_odata(void)
     H_RULE(cold_restart,    h_epsilon_p());
     H_RULE(warm_restart,    h_epsilon_p());
 
+    H_RULE(applid,          dnp3_p_g90v1_applid_oblock);
+    H_RULE(application,     dnp3_p_many(dnp3_p_objchoice(applid, NULL)));
+
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
                                              oblock_binin,
                                              oblock_binout,
@@ -333,6 +337,9 @@ static void init_odata(void)
     odata[DNP3_COLD_RESTART]      = ama(cold_restart);
     odata[DNP3_WARM_RESTART]      = ama(warm_restart);
     odata[DNP3_INITIALIZE_DATA]   = NULL;   // obsolete, not supported
+    odata[DNP3_INITIALIZE_APPL]   = // -.
+    odata[DNP3_START_APPL]        = // -v
+    odata[DNP3_STOP_APPL]         = ama(application);
 
         // read_rsp_object:
         //   may not use variation 0
@@ -513,6 +520,7 @@ void dnp3_p_init_app(void)
     dnp3_p_init_time();
     dnp3_p_init_class();
     dnp3_p_init_iin();
+    dnp3_p_init_application();
 
     // initialize request-specific "object data" parsers
     init_odata();

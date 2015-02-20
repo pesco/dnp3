@@ -307,6 +307,16 @@ static void test_req_initialize_data(void)
     check_parse(dnp3_p_app_request,  "\xC3\x0F",2, "FUNC_NOT_SUPP on [3] (fir,fin) INITIALIZE_DATA");
 }
 
+static void test_req_application(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC3\x10\x5A\x01\x5B\x01\x03\x00\x43\x4C\x36",11,
+                                     "[3] (fir,fin) INITIALIZE_APPL {g90v1 qc=5B 'CL6'}");
+    check_parse(dnp3_p_app_request,  "\xC3\x11\x5A\x01\x5B\x01\x03\x00\x43\x4C\x36",11,
+                                     "[3] (fir,fin) START_APPL {g90v1 qc=5B 'CL6'}");
+    check_parse(dnp3_p_app_request,  "\xC3\x12\x5A\x01\x5B\x01\x03\x00\x43\x4C\x36",11,
+                                     "[3] (fir,fin) STOP_APPL {g90v1 qc=5B 'CL6'}");
+}
+
 static void test_rsp_fail(void)
 {
     check_parse_fail(dnp3_p_app_response, "",0);
@@ -891,6 +901,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/freeze_at_time", test_req_freeze_at_time);
     g_test_add_func("/app/req/restart", test_req_restart);
     g_test_add_func("/app/req/initialize_data", test_req_initialize_data);
+    g_test_add_func("/app/req/application", test_req_application);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);

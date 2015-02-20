@@ -132,6 +132,7 @@ typedef enum {
     DNP3_GROUP_CLASS = 60,
     DNP3_GROUP_FILE = 70,
     DNP3_GROUP_IIN = 80,
+    DNP3_GROUP_APPL = 90,
     DNP3_GROUP_AUTH = 120,
 } DNP3_Group;
 
@@ -274,6 +275,8 @@ typedef enum {
 
     DNP3_VARIATION_IIN_PACKED = 1,
 
+    DNP3_VARIATION_APPL_ID = 1,
+
     DNP3_VARIATION_AUTH_AGGR = 3,
     DNP3_VARIATION_AUTH_MAC = 9,
 } DNP3_Variation;
@@ -408,6 +411,12 @@ typedef union {
 
     // g52v1, g52v2 (delays)
     uint32_t delay;             // always in milliseconds!
+
+    // g90v1 (application id)
+    struct {
+        char *str;
+        size_t len;
+    } applid;
 
     // objects with timestamps (not group 50!)
     struct {

@@ -1,13 +1,22 @@
 A DNP3 parser implementation in Hammer 
+Sven M. Hallberg, 2014-2015
 
- * https://github.com/UpstandingHackers/hammer
+ * Uses the Hammer parser combinator library.
+   https://github.com/UpstandingHackers/hammer
 
- * needs the 'h_bind' and 'h_aligned' combinators as implemented in
-   https://github.com/pesco/hammer/
+ * Currently requires a custom version of Hammer:
+   https://github.com/pesco/hammer/ (master branch)
 
- * 'make' builds
+   This includes:
+     * 'h_bind', monadic bind for parsers (from branch 'h_bind')
+     * 'h_aligned', to check for byte-alignment (from branch 'h_aligned')
+     * A temporary patch to 'h_put_value' allowing it to overwrite a
+       previously-stored value. This is a stop-gap workaround until we get
+       symbol scoping.
 
- * './test' runs the test suite (uses the Glib test framework)
+ * Run 'make' to build.
+
+ * Run './test' to execute the unit tests (uses the GLib test framework).
 
 
 NOTES:
@@ -39,3 +48,8 @@ NOTES:
      - The 'queue' flag on CROB objects _is_ accepted so an implementation
        can reject only the offending object in a request containing multiple
        commands.
+
+
+LICENSE:
+
+ TBD

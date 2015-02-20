@@ -278,7 +278,6 @@ static void init_odata(void)
     H_RULE(write,           dnp3_p_many(write_oblock));
 
     #define act_select dnp3_p_act_flatten
-
     H_RULE(pcb,             dnp3_p_g12v2_binoutcmd_pcb_oblock);
     H_RULE(pcm,             dnp3_p_g12v3_binoutcmd_pcm_oblock);
     H_RULE(select_pcb,      dnp3_p_seq(pcb, dnp3_p_many1(pcm)));
@@ -290,11 +289,16 @@ static void init_odata(void)
         // XXX empty select requests valid?
         // XXX is it valid to have many pcb-pcm blocks in the same request? to mix pcbs and crobs?
 
-    H_RULE(frz_oblock,      dnp3_p_objchoice(dnp3_p_ctr_fblock,
-                                             dnp3_p_anain_fblock, NULL));
-    H_RULE(frz_clr_oblock,  dnp3_p_objchoice(dnp3_p_ctr_fblock, NULL));
-    H_RULE(freeze,          dnp3_p_many(frz_oblock));
-    H_RULE(freeze_clear,    dnp3_p_many(frz_clr_oblock));
+    H_RULE(freezable,       h_choice(dnp3_p_ctr_fblock, dnp3_p_anain_fblock, NULL));
+    H_RULE(clearable,       dnp3_p_ctr_fblock);
+
+    H_RULE(freeze,          dnp3_p_many(dnp3_p_objchoice(freezable, NULL)));
+    H_RULE(freeze_clear,    dnp3_p_many(dnp3_p_objchoice(clearable, NULL)));
+
+    #define act_freeze_at_time dnp3_p_act_flatten
+    H_RULE(tdi,             dnp3_p_g50v2_time_interval_oblock);
+    H_RULE(frz_schedule,    dnp3_p_seq(tdi, dnp3_p_many(freezable)));
+    H_ARULE(freeze_at_time, dnp3_p_many(frz_schedule));
 
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
                                              oblock_binin,
@@ -313,14 +317,16 @@ static void init_odata(void)
     odata[DNP3_CONFIRM] = ama(confirm);
     odata[DNP3_READ]    = ama(read);
     odata[DNP3_WRITE]   = ama(write);
-    odata[DNP3_SELECT]  =           // -.
-    odata[DNP3_OPERATE] =           // -.
-    odata[DNP3_DIRECT_OPERATE] =    // -v
+    odata[DNP3_SELECT]            = // -.
+    odata[DNP3_OPERATE]           = // -.
+    odata[DNP3_DIRECT_OPERATE]    = // -v
     odata[DNP3_DIRECT_OPERATE_NR] = ama(select);
-    odata[DNP3_IMMED_FREEZE] =      // -v
-    odata[DNP3_IMMED_FREEZE_NR] = ama(freeze);
-    odata[DNP3_FREEZE_CLEAR] =      // -v
-    odata[DNP3_FREEZE_CLEAR_NR] = ama(freeze_clear);
+    odata[DNP3_IMMED_FREEZE]      = // -v
+    odata[DNP3_IMMED_FREEZE_NR]   = ama(freeze);
+    odata[DNP3_FREEZE_CLEAR]      = // -v
+    odata[DNP3_FREEZE_CLEAR_NR]   = ama(freeze_clear);
+    odata[DNP3_FREEZE_AT_TIME]    = // -v
+    odata[DNP3_FREEZE_AT_TIME_NR] = ama(freeze_at_time);
 
         // read_rsp_object:
         //   may not use variation 0

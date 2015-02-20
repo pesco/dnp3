@@ -123,21 +123,22 @@ static int append_dblbit_flags(char **res, size_t *size, DNP3_Flags flags)
     return appendf(res, size, "%c", (int)dblbit_sym[flags.state]);
 }
 
-static int append_time(char **res, size_t *size, uint64_t time, bool relative)
+static int append_time(char **res, size_t *size, const char *pre, uint64_t time, bool relative)
 {
     uint64_t s  = time / 1000;
     uint64_t ms = time % 1000;
     const char *fmt;
 
     if(relative)
-        fmt = ms ? "@+%"PRIu64".%.3"PRIu64"s" : "@+%"PRIu64"s";
+        fmt = ms ? "%s%"PRIu64".%.3"PRIu64"s" : "%s%"PRIu64"s";
     else
-        fmt = ms ? "@%"PRIu64".%.3"PRIu64"s" : "@%"PRIu64"s";
-    return appendf(res, size, fmt, s, ms);
+        fmt = ms ? "%s%"PRIu64".%.3"PRIu64"s" : "%s%"PRIu64"s";
+    return appendf(res, size, fmt, pre, s, ms);
 }
 
-#define append_abstime(res, size, time) append_time(res, size, time, false)
-#define append_reltime(res, size, time) append_time(res, size, time, true)
+#define append_abstime(res, size, time) append_time(res, size, "@", time, false)
+#define append_reltime(res, size, time) append_time(res, size, "@+", time, true)
+#define append_interval_ms(res, size, time) append_time(res, size, "+", time, true)
 
 static int append_interval(char **res, size_t *size, uint32_t val, DNP3_IntervalUnit unit)
 {
@@ -363,7 +364,7 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
         break;
     case GV(TIME, TIME_INTERVAL):
         append_abstime(&res, &size, o.time.abstime);
-        append_reltime(&res, &size, o.time.interval);
+        append_interval_ms(&res, &size, o.time.interval);
         break;
     case GV(TIME, INDEXED_TIME):
         append_abstime(&res, &size, o.time.abstime);

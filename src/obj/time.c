@@ -89,7 +89,7 @@ void dnp3_p_init_time(void)
     dnp3_p_g50v1_time_oblock = dnp3_p_single(G_V(TIME, TIME), time);
 
     dnp3_p_g50v2_time_interval_oblock
-            = dnp3_p_oblock(G_V(TIME, TIME_INTERVAL), time_interval);
+            = dnp3_p_single(G_V(TIME, TIME_INTERVAL), time_interval);
 
     dnp3_p_g50v3_recorded_time_oblock
             = dnp3_p_single(G_V(TIME, RECORDED_TIME), time);
@@ -107,7 +107,7 @@ void dnp3_p_init_time(void)
     dnp3_p_cto_oblock = h_choice(oblock_cto_sync, oblock_cto_unsync, NULL);
 
     // group 52 (delays)...
-    // XXX is single (qc=07,range=1) correct for group 51 (CTO)?
+    // XXX is single (qc=07,range=1) correct for group 52 (delays)?
     H_RULE (oblock_delay_s,     dnp3_p_single(G_V(DELAY, S), delay_s));
     H_RULE (oblock_delay_ms,    dnp3_p_single(G_V(DELAY, MS), delay_ms));
 

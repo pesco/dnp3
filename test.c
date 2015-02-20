@@ -280,6 +280,21 @@ static void test_req_freeze_clear(void)
     check_parse(dnp3_p_app_request,  "\xC3\x0A\x1E\x00\x06",5, "OBJ_UNKNOWN on [3] (fir,fin) FREEZE_CLEAR_NR");
 }
 
+static void test_req_freeze_at_time(void)
+{
+    // counters
+    check_parse(dnp3_p_app_request,  "\xC3\x0B\x32\x02\x07\x01\xC0\x5F\x63\x1C\xE7\x00\xA0\xBB\x0D\x00\x14\x00\x06",19,
+                                     "[3] (fir,fin) FREEZE_AT_TIME {g50v2 qc=07 @992613720s+900s} {g20v0 qc=06}");
+    check_parse(dnp3_p_app_request,  "\xC3\x0C\x32\x02\x07\x01\xC0\x5F\x63\x1C\xE7\x00\xA0\xBB\x0D\x00\x14\x00\x06",19,
+                                     "[3] (fir,fin) FREEZE_AT_TIME_NR {g50v2 qc=07 @992613720s+900s} {g20v0 qc=06}");
+
+    // analog inputs
+    check_parse(dnp3_p_app_request,  "\xC3\x0B\x32\x02\x07\x01\xC0\x5F\x63\x1C\xE7\x00\xA0\xBB\x0D\x00\x1E\x00\x06",19,
+                                     "[3] (fir,fin) FREEZE_AT_TIME {g50v2 qc=07 @992613720s+900s} {g30v0 qc=06}");
+    check_parse(dnp3_p_app_request,  "\xC3\x0C\x32\x02\x07\x01\xC0\x5F\x63\x1C\xE7\x00\xA0\xBB\x0D\x00\x1E\x00\x06",19,
+                                     "[3] (fir,fin) FREEZE_AT_TIME_NR {g50v2 qc=07 @992613720s+900s} {g30v0 qc=06}");
+}
+
 static void test_rsp_fail(void)
 {
     check_parse_fail(dnp3_p_app_response, "",0);
@@ -861,6 +876,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/direct_operate_nr", test_req_direct_operate_nr);
     g_test_add_func("/app/req/freeze", test_req_freeze);
     g_test_add_func("/app/req/freeze_clear", test_req_freeze_clear);
+    g_test_add_func("/app/req/freeze_at_time", test_req_freeze_at_time);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);

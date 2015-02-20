@@ -340,6 +340,7 @@ static void init_odata(void)
     odata[DNP3_INITIALIZE_APPL]   = // -.
     odata[DNP3_START_APPL]        = // -v
     odata[DNP3_STOP_APPL]         = ama(application);
+    odata[DNP3_SAVE_CONFIG]       = NULL;   // deprecated, not supported
 
         // read_rsp_object:
         //   may not use variation 0

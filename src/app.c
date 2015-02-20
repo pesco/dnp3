@@ -300,6 +300,9 @@ static void init_odata(void)
     H_RULE(frz_schedule,    dnp3_p_seq(tdi, dnp3_p_many(freezable)));
     H_ARULE(freeze_at_time, dnp3_p_many(frz_schedule));
 
+    H_RULE(cold_restart,    h_epsilon_p());
+    H_RULE(warm_restart,    h_epsilon_p());
+
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
                                              oblock_binin,
                                              oblock_binout,
@@ -327,6 +330,8 @@ static void init_odata(void)
     odata[DNP3_FREEZE_CLEAR_NR]   = ama(freeze_clear);
     odata[DNP3_FREEZE_AT_TIME]    = // -v
     odata[DNP3_FREEZE_AT_TIME_NR] = ama(freeze_at_time);
+    odata[DNP3_COLD_RESTART]      = ama(cold_restart);
+    odata[DNP3_WARM_RESTART]      = ama(warm_restart);
 
         // read_rsp_object:
         //   may not use variation 0

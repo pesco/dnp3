@@ -295,6 +295,12 @@ static void test_req_freeze_at_time(void)
                                      "[3] (fir,fin) FREEZE_AT_TIME_NR {g50v2 qc=07 @992613720s+900s} {g30v0 qc=06}");
 }
 
+static void test_req_restart(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC3\x0D",2, "[3] (fir,fin) COLD_RESTART");
+    check_parse(dnp3_p_app_request,  "\xC3\x0E",2, "[3] (fir,fin) WARM_RESTART");
+}
+
 static void test_rsp_fail(void)
 {
     check_parse_fail(dnp3_p_app_response, "",0);
@@ -877,6 +883,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/freeze", test_req_freeze);
     g_test_add_func("/app/req/freeze_clear", test_req_freeze_clear);
     g_test_add_func("/app/req/freeze_at_time", test_req_freeze_at_time);
+    g_test_add_func("/app/req/restart", test_req_restart);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);

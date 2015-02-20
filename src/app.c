@@ -290,6 +290,12 @@ static void init_odata(void)
         // XXX empty select requests valid?
         // XXX is it valid to have many pcb-pcm blocks in the same request? to mix pcbs and crobs?
 
+    H_RULE(frz_oblock,      dnp3_p_objchoice(dnp3_p_ctr_fblock,
+                                             dnp3_p_anain_fblock, NULL));
+    H_RULE(frz_clr_oblock,  dnp3_p_objchoice(dnp3_p_ctr_fblock, NULL));
+    H_RULE(freeze,          dnp3_p_many(frz_oblock));
+    H_RULE(freeze_clear,    dnp3_p_many(frz_clr_oblock));
+
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
                                              oblock_binin,
                                              oblock_binout,
@@ -307,10 +313,14 @@ static void init_odata(void)
     odata[DNP3_CONFIRM] = ama(confirm);
     odata[DNP3_READ]    = ama(read);
     odata[DNP3_WRITE]   = ama(write);
-    odata[DNP3_SELECT]  =           // vvv
-    odata[DNP3_OPERATE] =           // vvv
-    odata[DNP3_DIRECT_OPERATE] =    // vvv
+    odata[DNP3_SELECT]  =           // -.
+    odata[DNP3_OPERATE] =           // -.
+    odata[DNP3_DIRECT_OPERATE] =    // -v
     odata[DNP3_DIRECT_OPERATE_NR] = ama(select);
+    odata[DNP3_IMMED_FREEZE] =      // -v
+    odata[DNP3_IMMED_FREEZE_NR] = ama(freeze);
+    odata[DNP3_FREEZE_CLEAR] =      // -v
+    odata[DNP3_FREEZE_CLEAR_NR] = ama(freeze_clear);
 
         // read_rsp_object:
         //   may not use variation 0

@@ -8,6 +8,7 @@
 
 
 HParser *dnp3_p_anain_rblock;
+HParser *dnp3_p_anain_fblock;    // for freeze - always variation 0
 HParser *dnp3_p_anain_oblock;
 
 HParser *dnp3_p_frozenanain_rblock;
@@ -308,6 +309,7 @@ void dnp3_p_init_analog(void)
                                             V(ANAIN, 16BIT_NOFLAG),
                                             V(ANAIN, FLOAT),
                                             V(ANAIN, DOUBLE), 0);
+    dnp3_p_anain_fblock     = dnp3_p_specific_rblock(G(ANAIN), DNP3_VARIATION_ANY);
     dnp3_p_anain_oblock     = h_choice(oblock_i32fl, oblock_i16fl,
                                        oblock_i32nofl, oblock_i16nofl,
                                        oblock_f32fl, oblock_f64fl, NULL);

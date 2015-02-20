@@ -5,6 +5,7 @@
 void dnp3_p_init_analog(void);
 
 extern HParser *dnp3_p_anain_rblock;
+extern HParser *dnp3_p_anain_fblock;    // for freeze - always variation 0
 extern HParser *dnp3_p_anain_oblock;
 
 extern HParser *dnp3_p_frozenanain_rblock;

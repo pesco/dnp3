@@ -7,6 +7,7 @@
 
 
 HParser *dnp3_p_ctr_rblock;
+HParser *dnp3_p_ctr_fblock;      // for freeze - always variation 0
 HParser *dnp3_p_ctr_oblock;
 HParser *dnp3_p_frozenctr_rblock;
 HParser *dnp3_p_frozenctr_oblock;
@@ -104,6 +105,7 @@ void dnp3_p_init_counter(void)
                                               V(CTR, 16BIT),
                                               V(CTR, 32BIT_NOFLAG),
                                               V(CTR, 32BIT_NOFLAG), 0);
+    dnp3_p_ctr_fblock = dnp3_p_specific_rblock(G(CTR), DNP3_VARIATION_ANY);
     dnp3_p_ctr_oblock = h_choice(oblock_32bit_flag,
                                  oblock_16bit_flag,
                                  oblock_32bit_noflag,

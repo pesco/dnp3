@@ -319,8 +319,8 @@ static void init_odata(void)
                                      dnp3_p_g60v3_class2_rblock,
                                      dnp3_p_g60v4_class3_rblock,
                                      NULL));
-    H_RULE(unsol_oblock,    dnp3_p_objchoice(event_class, event_point, NULL));
-    H_RULE(enable_unsol,    dnp3_p_many(unsol_oblock));
+    H_RULE(en_unsol_oblock, dnp3_p_objchoice(event_class, event_point, NULL));
+    H_RULE(enable_unsol,    dnp3_p_many(en_unsol_oblock));
 
     #define act_assign_class dnp3_p_act_flatten
     H_RULE(assign_set,      dnp3_p_seq(rblock_class, dnp3_p_many(event_point)));
@@ -337,7 +337,19 @@ static void init_odata(void)
                                              NULL));
     H_RULE(response,        dnp3_p_many(rsp_oblock));
 
-    H_RULE(unsolicited,     h_epsilon_p()); // XXX
+    H_RULE(unsol_oblock,    dnp3_p_objchoice(dnp3_p_bininev_oblock,
+                                             dnp3_p_dblbitinev_oblock,
+                                             dnp3_p_binoutev_oblock,
+                                             dnp3_p_binoutcmdev_oblock,
+                                             dnp3_p_ctrev_oblock,
+                                             dnp3_p_frozenctrev_oblock,
+                                             dnp3_p_anainev_oblock,
+                                             dnp3_p_frozenanainev_oblock,
+                                             dnp3_p_anaoutev_oblock,
+                                             dnp3_p_anaoutcmdev_oblock,
+                                             dnp3_p_cto_oblock,
+                                             NULL));
+    H_RULE(unsolicited,     dnp3_p_many(unsol_oblock));
 
 
     H_RULE(empty_req,       ama(h_epsilon_p()));

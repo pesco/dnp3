@@ -415,6 +415,14 @@ static void test_rsp_null(void)
     check_parse(dnp3_p_app_response, "\xC2\x81\x00\x00",4, "[2] (fir,fin) RESPONSE");
 }
 
+static void test_rsp_unsolicited(void)
+{
+    check_parse(dnp3_p_app_response, "\x30\x82\x00\x00\x33\x01\x07\x01\x00\x04\x00\x00\x00\x00",14,
+                                     "[0] (con,uns) UNSOLICITED_RESPONSE {g51v1 qc=07 @1.024s}");
+    check_parse(dnp3_p_app_response, "\x30\x82\x00\x00\x33\x02\x07\x01\x00\x04\x00\x00\x00\x00",14,
+                                     "[0] (con,uns) UNSOLICITED_RESPONSE {g51v2 qc=07 (unsynchronized)@1.024s}");
+}
+
 static void test_obj_binin(void)
 {
     check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x08",7,
@@ -943,6 +951,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);
     g_test_add_func("/app/rsp/null", test_rsp_null);
+    g_test_add_func("/app/rsp/unsolicited", test_rsp_unsolicited);
     g_test_add_func("/app/obj/binin", test_obj_binin);
     g_test_add_func("/app/obj/bininev", test_obj_bininev);
     g_test_add_func("/app/obj/dblbitin", test_obj_dblbitin);

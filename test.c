@@ -339,6 +339,16 @@ static void test_req_assign_class(void)
                                                                " {g60v1 qc=06} {g21v0 qc=00 #3..10}");
 }
 
+static void test_req_delay_measure(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC3\x17",2, "[3] (fir,fin) DELAY_MEASURE");
+}
+
+static void test_req_record_current_time(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC3\x18",2, "[3] (fir,fin) RECORD_CURRENT_TIME");
+}
+
 static void test_rsp_fail(void)
 {
     check_parse_fail(dnp3_p_app_response, "",0);
@@ -927,6 +937,8 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/enable_unsolicited", test_req_enable_unsolicited);
     g_test_add_func("/app/req/disable_unsolicited", test_req_disable_unsolicited);
     g_test_add_func("/app/req/assign_class", test_req_assign_class);
+    g_test_add_func("/app/req/delay_measure", test_req_delay_measure);
+    g_test_add_func("/app/req/record_current_time", test_req_record_current_time);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);

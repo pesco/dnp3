@@ -151,8 +151,6 @@ static HParser *odata[256] = {NULL};
 
 static void init_odata(void)
 {
-    H_RULE(confirm, h_epsilon_p());
-
     // read request object blocks:
     //   may use variation 0 (any)
     //   may use group 60 (event class data)
@@ -301,9 +299,6 @@ static void init_odata(void)
     H_RULE(frz_schedule,    dnp3_p_seq(tdi, dnp3_p_many(freezable)));
     H_ARULE(freeze_at_time, dnp3_p_many(frz_schedule));
 
-    H_RULE(cold_restart,    h_epsilon_p());
-    H_RULE(warm_restart,    h_epsilon_p());
-
     H_RULE(applid,          dnp3_p_g90v1_applid_oblock);
     H_RULE(application,     dnp3_p_many(dnp3_p_objchoice(applid, NULL)));
 
@@ -345,7 +340,10 @@ static void init_odata(void)
     H_RULE(unsolicited,     h_epsilon_p()); // XXX
 
 
-    odata[DNP3_CONFIRM] = ama(confirm);
+    H_RULE(empty_req,       ama(h_epsilon_p()));
+    H_RULE(not_supp,        h_error(ERR_FUNC_NOT_SUPP));
+
+    odata[DNP3_CONFIRM] = empty_req;
     odata[DNP3_READ]    = ama(read);
     odata[DNP3_WRITE]   = ama(write);
     odata[DNP3_SELECT]            = // -.
@@ -358,16 +356,18 @@ static void init_odata(void)
     odata[DNP3_FREEZE_CLEAR_NR]   = ama(freeze_clear);
     odata[DNP3_FREEZE_AT_TIME]    = // -v
     odata[DNP3_FREEZE_AT_TIME_NR] = ama(freeze_at_time);
-    odata[DNP3_COLD_RESTART]      = ama(cold_restart);
-    odata[DNP3_WARM_RESTART]      = ama(warm_restart);
-    odata[DNP3_INITIALIZE_DATA]   = NULL;   // obsolete, not supported
+    odata[DNP3_COLD_RESTART]      = empty_req;
+    odata[DNP3_WARM_RESTART]      = empty_req;
+    odata[DNP3_INITIALIZE_DATA]   = not_supp; // obsolete
     odata[DNP3_INITIALIZE_APPL]   = // -.
     odata[DNP3_START_APPL]        = // -v
     odata[DNP3_STOP_APPL]         = ama(application);
-    odata[DNP3_SAVE_CONFIG]       = NULL;   // deprecated, not supported
+    odata[DNP3_SAVE_CONFIG]       = not_supp; // deprecated
     odata[DNP3_ENABLE_UNSOLICITED]  = // -v
     odata[DNP3_DISABLE_UNSOLICITED] = ama(enable_unsol);
-    odata[DNP3_ASSIGN_CLASS]      = ama(assign_class);
+    odata[DNP3_ASSIGN_CLASS]        = ama(assign_class);
+    odata[DNP3_DELAY_MEASURE]       = empty_req;
+    odata[DNP3_RECORD_CURRENT_TIME] = empty_req;
 
         // read_rsp_object:
         //   may not use variation 0

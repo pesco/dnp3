@@ -25,3 +25,16 @@ NOTES:
 
  C) Reserved bits are _required_ to be 0 unless the standard explicitly
     allows them to be ignored.
+
+ D) Deprecated and obsolete parts of the protocol are not supported unless
+    required. Specifically:
+
+     - The INITIALIZE_DATA function code is rejected with a FUNC_NOT_SUPP
+       parse error.
+     - The 'rollover' flag on counter objects is ignored and its value not
+       exposed to the user.
+     - Delta counters are rejected with an OBJ_UNKNOWN parse error.
+
+     - The 'queue' flag on CROB objects _is_ accepted so an implementation
+       can reject only the offending object in a request containing multiple
+       commands.

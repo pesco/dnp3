@@ -332,6 +332,7 @@ static void init_odata(void)
     odata[DNP3_FREEZE_AT_TIME_NR] = ama(freeze_at_time);
     odata[DNP3_COLD_RESTART]      = ama(cold_restart);
     odata[DNP3_WARM_RESTART]      = ama(warm_restart);
+    odata[DNP3_INITIALIZE_DATA]   = NULL;   // obsolete, not supported
 
         // read_rsp_object:
         //   may not use variation 0

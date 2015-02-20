@@ -352,6 +352,8 @@ typedef struct {
 typedef struct {
     uint8_t optype:4;
     uint8_t queue:1;
+        // the queue flag is obsolete - masters should never set it and
+        // outstations should return status NOT_SUPPORTED when it is set.
     uint8_t clear:1;
     uint8_t tcc:2;
     uint8_t count;

@@ -74,7 +74,7 @@ void dnp3_p_init_binoutcmd(void)
 
     H_RULE (tcc,    h_int_range(h_bits(2, false), 0, 2));
     H_ARULE(crob,   h_sequence(h_bits(4, false),    // op type
-                               bit,                 // queue flag
+                               bit,                 // queue flag (obsolete)
                                bit,                 // clear flag
                                tcc,
                                h_uint8(),           // count

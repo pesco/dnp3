@@ -307,6 +307,23 @@ static void init_odata(void)
     H_RULE(applid,          dnp3_p_g90v1_applid_oblock);
     H_RULE(application,     dnp3_p_many(dnp3_p_objchoice(applid, NULL)));
 
+    H_RULE(unsol_oblock,    dnp3_p_objchoice(dnp3_p_g60v2_class1_rblock,
+                                             dnp3_p_g60v3_class2_rblock,
+                                             dnp3_p_g60v4_class3_rblock,
+         // XXX the below point types are not listed as allowed with fc 20/21 in AN2013-004b.
+                                             dnp3_p_binin_rblock,
+                                             dnp3_p_dblbitin_rblock,
+                                             dnp3_p_binout_rblock,
+                                             dnp3_p_binoutcmd_rblock,
+                                             dnp3_p_ctr_rblock,
+                                             dnp3_p_frozenctr_rblock,
+                                             dnp3_p_anain_rblock,
+                                             dnp3_p_frozenanain_rblock,
+                                             dnp3_p_anaoutstatus_rblock,
+                                             dnp3_p_anaout_rblock,
+                                             NULL));
+    H_RULE(enable_unsol,    dnp3_p_many(unsol_oblock));
+
     H_RULE(rsp_oblock,      dnp3_p_objchoice(//oblock_attr,
                                              oblock_binin,
                                              oblock_binout,
@@ -341,6 +358,8 @@ static void init_odata(void)
     odata[DNP3_START_APPL]        = // -v
     odata[DNP3_STOP_APPL]         = ama(application);
     odata[DNP3_SAVE_CONFIG]       = NULL;   // deprecated, not supported
+    odata[DNP3_ENABLE_UNSOLICITED]  = // -v
+    odata[DNP3_DISABLE_UNSOLICITED] = ama(enable_unsol);
 
         // read_rsp_object:
         //   may not use variation 0

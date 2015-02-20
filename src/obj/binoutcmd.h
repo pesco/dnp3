@@ -5,6 +5,8 @@
 extern HParser *dnp3_p_binoutcmdev_rblock;
 extern HParser *dnp3_p_binoutcmdev_oblock;
 
+extern HParser *dnp3_p_binoutcmd_rblock;
+
 extern HParser *dnp3_p_g12v1_binoutcmd_crob_oblock;
 extern HParser *dnp3_p_g12v2_binoutcmd_pcb_oblock;
 extern HParser *dnp3_p_g12v3_binoutcmd_pcm_oblock;

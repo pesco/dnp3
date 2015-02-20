@@ -26,6 +26,7 @@ HParser *dnp3_p_anaindeadband_oblock;
 HParser *dnp3_p_anaoutstatus_rblock;
 HParser *dnp3_p_anaoutstatus_oblock;
 
+HParser *dnp3_p_anaout_rblock;
 HParser *dnp3_p_anaout_sblock;
 HParser *dnp3_p_anaout_oblock;
 
@@ -424,6 +425,11 @@ void dnp3_p_init_analog(void)
 
     // the 's' is for "select" (the first function code this is relevant for).
     // these are the variants where the "control status" field must be zero.
+    dnp3_p_anaout_rblock     = dnp3_p_rblock(G(ANAOUT),
+                                             V(ANAOUT, 32BIT),
+                                             V(ANAOUT, 16BIT),
+                                             V(ANAOUT, FLOAT),
+                                             V(ANAOUT, DOUBLE), 0);
     dnp3_p_anaout_sblock     = h_choice(oblock_outi32_s, oblock_outi16_s,
                                         oblock_outf32_s, oblock_outf64_s, NULL);
     dnp3_p_anaout_oblock     = h_choice(oblock_outi32, oblock_outi16,

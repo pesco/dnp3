@@ -317,6 +317,18 @@ static void test_req_application(void)
                                      "[3] (fir,fin) STOP_APPL {g90v1 qc=5B 'CL6'}");
 }
 
+static void test_req_enable_unsolicited(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC3\x14\x3C\x02\x06\x3C\x03\x06\x3C\x04\x06",11,
+                                     "[3] (fir,fin) ENABLE_UNSOLICITED {g60v2 qc=06} {g60v3 qc=06} {g60v4 qc=06}");
+}
+
+static void test_req_disable_unsolicited(void)
+{
+    check_parse(dnp3_p_app_request,  "\xC3\x15\x3C\x02\x06\x3C\x03\x06\x3C\x04\x06",11,
+                                     "[3] (fir,fin) DISABLE_UNSOLICITED {g60v2 qc=06} {g60v3 qc=06} {g60v4 qc=06}");
+}
+
 static void test_rsp_fail(void)
 {
     check_parse_fail(dnp3_p_app_response, "",0);
@@ -902,6 +914,8 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/restart", test_req_restart);
     g_test_add_func("/app/req/initialize_data", test_req_initialize_data);
     g_test_add_func("/app/req/application", test_req_application);
+    g_test_add_func("/app/req/enable_unsolicited", test_req_enable_unsolicited);
+    g_test_add_func("/app/req/disable_unsolicited", test_req_disable_unsolicited);
     g_test_add_func("/app/rsp/fail", test_rsp_fail);
     g_test_add_func("/app/rsp/ac", test_rsp_ac);
     g_test_add_func("/app/rsp/iin", test_rsp_iin);

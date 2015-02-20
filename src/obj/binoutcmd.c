@@ -9,6 +9,8 @@
 HParser *dnp3_p_binoutcmdev_rblock;
 HParser *dnp3_p_binoutcmdev_oblock;
 
+HParser *dnp3_p_binoutcmd_rblock;
+
 HParser *dnp3_p_g12v1_binoutcmd_crob_oblock;
 HParser *dnp3_p_g12v2_binoutcmd_pcb_oblock;
 HParser *dnp3_p_g12v3_binoutcmd_pcm_oblock;
@@ -90,6 +92,11 @@ void dnp3_p_init_binoutcmd(void)
     dnp3_p_g12v2_binoutcmd_pcb_oblock  = dnp3_p_single(G_V(BINOUTCMD, PCB), crob);
     dnp3_p_g12v3_binoutcmd_pcm_oblock  = dnp3_p_oblock_packed(G_V(BINOUTCMD, PCM), packed);
     dnp3_p_g12v3_binoutcmd_pcm_rblock  = dnp3_p_specific_rblock(G_V(BINOUTCMD, PCM));
+
+    dnp3_p_binoutcmd_rblock = dnp3_p_rblock(G(BINOUTCMD),
+                                            V(BINOUTCMD, CROB),
+                                            V(BINOUTCMD, PCB),
+                                            V(BINOUTCMD, PCM), 0);
 
     // group 13 (binary output command events)...
     H_RULE(oblock_notime,   dnp3_p_oblock(G_V(BINOUTCMDEV, NOTIME),  notime));

@@ -138,7 +138,6 @@ void dnp3_p_init_binary(void)
 
 
     // group 1: binary inputs...
-    // XXX does oblock_packed become unnecessary when little-endian is the default?
     H_RULE (oblock_packed,      dnp3_p_oblock_packed(G_V(BININ, PACKED), packed));
     H_RULE (oblock_flags,       dnp3_p_oblock(G_V(BININ, FLAGS), flags));
 

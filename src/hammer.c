@@ -58,7 +58,7 @@ static HParsedToken *act_float(const HParseResult *p, void *user)
     HParsedToken *tok = H_ALLOC(HParsedToken);
     tok->token_type = TT_FLOAT;
     tok->dbl = *(float *)&H_CAST_UINT(p->ast);
-        // XXX act_float assumes compatible endianness for casting from uint64_t to double
+        // XXX act_float assumes compatible endianness for casting from uint64_t to float
     return tok;
 }
 

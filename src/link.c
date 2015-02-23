@@ -182,7 +182,6 @@ void dnp3_p_init_link(void)
                               /* --- fcv fcb prm dir --- */
                               /*     dfc                 */
     H_RULE(ctrl,    h_sequence(func, bit,bit,bit,bit, NULL));
-        // XXX is FCB in secondary frames required 0?
     H_RULE(dest,    address);
     H_RULE(source,  h_int_range(address, 0, 0xFFEF));
     H_RULE(crc,     h_uint16());

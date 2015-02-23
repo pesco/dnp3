@@ -183,7 +183,7 @@ static HParser *prefixed_size(HParser *vfcnt, HParser *p, HParser *(*q)(HAllocat
                     act_objects_only, NULL);
 }
 
-static HParser *oblock_range__(HParser *p)
+static HParser *oblock_range_(HParser *p)
 {
     H_RULE(range,   h_choice(range_index, range_addr, NULL));
         // XXX are address ranges really allowed with all types of objects or
@@ -191,22 +191,7 @@ static HParser *oblock_range__(HParser *p)
     H_RULE(objs,    h_action(h_length_value(range, p),
                              act_objects_only, NULL));
 
-    // this variant does not attach the prefix code, yet, so we can stick an
-    // endianness combinator in between for the packed variations (see below)
-    return objs;
-}
-
-static HParser *oblock_range_(HParser *p)
-{
-    return noprefix(oblock_range__(p));
-}
-
-static HParser *oblock_packed_(HParser *p)
-{
-    H_RULE(objs,        oblock_range__(p));
-    H_RULE(objs_pad,    h_left(objs, dnp3_p_pad));
-
-    return noprefix(objs_pad);
+    return noprefix(objs);
 }
 
 static HParser *oblock_index_(HParser *p)
@@ -347,7 +332,8 @@ HParser *dnp3_p_rblock(DNP3_Group g, ...)
     va_end(args);
 
     // assemble array of parsers for the given variations 
-    // XXX this array is never freed
+    // XXX this array is never freed (but no parsers ever are)
+    // XXX ensure we call parser-allocating functions only once during init
     vs = malloc((n+2) * sizeof(HParser *));
     vs[0] = variation(DNP3_VARIATION_ANY);
     va_start(args, g);
@@ -402,7 +388,7 @@ HParser *dnp3_p_oblock(DNP3_Group g, DNP3_Variation v, HParser *obj)
 
 HParser *dnp3_p_oblock_packed(DNP3_Group g, DNP3_Variation v, HParser *obj)
 {
-    return block(group(g), variation(v), oblock_packed_(obj));
+    return block(group(g), variation(v), oblock_range_(obj));
 }
 
 HParser *dnp3_p_oblock_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(HAllocator *mm__, size_t))

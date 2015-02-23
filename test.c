@@ -158,7 +158,7 @@ static void test_req_confirm(void)
     check_parse(dnp3_p_app_request, "\xC0\x00",2, "[0] (fir,fin) CONFIRM");
     check_parse(dnp3_p_app_request, "\xD0\x00",2, "[0] (fir,fin,uns) CONFIRM");
     check_parse(dnp3_p_app_request, "\xC0\x00\x01\x00\x06",5, "PARAM_ERROR on [0] (fir,fin) CONFIRM");
-        // XXX should a message with unexpected objects yield OBJ_UNKNOWN?
+        // XXX should a CONFIRM message with unexpected objects yield OBJ_UNKNOWN?
 }
 
 static void test_req_read(void)
@@ -877,8 +877,8 @@ static void test_obj_time(void)
 {
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x32\x01\x07\x01\x00\x04\x00\x00\x00\x00",14,
                                      "[0] RESPONSE {g50v1 qc=07 @1.024s}");
-    //check_parse(dnp3_p_app_request,  "\xC0\x81\x32\x02\x17\x01\x01\x00\x04\x00\x00\x00\x00\x3C\x00\x00\x00",17,
-    // XXX                             "[0] (fir,fin) FREEZE {g50v2 qc=17 #1:@1.024s+60s}");
+    check_parse(dnp3_p_app_request,  "\xC0\x0B\x32\x02\x07\x01\x00\x04\x00\x00\x00\x00\x3C\x00\x00\x00\x14\x00\x06",19,
+                                     "[0] (fir,fin) FREEZE_AT_TIME {g50v2 qc=07 @1.024s+0.060s} {g20v0 qc=06}");
     check_parse(dnp3_p_app_request,  "\xC0\x02\x32\x03\x07\x01\x00\x04\x00\x00\x00\x00",12,
                                      "[0] (fir,fin) WRITE {g50v3 qc=07 @1.024s}");
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x32\x04\x17\x01\x01\x00\x04\x00\x00\x00\x00\x0A\x00\x00\x00\x05",20,

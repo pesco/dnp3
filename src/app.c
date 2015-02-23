@@ -353,7 +353,7 @@ static void init_odata(void)
 
 
     H_RULE(empty_req,       ama(h_epsilon_p()));
-    H_RULE(not_supp,        h_error(ERR_FUNC_NOT_SUPP));
+    H_RULE(not_supp,        dnp3_p_err_func_not_supp);
 
     odata[DNP3_CONFIRM] = empty_req;
     odata[DNP3_READ]    = ama(read);
@@ -470,7 +470,7 @@ static HParsedToken *act_fragment_errfc(const HParseResult *p, void *user)
 }
 
 // parse the rest of a fragment, after the application header
-static HParser *f_fragment(const HParsedToken *hdr, void *env)
+static HParser *k_fragment(HAllocator *mm__, const HParsedToken *hdr, void *env)
 {
     // propagate TT_ERR on function code
     HParsedToken *fc_ = H_INDEX_TOKEN(hdr, 1);
@@ -488,13 +488,14 @@ static HParser *f_fragment(const HParsedToken *hdr, void *env)
     p = dnp3_p_packet(p);
 
     // any unspecific parse failure on odata should yield PARAM_ERROR
-    p = h_choice(p, h_error(ERR_PARAM_ERROR), NULL);
+    p = h_choice__m(mm__, p, dnp3_p_err_param_error, NULL);
 
-    return h_action(p, act_fragment, (void *)hdr);
+    return h_action__m(mm__, p, act_fragment, (void *)hdr);
 
     err: {
         HParsedToken *ac = H_INDEX_TOKEN(hdr, 0);
-        return h_action(h_unit(fc_), act_fragment_errfc, (void *)ac);
+        return h_action__m(mm__, h_unit__m(mm__, fc_),
+                                 act_fragment_errfc, (void *)ac);
     }
 }
 
@@ -609,8 +610,8 @@ void dnp3_p_init_app(void)
                                  h_sequence(rspac, rspfc, iin, NULL),
                                  h_sequence(anyrspac, erspfc, iin, NULL), NULL));
 
-    H_RULE (request,    h_bind(req_header, f_fragment, NULL));
-    H_RULE (response,   h_bind(rsp_header, f_fragment, NULL));
+    H_RULE (request,    h_bind(req_header, k_fragment, NULL));
+    H_RULE (response,   h_bind(rsp_header, k_fragment, NULL));
 
     dnp3_p_app_request  = little_endian(request);
     dnp3_p_app_response = little_endian(response);

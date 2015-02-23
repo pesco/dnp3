@@ -171,15 +171,15 @@ static HParser *prefixed_index(HParser *idx, HParser *p)
     return h_action(h_length_value(range_count, obj), act, NULL);
 }
 
-static HParser *f_bindvf(const HParsedToken *n, void *user)
+static HParser *k_bindvf(HAllocator *mm__, const HParsedToken *n, void *user)
 {
-    HParser *(*q)(size_t) = user;
+    HParser *(*q)(HAllocator *, size_t) = user;
 
-    return q(H_CAST_UINT(n));
+    return q(mm__, H_CAST_UINT(n));
 }
-static HParser *prefixed_size(HParser *vfcnt, HParser *p, HParser *(*q)(size_t))
+static HParser *prefixed_size(HParser *vfcnt, HParser *p, HParser *(*q)(HAllocator *, size_t))
 {
-    return h_action(h_length_value(vfcnt, h_bind(p, f_bindvf, q)),
+    return h_action(h_length_value(vfcnt, h_bind(p, k_bindvf, q)),
                     act_objects_only, NULL);
 }
 
@@ -216,7 +216,7 @@ static HParser *oblock_index_(HParser *p)
                     withpc(3, prefixed_index(h_uint32(), p)), NULL);
 }
 
-static HParser *oblock_vf_(HParser *cnt, HParser *(*p)(size_t))
+static HParser *oblock_vf_(HParser *cnt, HParser *(*p)(HAllocator *mm__, size_t))
 {
     return h_choice(withpc(4, prefixed_size(cnt, h_uint8(), p)), 
                     withpc(5, prefixed_size(cnt, h_uint16(), p)),
@@ -329,7 +329,7 @@ static HParser *block(HParser *grp, HParser *var, HParser *block_)
     // we want a parse failure in group and variation to lead to failure and
     // one in the rest to yield PARAM_ERROR.
     H_RULE (rest,   h_sequence(block_, dnp3_p_pad, get_rsc, get_base, NULL));
-    H_RULE (e_rest, h_choice(rest, h_error(ERR_PARAM_ERROR), NULL));
+    H_RULE (e_rest, h_choice(rest, dnp3_p_err_param_error, NULL));
     H_ARULE(block,  h_sequence(grp, var, e_rest, NULL));
 
     return block;
@@ -387,7 +387,7 @@ HParser *dnp3_p_single_rblock(DNP3_Group g, DNP3_Variation v)
     return block(group(g), variation(v), ohdr_count1);
 }
 
-HParser *dnp3_p_single_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t))
+HParser *dnp3_p_single_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(HAllocator *mm__, size_t))
 {
     return block(group(g), variation(v), oblock_vf_(range_vfcount1, obj));
 }
@@ -405,7 +405,7 @@ HParser *dnp3_p_oblock_packed(DNP3_Group g, DNP3_Variation v, HParser *obj)
     return block(group(g), variation(v), oblock_packed_(obj));
 }
 
-HParser *dnp3_p_oblock_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t))
+HParser *dnp3_p_oblock_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(HAllocator *mm__, size_t))
 {
     H_RULE(oblock_, oblock_vf_(range_vfcount, obj));
 

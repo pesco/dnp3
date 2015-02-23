@@ -6,9 +6,9 @@
 HParser *dnp3_p_g120v3_auth_aggr_block;
 HParser *dnp3_p_g120v9_auth_mac_block;
 
-static HParser *auth_mac(size_t n)  // n = size in object prefix
+static HParser *auth_mac(HAllocator *mm__, size_t n)  // n = size in object prefix
 {
-    return h_repeat_n(h_uint8(), n);
+    return h_repeat_n__m(mm__, h_uint8__m(mm__), n);
 }
 
 void dnp3_p_init_g120_auth(void)

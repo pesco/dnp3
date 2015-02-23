@@ -3,6 +3,7 @@
 
 // parser that always succeeds with the given result token.
 HParser *h_unit(const HParsedToken *tok);
+HParser *h_unit__m(HAllocator *mm__, const HParsedToken *tok);
 
 // parser that always "succeeds" with the given error code (token type).
 HParser *h_error(int code);     // TT_ERR <= code < TT_USER

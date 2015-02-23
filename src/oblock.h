@@ -36,7 +36,7 @@ HParser *dnp3_p_single(DNP3_Group g, DNP3_Variation v, HParser *obj);
 HParser *dnp3_p_single_rblock(DNP3_Group g, DNP3_Variation v);
 
 // parse an "oblock" of a single variable-format object of the given type.
-HParser *dnp3_p_single_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t));
+HParser *dnp3_p_single_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(HAllocator *mm__, size_t));
 
 // parse an "oblock" of objects of the given type.
 HParser *dnp3_p_oblock(DNP3_Group g, DNP3_Variation v, HParser *obj);
@@ -46,7 +46,7 @@ HParser *dnp3_p_oblock(DNP3_Group g, DNP3_Variation v, HParser *obj);
 HParser *dnp3_p_oblock_packed(DNP3_Group g, DNP3_Variation v, HParser *obj);
 
 // parse an "oblock" of variable-format objects of the given type.
-HParser *dnp3_p_oblock_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(size_t));
+HParser *dnp3_p_oblock_vf(DNP3_Group g, DNP3_Variation v, HParser *(*obj)(HAllocator *mm__, size_t));
 
 
 #endif // DNP3_OBLOCK_H_SEEN

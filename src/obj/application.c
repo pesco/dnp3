@@ -24,9 +24,10 @@ static HParsedToken *act_bytes(const HParseResult *p, void *user)
     return H_MAKE(DNP3_Object, o);
 }
 
-static HParser *bytes(size_t n)
+static HParser *bytes(HAllocator *mm__, size_t n)
 {
-    return h_action(h_repeat_n(h_uint8(), n), act_bytes, NULL);
+    return h_action__m(mm__, h_repeat_n__m(mm__, h_uint8__m(mm__), n),
+                             act_bytes, NULL);
 }
 
 void dnp3_p_init_application(void)

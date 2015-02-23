@@ -29,7 +29,7 @@ HParser *dnp3_p_objchoice(HParser *p, ...)
     // XXX don't generate these anew each call!
     H_RULE(octet,       h_uint8());
     H_RULE(ohdr_,       h_repeat_n(octet, 3));  // (grp,var,qc)
-    H_RULE(unk,         h_right(ohdr_, h_error(ERR_OBJ_UNKNOWN)));
+    H_RULE(unk,         h_right(ohdr_, dnp3_p_err_obj_unknown));
 
     H_RULE(ps,          h_choice__v(p, ap));
     H_RULE(ochoice,     h_choice(ps, unk, NULL));
@@ -70,7 +70,7 @@ HParser *dnp3_p_seq(HParser *p, HParser *q)
     H_RULE(q_ok,    h_attr_bool(q, not_err, NULL));
     H_RULE(pq_ok,   h_sequence(p_ok, q_ok, NULL));
 
-    H_RULE(err,     h_error(ERR_PARAM_ERROR));
+    H_RULE(err,     dnp3_p_err_param_error);
     H_RULE(p_err,   h_right(p_ok, h_choice(q, err, NULL)));
 
     return h_choice(pq_ok, p_err, p, NULL);
@@ -101,6 +101,9 @@ HParser *dnp3_p_packet(HParser *p)
 HParser *dnp3_p_pad;
 HParser *dnp3_p_dnp3time;
 HParser *dnp3_p_reltime;
+HParser *dnp3_p_err_param_error;
+HParser *dnp3_p_err_func_not_supp;
+HParser *dnp3_p_err_obj_unknown;
 
 void dnp3_p_init_util(void)
 {
@@ -113,4 +116,8 @@ void dnp3_p_init_util(void)
 
     dnp3_p_dnp3time = h_bits(48, false);
     dnp3_p_reltime  = h_bits(16, false);
+
+    dnp3_p_err_param_error = h_error(ERR_PARAM_ERROR);
+    dnp3_p_err_obj_unknown = h_error(ERR_OBJ_UNKNOWN);
+    dnp3_p_err_func_not_supp = h_error(ERR_FUNC_NOT_SUPP);
 }

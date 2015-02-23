@@ -7,9 +7,13 @@ static HParsedToken *act_unit(const HParseResult *p, void *tok_)
 {
     return (const HParsedToken *)tok_;  // XXX casting away the const?
 }
-HParser *h_unit(const HParsedToken *p)
+HParser *h_unit(const HParsedToken *tok)
 {
-    return h_action(h_epsilon_p(), act_unit, (void *)p);
+    return h_action(h_epsilon_p(), act_unit, (void *)tok);
+}
+HParser *h_unit__m(HAllocator *mm__, const HParsedToken *tok)
+{
+    return h_action__m(mm__, h_epsilon_p__m(mm__), act_unit, (void *)tok);
 }
 
 static HParsedToken *act_error(const HParseResult *p, void *user)

@@ -9,6 +9,10 @@ extern HParser *dnp3_p_pad;
 extern HParser *dnp3_p_dnp3time;    // 48-bit [ms since 1970-01-01]
 extern HParser *dnp3_p_reltime;     // 16-bit [ms since CTO]
 
+extern HParser *dnp3_p_err_param_error;
+extern HParser *dnp3_p_err_func_not_supp;
+extern HParser *dnp3_p_err_obj_unknown;
+
 // parse n reserved bits; must be zero, ignored in sequences
 HParser *dnp3_p_reserved(size_t n);
 

@@ -6,6 +6,53 @@
 
 /// TYPES ///
 
+// data link layer...
+
+typedef enum {
+    // used in primary frames:
+    DNP3_RESET_LINK_STATES = 0,
+    // 1 obsolete
+    DNP3_TEST_LINK_STATES = 2,
+    DNP3_CONFIRMED_USER_DATA = 3,
+    DNP3_UNCONFIRMED_USER_DATA = 4,
+    DNP3_REQUEST_LINK_STATUS = 9,
+
+    // used in secondary frames:
+    DNP3_ACK = 0,
+    DNP3_NACK = 1,
+    DNP3_LINK_STATUS = 11,
+    DNP3_NOT_SUPPORTED = 15
+} DNP3_LinkLayerFunctionCode;
+
+typedef struct {
+    uint8_t dir:1;      // direction: 1 = master to outstation
+    uint8_t prm:1;      // primary message bit (initiating a transaction?)
+    uint8_t fcb:1;      // frame count bit
+    union {
+        uint8_t fcv:1;  // primary frames: frame count valid?
+        uint8_t dfc:1;  // secondary frames: data flow control: 1 = busy
+    };
+    uint8_t fc:4;       // link layer function code
+    uint16_t source;
+    uint16_t destination;
+
+    uint8_t len;        // no. of bytes in payload (NOT eq. to the header field)
+    uint8_t *payload;
+} DNP3_Frame;
+
+// transport function...
+
+typedef struct {
+    uint8_t fir:1;  // first segment in series?
+    uint8_t fin:1;  // final segment in series?
+    uint8_t seq:6;  // 0-63
+
+    size_t len;     // no. of bytes in payload
+    uint8_t *payload;
+} DNP3_Segment;
+
+// application layer...
+
 typedef struct {
     uint8_t fir:1;  // note: ignore on unsolicited responses (treat as 1)!
     uint8_t fin:1;  // note: ignore on unsolicited responses (treat as 1)!
@@ -475,12 +522,19 @@ enum DNP3_TokenType {
     TT_DNP3_IntIndications,
     TT_DNP3_ObjectBlock,
     TT_DNP3_AuthData,
-    TT_DNP3_Object
-    // XXX ...
+    TT_DNP3_Object,
+
+    TT_DNP3_Segment,
+
+    TT_DNP3_Frame
 };
 
 extern HParser *dnp3_p_app_request;
 extern HParser *dnp3_p_app_response;
+
+extern HParser *dnp3_p_transport_segment;
+
+extern HParser *dnp3_p_link_frame;
 
 void dnp3_p_init(void);
 
@@ -490,7 +544,9 @@ void dnp3_p_init(void);
 // caller must free result on all of the following!
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o);
 char *dnp3_format_oblock(const DNP3_ObjectBlock *ob);
-char *dnp3_format_fragment(const DNP3_Fragment *req);
+char *dnp3_format_fragment(const DNP3_Fragment *frag);
+char *dnp3_format_segment(const DNP3_Segment *seg);
+char *dnp3_format_frame(const DNP3_Frame *frame);
 
 
 #endif // DNP3_H_SEEN

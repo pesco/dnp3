@@ -17,6 +17,7 @@ static char *format(const HParsedToken *p)
 
     switch(p->token_type) {
     case TT_DNP3_Fragment:  return dnp3_format_fragment(p->user);
+    case TT_DNP3_Frame:     return dnp3_format_frame(p->user);
     }
 
     if(H_ISERR(p->token_type)) {
@@ -917,6 +918,23 @@ static void test_obj_iin(void)
                                      "[0] RESPONSE {g80v1 qc=00 #0..2: 0 1 1}");
 }
 
+static void test_link(void)
+{
+    check_parse(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
+                                   "primary frame from master 65519 to 1: TEST_LINK_STATES");
+    check_parse_fail(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB4",10); // crc error
+    check_parse(dnp3_p_link_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
+                                   "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: 01 02 03 04");
+    check_parse(dnp3_p_link_frame, "\x05\x64\x26\xF3\x01\x00\xEF\xFF\x6B\xF4"
+                                   "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\xEC\x10"
+                                   "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x27\x03"
+                                   "\x20\x50\xD6",49,
+                                   "primary frame from master 65519 to 1: CONFIRMED_USER_DATA:"
+                                   " 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F"
+                                   " 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F"
+                                   " 20");
+}
+
 
 
 /// ...
@@ -978,6 +996,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/delay", test_obj_delay);
     g_test_add_func("/app/obj/class", test_obj_class);
     g_test_add_func("/app/obj/iin", test_obj_iin);
+    g_test_add_func("/link", test_link);
 
     g_test_run();
 }

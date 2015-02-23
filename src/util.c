@@ -89,11 +89,11 @@ static bool is_err(HParseResult *p, void *user)
     return H_ISERR(p->ast->token_type);
 }
 
-HParser *dnp3_p_packet(HParser *p)
+HParser *dnp3_p_packet__m(HAllocator *mm__, HParser *p)
 {
-    H_RULE(err, h_attr_bool(p, is_err, NULL));
-    H_RULE(ok,  h_left(p, h_end_p()));
-    H_RULE(pkt, h_choice(err, ok, NULL));
+    H_RULE(err, h_attr_bool__m(mm__, p, is_err, NULL));
+    H_RULE(ok,  h_left__m(mm__, p, h_end_p__m(mm__)));
+    H_RULE(pkt, h_choice__m(mm__, err, ok, NULL));
 
     return pkt;
 }

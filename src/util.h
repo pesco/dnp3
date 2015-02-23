@@ -35,7 +35,7 @@ HParser *dnp3_p_seq(HParser *p, HParser *q);
 HParsedToken *dnp3_p_act_flatten(const HParseResult *p, void* user);
 
 // like h_left(p, h_end_p()) but propagates TT_ERR and friends
-HParser *dnp3_p_packet(HParser *p);
+HParser *dnp3_p_packet__m(HAllocator *mm__, HParser *p);
 
 #define little_endian(p)  h_with_endianness(BIT_LITTLE_ENDIAN|BYTE_LITTLE_ENDIAN, p)
 #define bit_big_endian(p) h_with_endianness(BIT_BIG_ENDIAN|BYTE_LITTLE_ENDIAN, p)

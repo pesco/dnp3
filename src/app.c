@@ -485,7 +485,7 @@ static HParser *k_fragment(HAllocator *mm__, const HParsedToken *hdr, void *env)
         goto err;
 
     // odata must always parse the entire rest of the fragment
-    p = dnp3_p_packet(p);
+    p = dnp3_p_packet__m(mm__, p);
 
     // any unspecific parse failure on odata should yield PARAM_ERROR
     p = h_choice__m(mm__, p, dnp3_p_err_param_error, NULL);

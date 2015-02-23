@@ -32,7 +32,7 @@ typedef struct {
         uint8_t fcv:1;  // primary frames: frame count valid?
         uint8_t dfc:1;  // secondary frames: data flow control: 1 = busy
     };
-    uint8_t fc:4;       // link layer function code
+    uint8_t func:4;     // link layer function code
     uint16_t source;
     uint16_t destination;
 

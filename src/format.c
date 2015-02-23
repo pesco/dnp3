@@ -546,6 +546,45 @@ err:
     return NULL;
 }
 
+int append_payload(char **res, size_t *size, uint8_t *bytes, size_t len)
+{
+    char *s = malloc(len * 3 + 1);
+    if(!s) return -1;
+
+    char *p = s;
+    *p = '\0';
+    for(size_t i=0; i<len; i++)
+        p += sprintf(p, " %.2X", bytes[i]);
+
+    int x = appendf(res, size, ":%s", s);
+    free(s);
+    return x;
+}
+
+char *dnp3_format_segment(const DNP3_Segment *seg)
+{
+    char *res = NULL;
+    size_t size;
+    int x;
+
+    const char *flags = "";
+    if(seg->fir && seg->fin) flags = "(fir,fin) ";
+    else if(seg->fir)        flags = "(fir) ";
+    else if(seg->fin)        flags = "(fin) ";
+
+    x = appendf(&res, &size, "%ssegment %"PRIu8, flags, seg->seq);
+    if(x<0) goto err;
+
+    x = append_payload(&res, &size, seg->payload, seg->len);
+    if(x<0) goto err;
+
+    return res;
+
+err:
+    if(res) free(res);
+    return NULL;
+}
+
 char *dnp3_format_frame(const DNP3_Frame *frame)
 {
     char *res = NULL;
@@ -575,23 +614,16 @@ char *dnp3_format_frame(const DNP3_Frame *frame)
         names[14] = "function 14 (obsolete)";
         names[15] = "NOT_SUPPORTED";
     }
-    const char *name = names[frame->fc];
+    const char *name = names[frame->func];
     if(name)
         x = appendf(&res, &size, "%s", name);
     else
-        x = appendf(&res, &size, "function %d (reserved)", (int)frame->fc);
+        x = appendf(&res, &size, "function %d (reserved)", (int)frame->func);
     if(x<0) goto err;
 
     // user data
     if(frame->len > 0) {
-        char *s = malloc(frame->len * 3 + 1);
-        if(!s) goto err;
-
-        char *p = s;
-        for(size_t i=0; i<frame->len; i++)
-            p += sprintf(p, " %.2X", frame->payload[i]);
-
-        x = appendf(&res, &size, ":%s", s);
+        x = append_payload(&res, &size, frame->payload, frame->len);
         if(x<0) goto err;
     }
 

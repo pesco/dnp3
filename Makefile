@@ -9,6 +9,8 @@ OBJS = src/app.o \
        src/obj/iin.o \
        src/obj/application.o \
        src/g120_auth.o \
+       src/transport.o \
+       src/link.o \
        src/hammer.o \
        src/util.o \
        src/format.o \

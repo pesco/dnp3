@@ -17,6 +17,7 @@ static char *format(const HParsedToken *p)
 
     switch(p->token_type) {
     case TT_DNP3_Fragment:  return dnp3_format_fragment(p->user);
+    case TT_DNP3_Segment:   return dnp3_format_segment(p->user);
     case TT_DNP3_Frame:     return dnp3_format_frame(p->user);
     }
 
@@ -935,6 +936,14 @@ static void test_link(void)
                                    " 20");
 }
 
+static void test_transport(void)
+{
+    check_parse(dnp3_p_transport_segment, "\x4A\x01\x02\x03\x04\x05\x06",7,
+                                          "(fir) segment 10: 01 02 03 04 05 06");
+    check_parse(dnp3_p_transport_segment, "\x9A",1, "(fin) segment 26:");
+    check_parse_fail(dnp3_p_transport_segment, "",0);
+}
+
 
 
 /// ...
@@ -996,6 +1005,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/delay", test_obj_delay);
     g_test_add_func("/app/obj/class", test_obj_class);
     g_test_add_func("/app/obj/iin", test_obj_iin);
+    g_test_add_func("/transport", test_transport);
     g_test_add_func("/link", test_link);
 
     g_test_run();

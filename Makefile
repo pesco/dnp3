@@ -20,7 +20,7 @@ INCLUDES = include/dnp3.h
 
 CFLAGS += -O0 -ggdb  # XXX debuging
 CFLAGS += -Iinclude -std=c99 `pkg-config --cflags glib-2.0`
-LDFLAGS += -lhammer `pkg-config --libs glib-2.0`
+LDLIBS += -lhammer `pkg-config --libs glib-2.0`
 
 
 test : $(OBJS) test.o

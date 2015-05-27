@@ -924,6 +924,8 @@ static void test_link(void)
     check_parse(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
                                    "primary frame from master 65519 to 1: TEST_LINK_STATES");
     check_parse_fail(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB4",10); // crc error
+    check_parse(dnp3_p_link_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x05\xB4\x67\x58",17,
+                                   "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: <corrupt>");
     check_parse(dnp3_p_link_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
                                    "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: 01 02 03 04");
     check_parse(dnp3_p_link_frame, "\x05\x64\x26\xF3\x01\x00\xEF\xFF\x6B\xF4"

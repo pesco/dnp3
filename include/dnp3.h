@@ -37,7 +37,20 @@ typedef struct {
     uint16_t destination;
 
     uint8_t len;        // no. of bytes in payload (NOT eq. to the header field)
-    uint8_t *payload;
+    uint8_t *payload;   // NULL if corrupt (CRC validation failed) or len=0
+        // rationale for returning frames with corrupted payload at all:
+        //   when the frame header is intact and thus the frame length is
+        //   known, the entire frame should be skipped. this way that behaviour
+        //   is easy to implement in higher-level processing/parsing. also, an
+        //   implementation may be able to do something useful with the header
+        //   information.
+        // (hypothetical alternative:
+        //   bake skipping frames with corrupt payload into the parser. it
+        //   seems counter-intuitive that the parser for a frame would in fact
+        //   potentially consume an arbitrary number of (corrupted) frames.
+        //   also, should not then the logic for skipping bytes until a valid
+        //   start marker is found (resynchronization) also be included in the
+        //   parser?)
 } DNP3_Frame;
 
 // transport function...

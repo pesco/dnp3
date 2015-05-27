@@ -25,6 +25,7 @@ design/protocol questions:
   Common Time-of-Occurance (CTO, group 50) object in the same message?
 - is qc=17 (index prefixes) valid for bit-packed variations? which encoding is correct?
 - is it valid to include multiple time (g50v1/3/4) blocks in a WRITE request?
+- is it a good idea to return corrupted link-layer frames with payload=NULL?
 
 missing features:
 - device attributes

@@ -548,17 +548,22 @@ err:
 
 int append_payload(char **res, size_t *size, uint8_t *bytes, size_t len)
 {
-    char *s = malloc(len * 3 + 1);
-    if(!s) return -1;
+    if(bytes) {
+        char *s = malloc(len * 3 + 1);
+        if(!s) return -1;
 
-    char *p = s;
-    *p = '\0';
-    for(size_t i=0; i<len; i++)
-        p += sprintf(p, " %.2X", bytes[i]);
+        char *p = s;
+        *p = '\0';
+        for(size_t i=0; i<len; i++)
+            p += sprintf(p, " %.2X", bytes[i]);
 
-    int x = appendf(res, size, ":%s", s);
-    free(s);
-    return x;
+        int x = appendf(res, size, ":%s", s);
+        free(s);
+        return x;
+    } else {
+        int x = appendf(res, size, ": (null)");
+        return x;
+    }
 }
 
 char *dnp3_format_segment(const DNP3_Segment *seg)
@@ -623,7 +628,10 @@ char *dnp3_format_frame(const DNP3_Frame *frame)
 
     // user data
     if(frame->len > 0) {
-        x = append_payload(&res, &size, frame->payload, frame->len);
+        if(frame->payload)
+            x = append_payload(&res, &size, frame->payload, frame->len);
+        else
+            x = appendf(&res, &size, ": <corrupt>");
         if(x<0) goto err;
     }
 

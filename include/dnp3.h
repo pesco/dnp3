@@ -549,11 +549,14 @@ extern HParser *dnp3_p_transport_segment;
 
 extern HParser *dnp3_p_link_frame;
 
+
+/// EXPORTED FUNCTIONS ///
+
 void dnp3_p_init(void);
 
+uint16_t dnp3_crc(uint8_t *bytes, size_t len);
 
-/// FORMATTING FOR HUMAN-READABLE OUTPUT ///
-
+// formatting for human-readable output
 // caller must free result on all of the following!
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o);
 char *dnp3_format_oblock(const DNP3_ObjectBlock *ob);

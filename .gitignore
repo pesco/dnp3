@@ -3,3 +3,4 @@
 .syntastic_*
 Session.vim
 /test
+/crc

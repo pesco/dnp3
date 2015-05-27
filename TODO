@@ -36,6 +36,7 @@ missing features:
 - other object groups > 80
 
 implementation details:
+- the use of system_allocator for the result in k_nest is wrong. hammer probably needs h_nest.
 - revisit the ugly DNP3_Object structure
   - move the 'state' field out of the DNP3_Flags struct?
 - clean up header guards and includes
@@ -49,6 +50,7 @@ implementation details:
 - support output of arbitrary application identifier strings in format.c
 - ensure we call parser-allocating functions only once during init
 - move some static parser definitions out of dnp3_p_objchoice so they don't get created anew each call
+
 
 spec issues:
 - AN2013-004b tables

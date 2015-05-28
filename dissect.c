@@ -183,25 +183,33 @@ int main(int argc, char *argv[])
             }
         }
 
-        // try to reassemble a sequence of segments
-        r = h_parse(dnp3_p_assembled_payload, buf, n);
+        // try to reassemble sequences of segments
+        r = h_parse(h_many(dnp3_p_assembled_payload), buf, n);
         if(r) {
-            t=l=n=0;    // flush buffer
+            // flush consumed input
+            size_t consumed = r->bit_length/8;
+            n -= consumed;
+            memmove(buf, buf+consumed, n);
+            t=l=0;
+
             assert(r->ast);
-            HBytes bytes = H_CAST_BYTES(r->ast);
+            HCountedArray *seq = H_CAST_SEQ(r->ast);
+            for(size_t i=0; i<seq->used; i++) {
+                HBytes bytes = H_CAST_BYTES(seq->elements[i]);
 
-            printf("T> reassembled payload:");
-            for(size_t i=0; i<bytes.len; i++)
-                printf(" %.2X", (unsigned int)bytes.token[i]);
-            printf("\n");
+                printf("T> reassembled payload:");
+                for(size_t i=0; i<bytes.len; i++)
+                    printf(" %.2X", (unsigned int)bytes.token[i]);
+                printf("\n");
 
-            // try to parse a message
-            r = h_parse(dnp3_p_app_message, bytes.token, bytes.len); 
-            if(r) {
-                DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
-                printf("A> %s\n", dnp3_format_fragment(fragment));
-            } else {
-                printf("A> parse error\n");
+                // try to parse a message
+                r = h_parse(dnp3_p_app_message, bytes.token, bytes.len);
+                if(r) {
+                    DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
+                    printf("A> %s\n", dnp3_format_fragment(fragment));
+                } else {
+                    printf("A> parse error\n");
+                }
             }
         }
     }

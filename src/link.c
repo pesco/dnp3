@@ -69,7 +69,12 @@ static bool validate_bytes_crc(HParseResult *p, void *user)
         buf[i] = H_CAST_UINT(bytes->elements[i]);
     }
 
-    return (crc == dnp3_crc(buf, bytes->used));
+    uint16_t compcrc = dnp3_crc(buf, bytes->used);
+#ifdef PRINTCRC
+    if(crc != compcrc)
+        fprintf(stderr, "crc %.2X%.2X\n", compcrc%256, compcrc>>8);
+#endif
+    return (crc == compcrc);
 }
 
 #define act_bytes_crc h_act_first

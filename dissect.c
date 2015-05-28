@@ -53,12 +53,12 @@ static bool validate_equ(HParseResult *p, void *user)
 static bool validate_seq(HParseResult *p, void *user)
 {
     DNP3_Segment *a = H_FIELD(DNP3_Segment, 0);
-    DNP3_Segment *b = H_FIELD(DNP3_Segment, 1, 0);
+    DNP3_Segment *b = H_FIELD(DNP3_Segment, 1);
 
     return (b->seq == (a->seq + 1)%64);
 }
 
-static HParsedToken *act_series(const HParseResult *p, void *user)
+static HParsedToken *act_payload(const HParseResult *p, void *user)
 {
     HCountedArray *a = H_CAST_SEQ(p->ast);
     size_t len = 0;
@@ -110,36 +110,42 @@ void init(void)
 
     // hook in link layer parser
     // each transport segment arrives in a link-layer frame.
-    H_VRULE(dataframe,  sync);
-    H_RULE (segment,    h_bind(dataframe, k_frame, dnp3_p_transport_segment));
+    H_VRULE(dataframe, sync);
+    H_RULE (segment,   h_bind(sync,      k_frame, dnp3_p_transport_segment));
+    H_RULE (dataseg,   h_bind(dataframe, k_frame, dnp3_p_transport_segment));
 
     // we can state what makes a valid series of segments, how they assemble,
     // and when/what to discard as erroneous:
     // cf. IEEE 1815-2012 section 8.2
-    // XXX should it be "sequence of segments", not "series"?
 
-    H_VRULE(first,  segment);   // fir set
-    H_VRULE(final,  segment);   // fin set
+    H_VRULE(first,  dataseg);   // fir set
+    H_VRULE(final,  dataseg);   // fin set
 
-    HParser *ser = h_indirect();
+    // deduplication
+    H_VRULE(equ,    h_sequence(dataseg, dataseg, NULL));
+    H_RULE (dup,    h_left(h_and(equ), dataseg));
+    H_RULE (seg,    h_right(h_many(dup), dataseg));
 
-    #define act_ser_ h_act_flatten
-    H_VRULE(equ,    h_sequence(segment, segment, NULL));
-    H_RULE (dup,    h_right(h_and(equ), segment));
-    H_RULE (dedup,  h_ignore(h_many(dup)));
-    H_RULE (notfir, h_right(h_and(h_not(first)), segment));
-    H_VRULE(seq,    h_sequence(dedup, segment, h_and(notfir), ser, NULL));
-    H_ARULE(ser_,   h_choice(final, seq, NULL));
-    H_ARULE(series, h_right(h_and(first), ser));
+    H_RULE (notfir, h_right(h_not(first), seg));
+    H_RULE (notfin, h_right(h_not(final), seg));
 
-    h_bind_indirect(ser, ser_);
+    // "pre-sequence" = valid seq. numbers, dedup'ed, no spurious fir/fin flags
+    H_VRULE(seq,    h_sequence(notfin, notfir, NULL));
+    H_RULE (elt,    h_right(h_and(seq), seg));  // ...
+    H_RULE (pre_,   h_many(elt));               // last segment not consumed!
+    H_RULE (pre,    h_sequence(pre_, seg, NULL));
 
-    H_RULE(garbage, h_many(h_sequence(h_and(h_not(series)), segment, NULL)));
-    H_RULE(payload, h_right(garbage, series));
+    #define act_valid h_act_flatten
+    H_RULE (single,  h_right(h_and(first), final)); // no deduplication
+    H_RULE (multi,   h_sequence(h_and(first), pre_, final, NULL));
+    H_ARULE(valid,   h_choice(single, multi, NULL));
+    H_RULE (invalid, h_right(h_not(valid), pre));
+    H_RULE (garbage, h_many(invalid));
+    H_ARULE(payload, h_middle(garbage, valid, garbage));
 
     H_RULE(message, h_choice(dnp3_p_app_request, dnp3_p_app_response, NULL));
 
-    dnp3_p_framed_segment = h_bind(sync, k_frame, dnp3_p_transport_segment);
+    dnp3_p_framed_segment = segment;
     dnp3_p_assembled_payload = payload;
     dnp3_p_synced_frame = sync;
     dnp3_p_app_message = message;

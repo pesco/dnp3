@@ -46,7 +46,8 @@ static bool validate_equ(HParseResult *p, void *user)
             a->fin == b->fin &&
             a->seq == b->seq &&
             a->len == b->len &&
-            memcmp(a->payload, b->payload, a->len) == 0);
+            (a->payload == b->payload ||    // catches NULL case
+             memcmp(a->payload, b->payload, a->len) == 0));
 }
 
 static bool validate_seq(HParseResult *p, void *user)
@@ -85,7 +86,10 @@ static HParser *k_frame(HAllocator *mm__, const HParsedToken *p, void *user)
     HAllocator *mres = &system_allocator;
     const HParser *parser = user;
     DNP3_Frame *frame = H_CAST(DNP3_Frame, p);
-    HParseResult *res = h_parse__m(mres, parser, frame->payload, frame->len);
+    HParseResult *res = NULL;
+
+    if(frame->payload || frame->len==0)
+        res = h_parse__m(mres, parser, frame->payload, frame->len);
 
     if(!res)
         return NULL;

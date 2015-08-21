@@ -5,17 +5,29 @@ set(DNP3HAMMER_MINOR_VERSION 0)
 set(DNP3HAMMER_MICRO_VERSION 0)
 set(DNP3HAMMER_VERSION ${DNP3HAMMER_MAJOR_VERSION}.${DNP3HAMMER_MINOR_VERSION}.${DNP3HAMMER_MICRO_VERSION})
 
+FIND_PACKAGE(PkgConfig) # tell cmake to require pkg-config
 
-set(CMAKE_CC_FLAGS "${CMAKE_CC_FLAGS} -std=c99 `pkg-config --cflags glib-2.0`")
-set(CMAKE_REQUIRED_FLAGS ${CMAKE_CC_FLAGS})
+PKG_CHECK_MODULES(GLIB2 REQUIRED glib-2.0>=2.36.0)
+
+add_definitions("-std=c99")
 
 # include paths for all the local libraries
-
 include_directories(./include)
+include_directories(${GLIB2_INCLUDE_DIRS})
 
 # ---- library ----
 file(GLOB_RECURSE dnp3hammer_SRC ./src/*.c)
 add_library(dnp3hammer STATIC ${dnp3hammer_SRC})
+target_link_libraries(dnp3hammer hammer)
 
+# ---- test suite ----
+add_executable(testdnp3hammer test.c)
+target_link_libraries(testdnp3hammer dnp3hammer ${GLIB2_LIBRARIES})
 
+# ---- crc checker -----
+add_executable(crc crc.c)
+target_link_libraries(crc dnp3hammer)
 
+# ---- crc checker -----
+add_executable(dissect dissect.c)
+target_link_libraries(dissect dnp3hammer)

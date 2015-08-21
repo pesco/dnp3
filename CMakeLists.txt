@@ -11,7 +11,7 @@ PKG_CHECK_MODULES(GLIB2 REQUIRED glib-2.0>=2.36.0)
 
 add_definitions("-std=c99")
 
-# include paths for all the local libraries
+# include paths
 include_directories(./include)
 include_directories(${GLIB2_INCLUDE_DIRS})
 
@@ -28,6 +28,6 @@ target_link_libraries(testdnp3hammer dnp3hammer ${GLIB2_LIBRARIES})
 add_executable(crc crc.c)
 target_link_libraries(crc dnp3hammer)
 
-# ---- crc checker -----
+# ---- dissector -----
 add_executable(dissect dissect.c)
 target_link_libraries(dissect dnp3hammer)

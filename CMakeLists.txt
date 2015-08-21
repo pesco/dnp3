@@ -21,8 +21,8 @@ add_library(dnp3hammer STATIC ${dnp3hammer_SRC})
 target_link_libraries(dnp3hammer hammer)
 
 # ---- test suite ----
-add_executable(testdnp3hammer test.c)
-target_link_libraries(testdnp3hammer dnp3hammer ${GLIB2_LIBRARIES})
+add_executable(testsuite test.c)
+target_link_libraries(testsuite dnp3hammer ${GLIB2_LIBRARIES})
 
 # ---- crc checker -----
 add_executable(crc crc.c)

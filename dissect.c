@@ -67,17 +67,17 @@ static HParsedToken *act_payload(const HParseResult *p, void *user)
     for(size_t i=0; i<a->used; i++) {
         len += H_CAST(DNP3_Segment, a->elements[i])->len;
     }
-    HParsedToken *res = H_MAKE_BYTES(len);
 
     // assemble segments
-    uint8_t *s = (uint8_t *)res->bytes.token;   // it's not really const
+    uint8_t *t = h_arena_malloc(p->arena, len);
+    uint8_t *s = t;
     for(size_t i=0; i<a->used; i++) {
         DNP3_Segment *seg = H_CAST(DNP3_Segment, a->elements[i]);
         memcpy(s, seg->payload, seg->len);
         s += seg->len;
     }
 
-    return res;
+    return H_MAKE_BYTES(t, len);
 }
 
 extern HAllocator system_allocator; // XXX

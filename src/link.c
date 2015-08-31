@@ -203,7 +203,10 @@ void dnp3_p_init_link(void)
 
     H_RULE(start,   h_token("\x05\x64", 2));
     H_RULE(len,     h_int_range(h_uint8(), 5, 255));
+    // XXX len must be >5 for USER_DATA, =5 otherwise!
     H_RULE(func,    h_bits(4, false));
+    // XXX FCV is completely determined by function code!
+    // XXX only few function codes valid - depends on PRM!
                               /* --- fcv fcb prm dir --- */
                               /*     dfc                 */
     H_RULE(ctrl,    h_sequence(func, bit,bit,bit,bit, NULL));

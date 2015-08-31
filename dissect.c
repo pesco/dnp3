@@ -3,6 +3,7 @@
 #include <hammer/glue.h>
 #include "src/hammer.h"
 #include <string.h>
+#include <stdlib.h>
 
 #include <unistd.h>
 
@@ -153,11 +154,174 @@ void init(void)
 
 
 #define BUFLEN 4100 // enough for 2048B over 512 frames or 4096B over 1 frame
+#define CTXMAX 1024 // maximum number of connection contexts
+
+struct Context {
+    struct Context *next;
+
+    uint16_t src;
+    uint16_t dst;
+
+    uint8_t buf[BUFLEN];
+    size_t n;
+};
+
+struct Context *contexts = NULL;    // linked list
+
+// allocates up to CTXMAX contexts, or recycles the least recently used
+struct Context *lookup_context(uint16_t src, uint16_t dst)
+{
+    struct Context **pnext;
+    struct Context *ctx;
+    int n=0; // number of context entries
+
+    for(pnext=&contexts; (ctx = *pnext); pnext=&ctx->next) {
+        if(ctx->src == src && ctx->dst == dst) {
+            *pnext = ctx->next;     // unlink
+            ctx->next = contexts;   // move to front of list
+            contexts = ctx;
+
+            return ctx;
+        }
+
+        n++;
+        if(n >= CTXMAX) {
+            //fprintf(stderr, "debug: reuse context %d\n", n);
+            break;  // don't advance pnext or ctx
+        }
+    }
+    // ctx points to the last context in list, or NULL
+    // *pnext is the next pointer pointing to ctx
+
+    if(!ctx) {
+        // allocate a new context
+        //fprintf(stderr, "debug: alloc context %d\n", n+1);
+        ctx = calloc(1, sizeof(struct Context));
+    } else {
+        *pnext = ctx->next; // unlink
+    }
+
+    // fill context and place it in front of list
+    if(ctx) {
+        if(ctx->n > 0) {
+            fprintf(stderr,
+                    "L: overflow, %u to %u dropped with %zu bytes!\n",
+                    (unsigned)ctx->src, (unsigned)ctx->dst, ctx->n);
+        }
+
+        ctx->next = contexts;
+        ctx->src = src;
+        ctx->dst = dst;
+        contexts = ctx;
+    }
+
+    return ctx;
+}
+
+void free_contexts(void)
+{
+    struct Context *p = contexts;
+
+    while(p) {
+        struct Context *ctx = p;
+        p = p->next;
+        free(ctx);
+    }
+
+    contexts = NULL;
+}
+
+void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
+{
+    HParseResult *r;
+
+    printf("T> %s\n", dnp3_format_segment(segment));
+
+    // TODO chunked transport-layer protocol recognizer
+
+    // XXX temp: reassemble and process app layer
+    r = h_parse(dnp3_p_assembled_payload, ctx->buf, ctx->n);
+    if(r) {
+        // flush input
+        assert(r->bit_length == ctx->n * 8);
+        ctx->n = 0;
+
+        assert(r->ast);
+        HBytes bytes = H_CAST_BYTES(r->ast);
+        printf("T: reassembled payload:");
+        for(size_t i=0; i<bytes.len; i++)
+            printf(" %.2X", (unsigned int)bytes.token[i]);
+        printf("\n");
+
+        // try to parse a message
+        r = h_parse(dnp3_p_app_message, bytes.token, bytes.len);
+        if(r) {
+            DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
+            printf("A> %s\n", dnp3_format_fragment(fragment));
+        } else {
+            printf("A: no parse\n");
+        }
+    } else {
+        //fprintf(stderr, "debug: reassembly: no parse (%zu bytes)\n", ctx->n);
+    }
+}
+
+void process_link_frame(const DNP3_Frame *frame,
+                        uint8_t *buf, size_t len /*XXX temp*/)
+{
+    struct Context *ctx;
+    HParseResult *r;
+
+    // always print out the packet
+    printf("L> %s\n", dnp3_format_frame(frame));
+
+    // payload handling
+    switch(frame->func) {
+    case DNP3_UNCONFIRMED_USER_DATA:
+        if(!frame->payload) // CRC error
+            break;
+
+        // look up connection context by source-dest pair
+        ctx = lookup_context(frame->source, frame->destination);
+        if(!ctx) {
+            fprintf(stderr, "L: connection context failed to allocate\n");
+            break;
+        }
+
+        // parse and process payload as transport segment
+        r = h_parse(dnp3_p_transport_segment, frame->payload, frame->len);
+        if(!r) {
+            // NB: this should only happen when frame->len = 0, which is
+            //     not valid with USER_DATA as per AN2013-004b
+            fprintf(stderr, "T: no parse\n");
+            break;
+        }
+
+        // XXX temp: append the full frame to context buf
+        if(ctx->n + len <= BUFLEN) {
+            memcpy(ctx->buf + ctx->n, buf, len);
+            ctx->n += len;
+        } else {
+            fprintf(stderr, "T: overflow at %zu bytes,"
+                            " dropping %zu byte frame\n", ctx->n, len);
+        }
+
+        assert(r->ast);
+        process_transport_segment(ctx, H_CAST(DNP3_Segment, r->ast));
+        break;
+    case DNP3_CONFIRMED_USER_DATA:
+        if(!frame->payload) // CRC error
+            break;
+
+        fprintf(stderr, "L: confirmed user data not supported\n");  // XXX
+        break;
+    }
+}
 
 int main(int argc, char *argv[])
 {
     uint8_t buf[BUFLEN];
-    size_t n=0, m, l=0, t=0;
+    size_t n=0, m;
 
     init();
 
@@ -167,66 +331,34 @@ int main(int argc, char *argv[])
 
         n += m;
 
-        // parse and print lower layers
-        r = h_parse(h_many(dnp3_p_synced_frame), buf+l, n-l); 
-        if(r) {
-            l += r->bit_length/8;
-            assert(r->ast);
-            HCountedArray *seq = H_CAST_SEQ(r->ast);
-            for(size_t i=0; i<seq->used; i++) {
-                DNP3_Frame *frame = H_CAST(DNP3_Frame, seq->elements[i]);
-                printf("L> %s\n", dnp3_format_frame(frame));
-            }
-        }
-        r = h_parse(h_many(dnp3_p_framed_segment), buf+t, n-t); 
-        if(r) {
-            t += r->bit_length/8;
-            assert(r->ast);
-            HCountedArray *seq = H_CAST_SEQ(r->ast);
-            for(size_t i=0; i<seq->used; i++) {
-                DNP3_Segment *segment = H_CAST(DNP3_Segment, seq->elements[i]);
-                printf("T> %s\n", dnp3_format_segment(segment));
-            }
-        }
-
-        // try to reassemble sequences of segments
-        r = h_parse(h_many(dnp3_p_assembled_payload), buf, n);
-        if(r) {
-            // flush consumed input
+        // parse and process link layer frames
+        m=0;
+        while((r = h_parse(dnp3_p_synced_frame, buf+m, n-m))) {
             size_t consumed = r->bit_length/8;
-            n -= consumed;
-            memmove(buf, buf+consumed, n);
-            t=l=0;
-
+            assert(r->bit_length%8 == 0);
+            assert(consumed > 0);
             assert(r->ast);
-            HCountedArray *seq = H_CAST_SEQ(r->ast);
-            for(size_t i=0; i<seq->used; i++) {
-                HBytes bytes = H_CAST_BYTES(seq->elements[i]);
 
-                printf("T> reassembled payload:");
-                for(size_t i=0; i<bytes.len; i++)
-                    printf(" %.2X", (unsigned int)bytes.token[i]);
-                printf("\n");
+            process_link_frame(H_CAST(DNP3_Frame, r->ast),
+                               buf+m, consumed /*XXX temp*/);
 
-                // try to parse a message
-                r = h_parse(dnp3_p_app_message, bytes.token, bytes.len);
-                if(r) {
-                    DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
-                    printf("A> %s\n", dnp3_format_fragment(fragment));
-                } else {
-                    printf("A> parse error\n");
-                }
-            }
+            m += consumed;
         }
+
+        // flush consumed input
+        n -= m;
+        memmove(buf, buf+m, n);
     }
 
     if(n>0) {
         if(n>=BUFLEN)
             fprintf(stderr, "input buffer exhausted\n");
         else
-            fprintf(stderr, "no parse\n");
+            fprintf(stderr, "L: no parse (%zu bytes)\n", n);
         return 1;
     }
+
+    free_contexts();
 
     return 0;
 }

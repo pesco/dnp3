@@ -98,6 +98,13 @@ static HParser *k_frame(HAllocator *mm__, const HParsedToken *p, void *user)
         return h_unit__m(mm__, res->ast);
 }
 
+static bool not_err(HParseResult *p, void *user)
+{
+    return !H_ISERR(p->ast->token_type);
+}
+#define validate_request not_err
+#define validate_response not_err
+
 void init(void)
 {
     dnp3_p_init();
@@ -144,7 +151,9 @@ void init(void)
     H_RULE (garbage, h_many(invalid));
     H_ARULE(payload, h_middle(garbage, valid, garbage));
 
-    H_RULE(message, h_choice(dnp3_p_app_request, dnp3_p_app_response, NULL));
+    H_VRULE(request,  dnp3_p_app_request);
+    H_VRULE(response, dnp3_p_app_response);
+    H_RULE (message,  h_choice(request, response, NULL));
 
     dnp3_p_framed_segment = segment;
     dnp3_p_assembled_payload = payload;
@@ -231,6 +240,20 @@ void free_contexts(void)
     contexts = NULL;
 }
 
+const char *errorname(DNP3_ParseError e)
+{
+    static char s[] = "???";
+
+    switch(e) {
+    case ERR_FUNC_NOT_SUPP: return "FUNC_NOT_SUPP";
+    case ERR_OBJ_UNKNOWN:   return "OBJ_UNKNOWN";
+    case ERR_PARAM_ERROR:   return "PARAM_ERROR";
+    default:
+        snprintf(s, sizeof(s), "%d", (int)e);
+        return s;
+    }
+}
+
 void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
 {
     HParseResult *r;
@@ -256,8 +279,13 @@ void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
         // try to parse a message
         r = h_parse(dnp3_p_app_message, bytes.token, bytes.len);
         if(r) {
-            DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
-            printf("A> %s\n", dnp3_format_fragment(fragment));
+            assert(r->ast != NULL);
+            if(H_ISERR(r->ast->token_type)) {
+                printf("A: error %s\n", errorname(r->ast->token_type));
+            } else {
+                DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
+                printf("A> %s\n", dnp3_format_fragment(fragment));
+            }
         } else {
             printf("A: no parse\n");
         }

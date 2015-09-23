@@ -8,40 +8,13 @@
 #include <unistd.h>
 
 
-HParser *dnp3_p_framed_segment;     // a transport segment in a user data frame
 HParser *dnp3_p_synced_frame;       // skips bytes until valid frame header
-HParser *dnp3_p_assembled_payload;  // discards leading unexpected segments
+HParser *dnp3_p_transport_function; // the transport-layer state machine
 HParser *dnp3_p_app_message;        // application request or response
 
 
-static bool validate_dataframe(HParseResult *p, void *user)
+static bool segment_equal(const DNP3_Segment *a, const DNP3_Segment *b)
 {
-    DNP3_Frame *frame = H_CAST(DNP3_Frame, p->ast);
-    assert(frame);
-
-    // ignore frames with corrupted payloads
-    if(frame->len > 0 && !frame->payload)
-        return false;
-
-    return (frame->func == DNP3_CONFIRMED_USER_DATA
-            || frame->func == DNP3_UNCONFIRMED_USER_DATA);
-}
-
-static bool validate_first(HParseResult *p, void *user)
-{
-    return H_CAST(DNP3_Segment, p->ast)->fir;
-}
-
-static bool validate_final(HParseResult *p, void *user)
-{
-    return H_CAST(DNP3_Segment, p->ast)->fin;
-}
-
-static bool validate_equ(HParseResult *p, void *user)
-{
-    DNP3_Segment *a = H_FIELD(DNP3_Segment, 0);
-    DNP3_Segment *b = H_FIELD(DNP3_Segment, 1);
-
     // a and b must be byte-by-byte identical
     return (a->fir == b->fir &&
             a->fin == b->fin &&
@@ -51,51 +24,143 @@ static bool validate_equ(HParseResult *p, void *user)
              memcmp(a->payload, b->payload, a->len) == 0));
 }
 
-static bool validate_seq(HParseResult *p, void *user)
-{
-    DNP3_Segment *a = H_FIELD(DNP3_Segment, 0);
-    DNP3_Segment *b = H_FIELD(DNP3_Segment, 1);
+// Define an alphabet of input events related to the transport function:
+//
+//  A   a segment arrived with the FIR bit set
+//  =   a segment arrived with FIR unset and is bit-identical to the last
+//  +   a segment arrived with FIR unset and seq == (lastseq+1)%64
+//  !   a segment arrived with FIR unset and seq != (lastseq+1)%64
+//  _   a segment arrived with FIR unset and there was no previous segment
+//  Z   the last segment had the FIN bit set
+//
+// The transport function state machine is described by the regular expression
+//
+//      (A[+=]*Z|.)*
+//
+// with greedy matching.
+//
+// NB: Convert to a finite state machine and compare with IEEE 1815-2012
+//     Figure 8-4 "Reception state diagram" (page 273)!
+//
+// We will use an unambiguous variant:
+//
+//      (A+[+=]*(Z|[^AZ+=])|[^A])*
+//
 
-    return (b->seq == (a->seq + 1)%64);
+// convert an incoming transport segment into appropriate input tokens
+// precondition: p points to a buffer of size >=2
+// returns: number of tokens generated
+static size_t transport_tokens(const DNP3_Segment *seg, const DNP3_Segment *last,
+                               uint8_t *p)
+{
+    size_t n = 0;
+
+    if(seg->fir) {
+        p[n] = 'A';
+    } else if(last) {
+        if(segment_equal(seg, last))
+            p[n] = '=';
+        else if(seg->seq == (last->seq + 1)%64)
+            p[n] = '+';
+        else
+            p[n] = '!';
+    } else {
+        p[n] = '_';
+    }
+    n++;
+
+    if(seg->fin)
+        p[n++] = 'Z';
+
+    return n;
 }
 
-static HParsedToken *act_payload(const HParseResult *p, void *user)
-{
-    HCountedArray *a = H_CAST_SEQ(p->ast);
-    size_t len = 0;
 
-    // allocate result
-    for(size_t i=0; i<a->used; i++) {
-        len += H_CAST(DNP3_Segment, a->elements[i])->len;
+static const DNP3_Segment *ttok_values[800];  // XXX
+static size_t ttok_pos = 0;
+static HParsedToken *act_ttok(const HParseResult *p, void *user)
+{
+    DNP3_Segment **values = user;
+
+    if(!p->ast)
+        return NULL;
+
+    printf("debug: ttok index %zu, ttok_pos=%zu\n", p->ast->index, ttok_pos);
+    assert(p->ast->index >= ttok_pos);
+    return H_MAKE(DNP3_Segment, values[p->ast->index - ttok_pos]);
+}
+static HParser *ttok(const HParser *p)
+{
+    return h_action(p, act_ttok, ttok_values);
+}
+
+// XXX move back down
+const char *errorname(DNP3_ParseError e)
+{
+    static char s[] = "???";
+
+    switch(e) {
+    case ERR_FUNC_NOT_SUPP: return "FUNC_NOT_SUPP";
+    case ERR_OBJ_UNKNOWN:   return "OBJ_UNKNOWN";
+    case ERR_PARAM_ERROR:   return "PARAM_ERROR";
+    default:
+        snprintf(s, sizeof(s), "%d", (int)e);
+        return s;
+    }
+}
+
+// re-assemble a transport-layer segment series
+static HParsedToken *act_series(const HParseResult *p, void *user)
+{
+    // p = (segment, segment*, NULL)    <- valid series
+    //   | (segment, segment*)          <- invalid
+    //        A        [+]*     Z?
+
+    DNP3_Segment  *x  = H_FIELD(DNP3_Segment, 0);
+    HCountedArray *xs = H_FIELD_SEQ(1);
+
+    // if last element not present, this was not a valid series -> discard!
+    if(p->ast->seq->used < 3)
+        return NULL;
+
+    // calculate payload length
+    size_t len = x->len;
+    for(size_t i=0; i<xs->used; i++) {
+        len += H_CAST(DNP3_Segment, xs->elements[i])->len;
     }
 
     // assemble segments
     uint8_t *t = h_arena_malloc(p->arena, len);
     uint8_t *s = t;
-    for(size_t i=0; i<a->used; i++) {
-        DNP3_Segment *seg = H_CAST(DNP3_Segment, a->elements[i]);
-        memcpy(s, seg->payload, seg->len);
-        s += seg->len;
+    memcpy(s, x->payload, x->len);
+    s += x->len;
+    for(size_t i=0; i<xs->used; i++) {
+        x = H_CAST(DNP3_Segment, xs->elements[i]);
+        memcpy(s, x->payload, x->len);
+        s += x->len;
+    }
+
+    // XXX move this out as well?
+    printf("T: reassembled payload:");
+    for(size_t i=0; i<len; i++)
+        printf(" %.2X", (unsigned int)t[i]);
+    printf("\n");
+
+    // try to parse a message  XXX move out of here
+    HParseResult *r = h_parse(dnp3_p_app_message, t, len);
+    if(r) {
+        assert(r->ast != NULL);
+        if(H_ISERR(r->ast->token_type)) {
+            printf("A: error %s\n", errorname(r->ast->token_type));
+        } else {
+            DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
+            printf("A> %s\n", dnp3_format_fragment(fragment));
+        }
+    } else {
+        printf("A: no parse\n");
     }
 
     return H_MAKE_BYTES(t, len);
-}
-
-extern HAllocator system_allocator; // XXX
-static HParser *k_frame(HAllocator *mm__, const HParsedToken *p, void *user)
-{
-    HAllocator *mres = &system_allocator;
-    const HParser *parser = user;
-    DNP3_Frame *frame = H_CAST(DNP3_Frame, p);
-    HParseResult *res = NULL;
-
-    if(frame->payload || frame->len==0)
-        res = h_parse__m(mres, parser, frame->payload, frame->len);
-
-    if(!res)
-        return NULL;
-    else
-        return h_unit__m(mm__, res->ast);
 }
 
 static bool not_err(HParseResult *p, void *user)
@@ -109,61 +174,45 @@ void init(void)
 {
     dnp3_p_init();
 
-    // XXX should filter/split link layer by address and type
-
     HParser *sync = h_indirect();
     H_RULE(sync_, h_choice(dnp3_p_link_frame, h_right(h_uint8(), sync), NULL));
         // XXX is it correct to skip one byte looking for the frame start?
     h_bind_indirect(sync, sync_);
 
-    // hook in link layer parser
-    // each transport segment arrives in a link-layer frame.
-    H_VRULE(dataframe, sync);
-    H_RULE (segment,   h_bind(sync,      k_frame, dnp3_p_transport_segment));
-    H_RULE (dataseg,   h_bind(dataframe, k_frame, dnp3_p_transport_segment));
+    // transport-layer input tokens
+    H_RULE (A,      ttok(h_ch('A')));
+    H_RULE (Z,      h_ch('Z'));
+    H_RULE (pls,    ttok(h_ch('+')));
+    H_RULE (equ,    h_ch('='));
 
-    // we can state what makes a valid series of segments, how they assemble,
-    // and when/what to discard as erroneous:
-    // cf. IEEE 1815-2012 section 8.2
+    H_RULE (notAZpe, h_not_in("AZ+=",4));
+    H_RULE (notA,    h_not_in("A",1));
 
-    H_VRULE(first,  dataseg);   // fir set
-    H_VRULE(final,  dataseg);   // fin set
+    // transport function: (A+[+=]*(Z|[^AZ+=])|[^A])*
+    H_RULE (pe,      h_many(h_choice(pls, h_ignore(equ), NULL)));
+    H_RULE (end,     h_choice(Z, h_ignore(notAZpe), NULL));
+    H_RULE (A1,         h_indirect());
+    h_bind_indirect(A1, h_choice(h_right(A, A1), A, NULL));
+    H_ARULE(series,  h_sequence(A1, pe, end, NULL));
+    H_RULE (tfun,    h_many(h_choice(series, h_ignore(notA), NULL)));
 
-    // deduplication
-    H_VRULE(equ,    h_sequence(dataseg, dataseg, NULL));
-    H_RULE (dup,    h_left(h_and(equ), dataseg));
-    H_RULE (seg,    h_right(h_many(dup), dataseg));
-
-    H_RULE (notfir, h_right(h_not(first), seg));
-    H_RULE (notfin, h_right(h_not(final), seg));
-
-    // "pre-sequence" = valid seq. numbers, dedup'ed, no spurious fir/fin flags
-    H_VRULE(seq,    h_sequence(notfin, notfir, NULL));
-    H_RULE (elt,    h_right(h_and(seq), seg));  // ...
-    H_RULE (pre_,   h_many(elt));               // last segment not consumed!
-    H_RULE (pre,    h_sequence(pre_, seg, NULL));
-
-    #define act_valid h_act_flatten
-    H_RULE (single,  h_right(h_and(first), final)); // no deduplication
-    H_RULE (multi,   h_sequence(h_and(first), pre_, final, NULL));
-    H_ARULE(valid,   h_choice(single, multi, NULL));
-    H_RULE (invalid, h_right(h_not(valid), pre));
-    H_RULE (garbage, h_many(invalid));
-    H_ARULE(payload, h_middle(garbage, valid, garbage));
+    int tfun_compile = !h_compile(tfun, PB_LALR, NULL);
+    assert(tfun_compile);
 
     H_VRULE(request,  dnp3_p_app_request);
     H_VRULE(response, dnp3_p_app_response);
     H_RULE (message,  h_choice(request, response, NULL));
 
-    dnp3_p_framed_segment = segment;
-    dnp3_p_assembled_payload = payload;
     dnp3_p_synced_frame = sync;
+    dnp3_p_transport_function = tfun;
     dnp3_p_app_message = message;
 }
 
 
-#define BUFLEN 4100 // enough for 2048B over 512 frames or 4096B over 1 frame
+#define BUFLEN 4619 // enough for 4096B over 1 frame or 355 empty segments
 #define CTXMAX 1024 // maximum number of connection contexts
+#define TBUFLEN (BUFLEN/13*2)   // 13 = min. size of a frame
+                                // 2  = max. number of tokens per frame
 
 struct Context {
     struct Context *next;
@@ -171,6 +220,11 @@ struct Context {
     uint16_t src;
     uint16_t dst;
 
+    // transport function
+    const DNP3_Segment *last_segment;
+    HSuspendedParser *tfun;
+
+    // raw valid frames
     uint8_t buf[BUFLEN];
     size_t n;
 };
@@ -218,6 +272,16 @@ struct Context *lookup_context(uint16_t src, uint16_t dst)
                     (unsigned)ctx->src, (unsigned)ctx->dst, ctx->n);
         }
 
+        ctx->n = 0;
+        ctx->last_segment = NULL;
+        if(ctx->tfun) {
+            HParseResult *r = h_parse_finish(ctx->tfun);
+            assert(r != NULL);
+            h_parse_result_free(r);
+        }
+        ctx->tfun = h_parse_start(dnp3_p_transport_function);
+        assert(ctx->tfun != NULL);
+
         ctx->next = contexts;
         ctx->src = src;
         ctx->dst = dst;
@@ -240,28 +304,30 @@ void free_contexts(void)
     contexts = NULL;
 }
 
-const char *errorname(DNP3_ParseError e)
-{
-    static char s[] = "???";
-
-    switch(e) {
-    case ERR_FUNC_NOT_SUPP: return "FUNC_NOT_SUPP";
-    case ERR_OBJ_UNKNOWN:   return "OBJ_UNKNOWN";
-    case ERR_PARAM_ERROR:   return "PARAM_ERROR";
-    default:
-        snprintf(s, sizeof(s), "%d", (int)e);
-        return s;
-    }
-}
-
 void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
 {
     HParseResult *r;
+    uint8_t buf[2];
+    size_t n;
 
     printf("T> %s\n", dnp3_format_segment(segment));
 
-    // TODO chunked transport-layer protocol recognizer
+    // convert to input tokens for transport function
+    n = transport_tokens(segment, ctx->last_segment, buf);
+    ctx->last_segment = segment;
+    ttok_values[0] = segment;
+    ttok_values[1] = NULL;
+    printf("debug: tfun input: ");
+    for(size_t i=0; i<n; i++)
+        printf("%c", buf[i]);
+    printf("\n");
 
+    // run transport function
+    bool tfun_done = h_parse_chunk(ctx->tfun, buf, n);
+    assert(!tfun_done);
+    ttok_pos += n;
+
+#if 0
     // XXX temp: reassemble and process app layer
     r = h_parse(dnp3_p_assembled_payload, ctx->buf, ctx->n);
     if(r) {
@@ -292,6 +358,7 @@ void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
     } else {
         //fprintf(stderr, "debug: reassembly: no parse (%zu bytes)\n", ctx->n);
     }
+#endif
 }
 
 void process_link_frame(const DNP3_Frame *frame,
@@ -346,12 +413,24 @@ void process_link_frame(const DNP3_Frame *frame,
     }
 }
 
+// XXX debug
+void *h_pprint_lr_info(FILE *f, HParser *p);
+void h_pprint_lrtable(FILE *f, void *, void *, int);
+
 int main(int argc, char *argv[])
 {
     uint8_t buf[BUFLEN];
     size_t n=0, m;
 
     init();
+
+    // XXX debug
+#if 0
+    void *g = h_pprint_lr_info(stdout, dnp3_p_transport_function);
+    assert(g != NULL);
+    fprintf(stdout, "\n==== L A L R  T A B L E ====\n");
+    h_pprint_lrtable(stdout, g, dnp3_p_transport_function->backend_data, 0);
+#endif
 
     // while stdin open, read additional input into buf
     while(n<BUFLEN && (m=read(0, buf+n, BUFLEN-n))) {

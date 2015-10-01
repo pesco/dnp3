@@ -4,6 +4,7 @@
 #include "src/hammer.h"
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <unistd.h>
 
@@ -435,6 +436,14 @@ int main(int argc, char *argv[])
     // while stdin open, read additional input into buf
     while(n<BUFLEN && (m=read(0, buf+n, BUFLEN-n))) {
         HParseResult *r;
+
+        // handle read errors
+        if(m<0) {
+            if(errno == EINTR)
+                continue;
+            perror("read");
+            return 1;
+        }
 
         n += m;
 

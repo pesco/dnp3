@@ -8,6 +8,8 @@
 
 #include <unistd.h>
 
+#include "dissect.h"
+
 
 HParser *dnp3_p_synced_frame;       // skips bytes until valid frame header
 HParser *dnp3_p_transport_function; // the transport-layer state machine
@@ -215,6 +217,8 @@ void init(void)
 #define TBUFLEN (BUFLEN/13*2)   // 13 = min. size of a frame
                                 // 2  = max. number of tokens per frame
 
+static uint8_t buf[BUFLEN];     // global input buffer
+
 struct Context {
     struct Context *next;
 
@@ -418,11 +422,8 @@ void process_link_frame(const DNP3_Frame *frame,
 void *h_pprint_lr_info(FILE *f, HParser *p);
 void h_pprint_lrtable(FILE *f, void *, void *, int);
 
-int main(int argc, char *argv[])
+int dnp3_printer_init(const Option *opts)
 {
-    uint8_t buf[BUFLEN];
-    size_t n=0, m;
-
     init();
 
     // XXX debug
@@ -433,48 +434,111 @@ int main(int argc, char *argv[])
     h_pprint_lrtable(stdout, g, dnp3_p_transport_function->backend_data, 0);
 #endif
 
-    // while stdin open, read additional input into buf
-    while(n<BUFLEN && (m=read(0, buf+n, BUFLEN-n))) {
-        HParseResult *r;
+    return 0;
+}
 
+static int dnp3_printer_feed(Plugin *self, size_t n)
+{
+    HParseResult *r;
+    size_t m=0;
+
+    // parse and process link layer frames
+    while((r = h_parse(dnp3_p_synced_frame, self->buf+m, n-m))) {
+        size_t consumed = r->bit_length/8;
+        assert(r->bit_length%8 == 0);
+        assert(consumed > 0);
+        assert(r->ast);
+
+        process_link_frame(H_CAST(DNP3_Frame, r->ast),
+                           self->buf+m, consumed /*XXX temp*/);
+
+        m += consumed;
+    }
+
+    // flush consumed input
+    n -= m;
+    memmove(buf, self->buf+m, n);
+    self->buf = buf;
+    self->bufsize = BUFLEN - n;
+
+    return 0;
+}
+
+static int dnp3_printer_finish(Plugin *self)
+{
+    free_contexts();
+    return 0;
+}
+
+static void log_stderr(void *env, int priority, const char *fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+}
+
+static void file_write(void *env, const uint8_t *buf, size_t n)
+{
+    fwrite(buf, 1, n, (FILE *)env);
+}
+
+Plugin *dnp3_printer(LogCallback log, OutputCallback output, void *env)
+{
+    static Plugin plugin = {
+        .buf = buf,
+        .bufsize = BUFLEN,
+        .feed = dnp3_printer_feed,
+        .finish = dnp3_printer_finish
+    };
+    static int already = 0;
+
+    if(already)
+        return NULL;
+
+    already = 1;
+    return &plugin;
+}
+
+int main(int argc, char *argv[])
+{
+    Plugin *plugin;
+
+    if(dnp3_printer_init(NULL) < 0) {
+        fprintf(stderr, "plugin init failed\n");
+        return 1;
+    }
+
+    plugin = dnp3_printer(log_stderr, file_write, stdout);
+    if(plugin == NULL) {
+        fprintf(stderr, "plugin bind failed\n");
+        return 1;
+    }
+
+    // while stdin open, read input into buf and process
+    size_t n;
+    while((n=read(0, plugin->buf, plugin->bufsize))) {
         // handle read errors
-        if(m<0) {
+        if(n<0) {
             if(errno == EINTR)
                 continue;
             perror("read");
             return 1;
         }
 
-        n += m;
-
-        // parse and process link layer frames
-        m=0;
-        while((r = h_parse(dnp3_p_synced_frame, buf+m, n-m))) {
-            size_t consumed = r->bit_length/8;
-            assert(r->bit_length%8 == 0);
-            assert(consumed > 0);
-            assert(r->ast);
-
-            process_link_frame(H_CAST(DNP3_Frame, r->ast),
-                               buf+m, consumed /*XXX temp*/);
-
-            m += consumed;
+        if(plugin->feed(plugin, n) < 0) {
+            fprintf(stderr, "processing error\n");
+            return 1;
         }
 
-        // flush consumed input
-        n -= m;
-        memmove(buf, buf+m, n);
-    }
-
-    if(n>0) {
-        if(n>=BUFLEN)
+        if(plugin->bufsize == 0) {
             fprintf(stderr, "input buffer exhausted\n");
-        else
-            fprintf(stderr, "L: no parse (%zu bytes)\n", n);
-        return 1;
+            return 1;
+        }
     }
 
-    free_contexts();
+    plugin->finish(plugin);
 
     return 0;
 }

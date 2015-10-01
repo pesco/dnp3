@@ -458,7 +458,7 @@ static int dnp3_printer_feed(Plugin *self, size_t n)
     // flush consumed input
     n -= m;
     memmove(buf, self->buf+m, n);
-    self->buf = buf;
+    self->buf = buf + n;
     self->bufsize = BUFLEN - n;
 
     return 0;

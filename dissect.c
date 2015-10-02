@@ -370,39 +370,6 @@ void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
     bool tfun_done = h_parse_chunk(ctx->tfun, buf, n);
     assert(!tfun_done);
     ttok_pos += n;
-
-#if 0
-    // XXX temp: reassemble and process app layer
-    r = h_parse(dnp3_p_assembled_payload, ctx->buf, ctx->n);
-    if(r) {
-        // flush input
-        assert(r->bit_length == ctx->n * 8);
-        ctx->n = 0;
-
-        assert(r->ast);
-        HBytes bytes = H_CAST_BYTES(r->ast);
-        print("T: reassembled payload:");
-        for(size_t i=0; i<bytes.len; i++)
-            print(" %.2X", (unsigned int)bytes.token[i]);
-        print("\n");
-
-        // try to parse a message
-        r = h_parse(dnp3_p_app_message, bytes.token, bytes.len);
-        if(r) {
-            assert(r->ast != NULL);
-            if(H_ISERR(r->ast->token_type)) {
-                print("A: error %s\n", errorname(r->ast->token_type));
-            } else {
-                DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
-                print("A> %s\n", dnp3_format_fragment(fragment));
-            }
-        } else {
-            print("A: no parse\n");
-        }
-    } else {
-        //debug("reassembly: no parse (%zu bytes)\n", ctx->n);
-    }
-#endif
 }
 
 void process_link_frame(const DNP3_Frame *frame,

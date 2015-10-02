@@ -1,3 +1,6 @@
+#include <syslog.h>
+#include <stdarg.h>
+
 typedef struct Plugin_ Plugin;
 struct Plugin_ {
     // input buffer, pre-allocated, may be altered by feed()
@@ -17,7 +20,7 @@ typedef struct {
 // one-time global init, returns < 0 on error, opts may be NULL
 int dnp3_printer_init(const Option *opts);
 
-typedef void (*LogCallback)(void *env, int priority, const char *fmt, ...);
+typedef void (*LogCallback)(void *env, int priority, const char *fmt, va_list args);
 typedef void (*OutputCallback)(void *env, const uint8_t *buf, size_t n);
 
 // create plugin instance bound to the given callbacks

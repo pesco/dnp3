@@ -115,13 +115,14 @@ static bool segment_equal(const DNP3_Segment *a, const DNP3_Segment *b)
 //
 
 // convert an incoming transport segment into appropriate input tokens
-// precondition: p points to a buffer of size >=2
+// precondition: p and t point to buffers of size >=2
 // returns: number of tokens generated
 static size_t transport_tokens(const DNP3_Segment *seg, const DNP3_Segment *last,
-                               uint8_t *p)
+                               uint8_t *p, const DNP3_Segment **t)
 {
     size_t n = 0;
 
+    // first token
     if(seg->fir) {
         p[n] = 'A';
     } else if(last) {
@@ -134,8 +135,11 @@ static size_t transport_tokens(const DNP3_Segment *seg, const DNP3_Segment *last
     } else {
         p[n] = '_';
     }
+    t[n] = seg;
     n++;
 
+    // second token
+    t[n] = NULL;
     if(seg->fin)
         p[n++] = 'Z';
 
@@ -143,11 +147,12 @@ static size_t transport_tokens(const DNP3_Segment *seg, const DNP3_Segment *last
 }
 
 
-static const DNP3_Segment *ttok_values[800];  // XXX
+static const DNP3_Segment **ttok_values;
 static size_t ttok_pos = 0;
 static HParsedToken *act_ttok(const HParseResult *p, void *user)
 {
-    DNP3_Segment **values = user;
+    DNP3_Segment **values = (DNP3_Segment **)ttok_values;   // XXX drop const
+    assert(ttok_values != NULL);
 
     if(!p->ast)
         return NULL;
@@ -158,7 +163,7 @@ static HParsedToken *act_ttok(const HParseResult *p, void *user)
 }
 static HParser *ttok(const HParser *p)
 {
-    return h_action(p, act_ttok, ttok_values);
+    return h_action(p, act_ttok, NULL);
 }
 
 // XXX move back down
@@ -352,22 +357,23 @@ void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
 {
     HParseResult *r;
     uint8_t buf[2];
+    const DNP3_Segment *tok[2];
     size_t n;
 
     print("T> %s\n", dnp3_format_segment(segment));
 
     // convert to input tokens for transport function
-    n = transport_tokens(segment, ctx->last_segment, buf);
+    n = transport_tokens(segment, ctx->last_segment, buf, tok);
     ctx->last_segment = segment;
-    ttok_values[0] = segment;
-    ttok_values[1] = NULL;
     debug("tfun input: ");
     for(size_t i=0; i<n; i++)
         debug("%c", buf[i]);
     debug("\n");
 
     // run transport function
+    ttok_values = tok;
     bool tfun_done = h_parse_chunk(ctx->tfun, buf, n);
+    ttok_values = NULL;
     assert(!tfun_done);
     ttok_pos += n;
 }

@@ -378,8 +378,7 @@ void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
     ttok_pos += n;
 }
 
-void process_link_frame(const DNP3_Frame *frame,
-                        uint8_t *buf, size_t len /*XXX temp*/)
+void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
 {
     struct Context *ctx;
     HParseResult *r;
@@ -409,7 +408,7 @@ void process_link_frame(const DNP3_Frame *frame,
             break;
         }
 
-        // XXX temp: append the full frame to context buf
+        // append the raw frame to context buf
         if(ctx->n + len <= BUFLEN) {
             memcpy(ctx->buf + ctx->n, buf, len);
             ctx->n += len;
@@ -425,7 +424,7 @@ void process_link_frame(const DNP3_Frame *frame,
         if(!frame->payload) // CRC error
             break;
 
-        error("L: confirmed user data not supported\n");  // XXX
+        error("L: confirmed user data not supported\n");  // XXX ?
         break;
     }
 }
@@ -464,8 +463,7 @@ static int dnp3_printer_feed(Plugin *self, size_t n)
         assert(consumed > 0);
         assert(r->ast);
 
-        process_link_frame(H_CAST(DNP3_Frame, r->ast),
-                           self->buf+m, consumed /*XXX temp*/);
+        process_link_frame(H_CAST(DNP3_Frame, r->ast), self->buf+m, consumed);
 
         m += consumed;
     }

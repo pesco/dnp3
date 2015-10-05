@@ -169,8 +169,8 @@ static HParser *ttok(const HParser *p)
     return h_action(p, act_ttok, NULL);
 }
 
-// XXX move back down
-const char *errorname(DNP3_ParseError e)
+// helper
+static const char *errorname(DNP3_ParseError e)
 {
     static char s[] = "???";
 
@@ -215,13 +215,12 @@ static HParsedToken *act_series(const HParseResult *p, void *user)
         s += x->len;
     }
 
-    // XXX move this out as well?
     print("T: reassembled payload:");
     for(size_t i=0; i<len; i++)
         print(" %.2X", (unsigned int)t[i]);
     print("\n");
 
-    // try to parse a message  XXX move out of here
+    // try to parse a message
     HParseResult *r = h_parse(dnp3_p_app_message, t, len);
     if(r) {
         assert(r->ast != NULL);
@@ -395,7 +394,7 @@ void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
     ttok_values = NULL;
     ctx->tfun_pos += n;
     if(tfun_done)
-        reset_tfun(ctx);
+        reset_tfun(ctx);    // XXX assert: all input consumed
 }
 
 void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)

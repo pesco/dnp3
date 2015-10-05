@@ -27,6 +27,7 @@ struct Context {
     // transport function
     const DNP3_Segment *last_segment;
     HSuspendedParser *tfun;
+    size_t tfun_pos;        // number of bytes consumed so far
 
     // raw valid frames
     uint8_t buf[BUFLEN];
@@ -51,11 +52,13 @@ static void error(const char *fmt, ...)
 
 static void debug(const char *fmt, ...)
 {
+#if 0
     va_list args;
 
     va_start(args, fmt);
     cb_log(cb_env, LOG_DEBUG, fmt, args);
     va_end(args);
+#endif
 }
 
 static void print(const char *fmt, ...)
@@ -281,6 +284,26 @@ void init(void)
 }
 
 
+void reset_tfun(struct Context *ctx)
+{
+    debug("tfun reset\n");
+    if(ctx->tfun) {
+        HParseResult *r = h_parse_finish(ctx->tfun);
+        assert(r != NULL);
+        h_parse_result_free(r);
+        ctx->tfun = NULL;
+    }
+}
+
+void init_tfun(struct Context *ctx)
+{
+    debug("tfun init\n");
+    assert(ctx->tfun == NULL);
+    ctx->tfun = h_parse_start(dnp3_p_transport_function);
+    assert(ctx->tfun != NULL);
+    ctx->tfun_pos = 0;
+}
+
 // allocates up to CTXMAX contexts, or recycles the least recently used
 struct Context *lookup_context(uint16_t src, uint16_t dst)
 {
@@ -299,7 +322,7 @@ struct Context *lookup_context(uint16_t src, uint16_t dst)
 
         n++;
         if(n >= CTXMAX) {
-            //debug("reuse context %d\n", n);
+            debug("reuse context %d\n", n);
             break;  // don't advance pnext or ctx
         }
     }
@@ -308,7 +331,7 @@ struct Context *lookup_context(uint16_t src, uint16_t dst)
 
     if(!ctx) {
         // allocate a new context
-        //debug("alloc context %d\n", n+1);
+        debug("alloc context %d\n", n+1);
         ctx = calloc(1, sizeof(struct Context));
     } else {
         *pnext = ctx->next; // unlink
@@ -323,13 +346,7 @@ struct Context *lookup_context(uint16_t src, uint16_t dst)
 
         ctx->n = 0;
         ctx->last_segment = NULL;
-        if(ctx->tfun) {
-            HParseResult *r = h_parse_finish(ctx->tfun);
-            assert(r != NULL);
-            h_parse_result_free(r);
-        }
-        ctx->tfun = h_parse_start(dnp3_p_transport_function);
-        assert(ctx->tfun != NULL);
+        reset_tfun(ctx);
 
         ctx->next = contexts;
         ctx->src = src;
@@ -355,7 +372,6 @@ void free_contexts(void)
 
 void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
 {
-    HParseResult *r;
     uint8_t buf[2];
     const DNP3_Segment *tok[2];
     size_t n;
@@ -371,11 +387,15 @@ void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
     debug("\n");
 
     // run transport function
+    if(!ctx->tfun)
+        init_tfun(ctx);
     ttok_values = tok;
+    ttok_pos = ctx->tfun_pos;
     bool tfun_done = h_parse_chunk(ctx->tfun, buf, n);
     ttok_values = NULL;
-    assert(!tfun_done);
-    ttok_pos += n;
+    ctx->tfun_pos += n;
+    if(tfun_done)
+        reset_tfun(ctx);
 }
 
 void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)

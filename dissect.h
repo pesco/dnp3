@@ -20,8 +20,14 @@ typedef struct {
 // one-time global init, returns < 0 on error, opts may be NULL
 int dnp3_printer_init(const Option *opts);
 
-typedef void (*LogCallback)(void *env, int priority, const char *fmt, va_list args);
 typedef void (*OutputCallback)(void *env, const uint8_t *buf, size_t n);
 
 // create plugin instance bound to the given callbacks
-Plugin *dnp3_printer(LogCallback log, OutputCallback output, void *env);
+Plugin *dnp3_printer(OutputCallback output, void *env);
+
+
+// logging hooks to be provided by main program
+void error(const char *fmt, ...);
+void debug_(const char *fmt, ...);
+
+#define debug(...) debug_(__VA_ARGS__)  // undefine to disable

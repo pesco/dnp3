@@ -36,30 +36,10 @@ struct Context {
 
 static struct Context *contexts = NULL;    // linked list
 
-static LogCallback cb_log;
 static OutputCallback cb_out;
 static void *cb_env;
 
-
-static void error(const char *fmt, ...)
-{
-    va_list args;
-
-    va_start(args, fmt);
-    cb_log(cb_env, LOG_ERR, fmt, args);
-    va_end(args);
-}
-
-static void debug(const char *fmt, ...)
-{
-#if 0
-    va_list args;
-
-    va_start(args, fmt);
-    cb_log(cb_env, LOG_DEBUG, fmt, args);
-    va_end(args);
-#endif
-}
+//#define debug(...)
 
 static void print(const char *fmt, ...)
 {
@@ -339,7 +319,7 @@ struct Context *lookup_context(uint16_t src, uint16_t dst)
     // fill context and place it in front of list
     if(ctx) {
         if(ctx->n > 0) {
-            error("L: overflow, %u to %u dropped with %zu bytes!\n",
+            error("context overflow, %u to %u dropped with %zu bytes!\n",
                   (unsigned)ctx->src, (unsigned)ctx->dst, ctx->n);
         }
 
@@ -414,7 +394,7 @@ void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
         // look up connection context by source-dest pair
         ctx = lookup_context(frame->source, frame->destination);
         if(!ctx) {
-            error("L: connection context failed to allocate\n");
+            error("connection context failed to allocate\n");
             break;
         }
 
@@ -423,7 +403,7 @@ void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
         if(!r) {
             // NB: this should only happen when frame->len = 0, which is
             //     not valid with USER_DATA as per AN2013-004b
-            error("T: no parse\n");
+            print("T: no parse\n");
             break;
         }
 
@@ -432,8 +412,8 @@ void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
             memcpy(ctx->buf + ctx->n, buf, len);
             ctx->n += len;
         } else {
-            error("T: overflow at %zu bytes,"
-                  " dropping %zu byte frame\n", ctx->n, len);
+            error("overflow at %zu bytes, dropping %zu byte frame\n",
+                  ctx->n, len);
         }
 
         assert(r->ast);
@@ -443,7 +423,7 @@ void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
         if(!frame->payload) // CRC error
             break;
 
-        error("L: confirmed user data not supported\n");  // XXX ?
+        error("confirmed user data not supported\n");  // XXX ?
         break;
     }
 }
@@ -502,7 +482,7 @@ static int dnp3_printer_finish(Plugin *self)
     return 0;
 }
 
-Plugin *dnp3_printer(LogCallback log, OutputCallback output, void *env)
+Plugin *dnp3_printer(OutputCallback output, void *env)
 {
     static Plugin plugin = {
         .buf = buf,
@@ -516,7 +496,6 @@ Plugin *dnp3_printer(LogCallback log, OutputCallback output, void *env)
         return NULL;
 
     already = 1;
-    cb_log = log;
     cb_out = output;
     cb_env = env;
     return &plugin;
@@ -525,9 +504,23 @@ Plugin *dnp3_printer(LogCallback log, OutputCallback output, void *env)
 
 /// main ///
 
-static void log_stderr(void *env, int priority, const char *fmt, va_list args)
+void error(const char *fmt, ...)
 {
+    va_list args;
+
+    va_start(args, fmt);
+    fputs("error: ", stderr);
     vfprintf(stderr, fmt, args);
+    va_end(args);
+}
+
+void debug_(const char *fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
 }
 
 static void file_write(void *env, const uint8_t *buf, size_t n)
@@ -544,7 +537,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    plugin = dnp3_printer(log_stderr, file_write, stdout);
+    plugin = dnp3_printer(file_write, stdout);
     if(plugin == NULL) {
         fprintf(stderr, "plugin bind failed\n");
         return 1;

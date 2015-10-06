@@ -8,7 +8,6 @@ Sven M. Hallberg, 2014-2015
    https://github.com/pesco/hammer/ (master branch)
 
    This includes:
-     * 'h_bind', monadic bind for parsers (from branch 'h_bind')
      * 'h_aligned', to check for byte-alignment (from branch 'h_aligned')
      * A temporary patch to 'h_put_value' allowing it to overwrite a
        previously-stored value. This is a stop-gap workaround until we get

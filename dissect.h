@@ -18,13 +18,22 @@ typedef struct {
 } Option;
 
 // one-time global init, returns < 0 on error, opts may be NULL
-int dnp3_printer_init(const Option *opts);
+int dnp3_dissect_init(const Option *opts);
 
 typedef void (*OutputCallback)(void *env, const uint8_t *buf, size_t n);
 
 // create plugin instance bound to the given callbacks
-Plugin *dnp3_printer(OutputCallback output, void *env);
+Plugin *dnp3_dissect(OutputCallback output, void *env);
 
+
+// dnp3 processing hooks to be provided
+void hook_link_frame(const DNP3_Frame *frame);
+void hook_transport_reject(void);
+void hook_transport_segment(const DNP3_Segment *segment);
+void hook_transport_payload(const uint8_t *s, size_t n);
+void hook_app_reject(void);
+void hook_app_error(DNP3_ParseError e);
+void hook_app_fragment(const DNP3_Fragment *fragment);
 
 // logging hooks to be provided by main program
 void error(const char *fmt, ...);

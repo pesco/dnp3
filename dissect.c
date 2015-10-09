@@ -41,22 +41,6 @@ static void *cb_env;
 
 //#define debug(...)
 
-static void print(const char *fmt, ...)
-{
-    va_list args;
-    char buf[1024];
-    int n;
-
-    va_start(args, fmt);
-    n = vsnprintf(buf, sizeof(buf), fmt, args);
-    va_end(args);
-
-    if(n >= 0)
-        cb_out(cb_env, (uint8_t *)buf, n);
-    else
-        error("vsnprintf: %s", strerror(errno));
-}
-
 
 HParser *dnp3_p_synced_frame;       // skips bytes until valid frame header
 HParser *dnp3_p_transport_function; // the transport-layer state machine
@@ -149,21 +133,6 @@ static HParser *ttok(const HParser *p)
     return h_action(p, act_ttok, NULL);
 }
 
-// helper
-static const char *errorname(DNP3_ParseError e)
-{
-    static char s[] = "???";
-
-    switch(e) {
-    case ERR_FUNC_NOT_SUPP: return "FUNC_NOT_SUPP";
-    case ERR_OBJ_UNKNOWN:   return "OBJ_UNKNOWN";
-    case ERR_PARAM_ERROR:   return "PARAM_ERROR";
-    default:
-        snprintf(s, sizeof(s), "%d", (int)e);
-        return s;
-    }
-}
-
 // re-assemble a transport-layer segment series
 static HParsedToken *act_series(const HParseResult *p, void *user)
 {
@@ -195,26 +164,23 @@ static HParsedToken *act_series(const HParseResult *p, void *user)
         s += x->len;
     }
 
-    print("T: reassembled payload:");
-    for(size_t i=0; i<len; i++)
-        print(" %.2X", (unsigned int)t[i]);
-    print("\n");
+    hook_transport_payload(t, len);
 
     // try to parse a message
     HParseResult *r = h_parse(dnp3_p_app_message, t, len);
     if(r) {
         assert(r->ast != NULL);
         if(H_ISERR(r->ast->token_type)) {
-            print("A: error %s\n", errorname(r->ast->token_type));
+            hook_app_error(r->ast->token_type);
         } else {
             DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
-            print("A> %s\n", dnp3_format_fragment(fragment));
+            hook_app_fragment(fragment);
         }
     } else {
-        print("A: no parse\n");
+        hook_app_reject();
     }
 
-    return H_MAKE_BYTES(t, len);
+    return H_MAKE_BYTES(t, len);    // XXX not really needed
 }
 
 static bool not_err(HParseResult *p, void *user)
@@ -355,7 +321,7 @@ void process_transport_segment(struct Context *ctx, const DNP3_Segment *segment)
     const DNP3_Segment *tok[2];
     size_t n;
 
-    print("T> %s\n", dnp3_format_segment(segment));
+    hook_transport_segment(segment);
 
     // convert to input tokens for transport function
     n = transport_tokens(segment, ctx->last_segment, buf, tok);
@@ -382,8 +348,7 @@ void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
     struct Context *ctx;
     HParseResult *r;
 
-    // always print out the packet
-    print("L> %s\n", dnp3_format_frame(frame));
+    hook_link_frame(frame);
 
     // payload handling
     switch(frame->func) {
@@ -403,7 +368,7 @@ void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
         if(!r) {
             // NB: this should only happen when frame->len = 0, which is
             //     not valid with USER_DATA as per AN2013-004b
-            print("T: no parse\n");
+            hook_transport_reject();
             break;
         }
 
@@ -435,7 +400,7 @@ void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
 void *h_pprint_lr_info(FILE *f, HParser *p);
 void h_pprint_lrtable(FILE *f, void *, void *, int);
 
-int dnp3_printer_init(const Option *opts)
+int dnp3_dissect_init(const Option *opts)
 {
     init();
 
@@ -450,7 +415,7 @@ int dnp3_printer_init(const Option *opts)
     return 0;
 }
 
-static int dnp3_printer_feed(Plugin *self, size_t n)
+static int dnp3_dissect_feed(Plugin *self, size_t n)
 {
     HParseResult *r;
     size_t m=0;
@@ -476,19 +441,19 @@ static int dnp3_printer_feed(Plugin *self, size_t n)
     return 0;
 }
 
-static int dnp3_printer_finish(Plugin *self)
+static int dnp3_dissect_finish(Plugin *self)
 {
     free_contexts();
     return 0;
 }
 
-Plugin *dnp3_printer(OutputCallback output, void *env)
+Plugin *dnp3_dissect(OutputCallback output, void *env)
 {
     static Plugin plugin = {
         .buf = buf,
         .bufsize = BUFLEN,
-        .feed = dnp3_printer_feed,
-        .finish = dnp3_printer_finish
+        .feed = dnp3_dissect_feed,
+        .finish = dnp3_dissect_finish
     };
     static int already = 0;
 
@@ -499,6 +464,79 @@ Plugin *dnp3_printer(OutputCallback output, void *env)
     cb_out = output;
     cb_env = env;
     return &plugin;
+}
+
+
+/// hooks ///
+
+static void print(const char *fmt, ...)
+{
+    va_list args;
+    char buf[1024];
+    int n;
+
+    va_start(args, fmt);
+    n = vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    if(n >= 0)
+        cb_out(cb_env, (uint8_t *)buf, n);
+    else
+        error("vsnprintf: %s", strerror(errno));
+}
+
+void hook_link_frame(const DNP3_Frame *frame)
+{
+    // always print out the packet
+    print("L> %s\n", dnp3_format_frame(frame));
+}
+
+void hook_transport_reject(void)
+{
+    print("T: no parse\n");
+}
+
+void hook_transport_segment(const DNP3_Segment *segment)
+{
+    print("T> %s\n", dnp3_format_segment(segment));
+}
+
+void hook_transport_payload(const uint8_t *s, size_t n)
+{
+    print("T: reassembled payload:");
+    for(size_t i=0; i<n; i++)
+        print(" %.2X", (unsigned int)s[i]);
+    print("\n");
+}
+
+void hook_app_reject(void)
+{
+    print("A: no parse\n");
+}
+
+// helper
+static const char *errorname(DNP3_ParseError e)
+{
+    static char s[] = "???";
+
+    switch(e) {
+    case ERR_FUNC_NOT_SUPP: return "FUNC_NOT_SUPP";
+    case ERR_OBJ_UNKNOWN:   return "OBJ_UNKNOWN";
+    case ERR_PARAM_ERROR:   return "PARAM_ERROR";
+    default:
+        snprintf(s, sizeof(s), "%d", (int)e);
+        return s;
+    }
+}
+
+void hook_app_error(DNP3_ParseError e)
+{
+    print("A: error %s\n", errorname(e));
+}
+
+void hook_app_fragment(const DNP3_Fragment *fragment)
+{
+    print("A> %s\n", dnp3_format_fragment(fragment));
 }
 
 
@@ -532,12 +570,12 @@ int main(int argc, char *argv[])
 {
     Plugin *plugin;
 
-    if(dnp3_printer_init(NULL) < 0) {
+    if(dnp3_dissect_init(NULL) < 0) {
         fprintf(stderr, "plugin init failed\n");
         return 1;
     }
 
-    plugin = dnp3_printer(file_write, stdout);
+    plugin = dnp3_dissect(file_write, stdout);
     if(plugin == NULL) {
         fprintf(stderr, "plugin bind failed\n");
         return 1;

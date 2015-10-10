@@ -17,10 +17,10 @@ typedef struct {
 // one-time global init, returns < 0 on error, opts may be NULL
 int dnp3_dissect_init(const Option *opts);
 
-typedef void (*OutputCallback)(void *env, const uint8_t *buf, size_t n);
+typedef void (*QueueOutputCallback)(void *env, const uint8_t *buf, size_t n);
 
 // create plugin instance bound to the given callbacks
-Plugin *dnp3_dissect(OutputCallback output, void *env);
+Plugin *dnp3_dissect(QueueOutputCallback output, void *env);
 
 
 // logging hooks to be provided by main program

@@ -3,7 +3,7 @@
 
 // plugin internals
 
-extern OutputCallback cb_out;
+extern QueueOutputCallback cb_out;
 extern void *cb_env;
 
 // dnp3 processing hooks to be provided per plugin

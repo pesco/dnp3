@@ -23,11 +23,12 @@ CFLAGS += -Iinclude -std=c99 `pkg-config --cflags glib-2.0`
 LDLIBS += -lhammer `pkg-config --libs glib-2.0`
 
 
-all: test crc pprint
+all: test crc pprint filter
 
 test : $(OBJS) test.o
 crc : $(OBJS) crc.o
 pprint : $(OBJS) dissect.o plugin_main.o pprint.o
+filter : $(OBJS) dissect.o plugin_main.o filter.o
 
 
 $(OBJS) \

@@ -37,6 +37,10 @@ dissect.o plugin_main.o \
 pprint.o filter.o \
     : $(INCLUDES)
 
+dissect.o plugin_main.o \
+pprint.o filter.o \
+    : plugin.h dissect.h
+
 clean :
 	rm -f $(OBJS) test.o test
 

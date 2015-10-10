@@ -33,7 +33,7 @@ struct Context {
 
 static struct Context *contexts = NULL;    // linked list
 
-OutputCallback cb_out;
+QueueOutputCallback cb_out;
 void *cb_env;
 
 //#define debug(...)
@@ -444,7 +444,7 @@ static int dnp3_dissect_finish(Plugin *self)
     return 0;
 }
 
-Plugin *dnp3_dissect(OutputCallback output, void *env)
+Plugin *dnp3_dissect(QueueOutputCallback output, void *env)
 {
     static Plugin plugin = {
         .buf = buf,

@@ -27,13 +27,14 @@ all: test crc pprint
 
 test : $(OBJS) test.o
 crc : $(OBJS) crc.o
-pprint : $(OBJS) dissect.o pprint.o
+pprint : $(OBJS) dissect.o plugin_main.o pprint.o
 
 
-$(OBJS) test.o : $(INCLUDES)
-$(OBJS) crc.o : $(INCLUDES)
-$(OBJS) dissect.o : $(INCLUDES)
-$(OBJS) pprint.o : $(INCLUDES)
+$(OBJS) \
+test.o crc.o \
+dissect.o plugin_main.o \
+pprint.o filter.o \
+    : $(INCLUDES)
 
 clean :
 	rm -f $(OBJS) test.o test

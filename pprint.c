@@ -26,7 +26,7 @@ static void print(const char *fmt, ...)
         error("vsnprintf: %s", strerror(errno));
 }
 
-void hook_link_frame(const DNP3_Frame *frame)
+void hook_link_frame(const DNP3_Frame *frame, const uint8_t *buf, size_t len)
 {
     // always print out the packet
     print("L> %s\n", dnp3_format_frame(frame));
@@ -75,7 +75,8 @@ void hook_app_error(DNP3_ParseError e)
     print("A: error %s\n", errorname(e));
 }
 
-void hook_app_fragment(const DNP3_Fragment *fragment)
+void hook_app_fragment(const DNP3_Fragment *fragment,
+                       const uint8_t *buf, size_t len)
 {
     print("A> %s\n", dnp3_format_fragment(fragment));
 }

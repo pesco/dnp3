@@ -171,7 +171,8 @@ static HParsedToken *act_series(const HParseResult *p, void *user)
             hook_app_error(r->ast->token_type);
         } else {
             DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
-            hook_app_fragment(fragment);
+            struct Context *ctx = contexts;  // XXX this is a hack
+            hook_app_fragment(fragment, ctx->buf, ctx->n);
         }
     } else {
         hook_app_reject();
@@ -345,7 +346,7 @@ void process_link_frame(const DNP3_Frame *frame, uint8_t *buf, size_t len)
     struct Context *ctx;
     HParseResult *r;
 
-    hook_link_frame(frame);
+    hook_link_frame(frame, buf, len);
 
     // payload handling
     switch(frame->func) {

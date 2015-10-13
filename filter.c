@@ -15,9 +15,15 @@ static void pass(const uint8_t *input, size_t len)
     cb_out(cb_env, input, len);
 }
 
-void hook_link_frame(const DNP3_Frame *frame)
+void hook_link_frame(const DNP3_Frame *frame, const uint8_t *buf, size_t len)
 {
-    // XXX pass if not user-data
+    if(frame->func == DNP3_UNCONFIRMED_USER_DATA ||
+       frame->func == DNP3_CONFIRMED_USER_DATA) {
+        return;
+    }
+
+    // pass non-data frames
+    pass(buf, len);
 }
 
 void hook_transport_reject(void)
@@ -60,7 +66,8 @@ void hook_app_error(DNP3_ParseError e)
     error("application-layer error: %s\n", errorname(e));
 }
 
-void hook_app_fragment(const DNP3_Fragment *fragment)
+void hook_app_fragment(const DNP3_Fragment *fragment,
+                       const uint8_t *buf, size_t len)
 {
-    // XXX pass corresponding frames
+    pass(buf, len);
 }

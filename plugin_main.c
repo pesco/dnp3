@@ -19,7 +19,7 @@ void error(const char *fmt, ...)
     va_end(args);
 }
 
-void debug_(const char *fmt, ...)
+void debug(const char *fmt, ...)
 {
     va_list args;
 

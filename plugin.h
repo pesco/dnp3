@@ -25,6 +25,4 @@ Plugin *dnp3_dissect(QueueOutputCallback output, void *env);
 
 // logging hooks to be provided by main program
 void error(const char *fmt, ...);
-void debug_(const char *fmt, ...);
-
-#define debug(...) debug_(__VA_ARGS__)  // undefine to disable
+void debug(const char *fmt, ...);

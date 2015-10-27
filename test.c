@@ -100,6 +100,20 @@ static char *format(const HParsedToken *p)
   } while(0)
 
 
+/// some test cases that produce seg-faults from fuzzing ///
+
+static void test_crash1(void)
+{
+	// group 2, variation 2 w/ qualifer 0x19 == 4 octet count of objects w/ 1 byte index prefix?
+	// count = 0x19191919 (large)
+	// clearly there isn't enough trailing data
+	const char* input = "\xC0\x81\x00\x00\x02\x02\x19\x19\x19\x19\x19\x19\x19\xff\x7f\xff\xff\x01\x01\x81";
+	size_t len = 20;
+
+	check_parse_fail(dnp3_p_app_response, input, len);
+	//check_parse_fail(dnp3_p_app_request, input, len);
+}
+
 /// test cases ///
 
 static void test_req_fail(void)
@@ -954,6 +968,8 @@ int main(int argc, char *argv[])
 {
     g_test_init(&argc, &argv, NULL);
     dnp3_p_init();
+
+    g_test_add_func("/app/crash/1", test_crash1);
 
     g_test_add_func("/app/req/fail", test_req_fail);
     g_test_add_func("/app/req/ac", test_req_ac);

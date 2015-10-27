@@ -47,7 +47,7 @@ static bool segment_equal(const DNP3_Segment *a, const DNP3_Segment *b)
 //
 // We will use an unambiguous variant:
 //
-//      (A+[+=]*(Z|[^AZ+=])|[^A])*
+//      (A+[+=]*(Z|[^AZ+=]|$)|[^A])*
 //
 
 // convert an incoming transport segment into appropriate input tokens
@@ -182,10 +182,11 @@ static void init(void)
 
     // single-step transport function (call repeatedly):
     //
-    //     A+[+=]*(Z|[^AZ+=])|[^A]
+    //     A+[+=]*(Z|[^AZ+=]|$)|[^A]
     //
     H_RULE (pe,      h_many(h_choice(pls, h_ignore(equ), NULL)));
-    H_RULE (end,     h_choice(Z, h_ignore(notAZpe), NULL));
+    H_RULE (eof,     h_end_p());
+    H_RULE (end,     h_choice(Z, h_ignore(notAZpe), eof, NULL));
     H_RULE (A1,         h_indirect());
     h_bind_indirect(A1, h_choice(h_right(A, A1), A, NULL));
     H_ARULE(series,  h_sequence(A1, pe, end, NULL));

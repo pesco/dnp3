@@ -6,3 +6,7 @@ Session.vim
 /crc
 /pprint
 /filter
+
+#cmake
+*~
+/build

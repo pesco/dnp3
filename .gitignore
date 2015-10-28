@@ -10,3 +10,6 @@ Session.vim
 #cmake
 *~
 /build
+
+#clion IDE
+/.idea

@@ -108,11 +108,27 @@ static void test_crash1(void)
 	// count = 0x19191919 (large)
 	// clearly there isn't enough trailing data
 	const char* input = "\xC0\x81\x00\x00\x02\x02\x19\x19\x19\x19\x19\x19\x19\xff\x7f\xff\xff\x01\x01\x81";
-	size_t len = 20;
+	const size_t len = 20;
 
 	check_parse_fail(dnp3_p_app_response, input, len);
-	//check_parse_fail(dnp3_p_app_request, input, len);
+	// check_parse_fail(dnp3_p_app_request, input, len);
 }
+
+static void test_crash2(void)
+{
+    const char *input = "\xC0\x14\x01\x00\x39\x23\x00\x00\x4d\x39\x39\x39\x09\x00\x80\x00";
+    const size_t len = 16;
+    check_parse_fail(dnp3_p_app_request, input, len);
+}
+
+static void test_crash3(void)
+{
+    const char *input = "\xC0\x81\x00\x00\x02\x02\x02\x00\x81\x00\x02\x02\x02\x40\x81\x00\x00\x00\x00\x02\x02\x00\x00\x10\x1f\x81";
+    const size_t len = 26;
+
+    check_parse_fail(dnp3_p_app_response, input, len);
+}
+
 
 /// test cases ///
 
@@ -970,6 +986,9 @@ int main(int argc, char *argv[])
     dnp3_p_init();
 
     g_test_add_func("/app/crash/1", test_crash1);
+    g_test_add_func("/app/crash/2", test_crash2);
+    g_test_add_func("/app/crash/3", test_crash3);
+
 
     g_test_add_func("/app/req/fail", test_req_fail);
     g_test_add_func("/app/req/ac", test_req_ac);

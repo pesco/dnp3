@@ -54,7 +54,7 @@ static HParser *ama(HParser *base)
                                  dnp3_p_g120v9_auth_mac_block, NULL));
         // XXX parse/validate mac before rest of odata?!
 
-    return h_choice(with_ama, base, NULL);
+    return base; // XXX h_choice(with_ama, base, NULL);
 }
 
 

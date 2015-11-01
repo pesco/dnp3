@@ -188,7 +188,7 @@ static HParser *k_frame(HAllocator *mm__, const HParsedToken *p, void *user)
 
         HParser *valid   = h_action__m(mm__, udata, act_udata, hdr);
         HParser *skipB   = h_ignore__m(mm__, h_uint8__m(mm__));
-        HParser *skip    = h_repeat_n__m(mm__, skip, hdr->len);
+        HParser *skip    = h_repeat_n__m(mm__, skipB, hdr->len);
         HParser *corrupt = h_right__m(mm__, skip, nulldata);
             // XXX i'd like h_skip(n) in hammer
 

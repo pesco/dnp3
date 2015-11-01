@@ -22,7 +22,10 @@ static char *format(const HParsedToken *p)
     }
 
     if(H_ISERR(p->token_type)) {
+        char *result = NULL;
         char *name = NULL;
+        char *frag = NULL;
+
         switch(p->token_type) {
         case ERR_FUNC_NOT_SUPP: name = g_strdup("FUNC_NOT_SUPP"); break;
         case ERR_OBJ_UNKNOWN:   name = g_strdup("OBJ_UNKNOWN"); break;
@@ -31,13 +34,16 @@ static char *format(const HParsedToken *p)
             name = g_strdup_printf("ERROR %d", p->token_type-TT_ERR);
         }
 
-        char *frag = NULL;
         if(p->user)
             frag = dnp3_format_fragment(p->user);
         else
             frag = g_strdup("-?-");
 
-        return g_strdup_printf("%s on %s", name, frag);
+        result = g_strdup_printf("%s on %s", name, frag);
+
+        free(name);
+        free(frag);
+        return result;
     }
 
     return h_write_result_unamb(p);

@@ -195,6 +195,7 @@ static int append_string(char **res, size_t *size, const char *s, size_t n)
     t[n] = '\0';
 
     appendf(res, size, "'%s'", t);
+    free(t);
 }
 
 char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)

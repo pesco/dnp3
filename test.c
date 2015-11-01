@@ -70,13 +70,14 @@ static char *format(const HParsedToken *p)
   } while(0)
 
 #define check_parse_fail(parser, input, inp_len) do { \
-    const HParseResult *result = h_parse(parser, (const uint8_t*)input, inp_len); \
+    HParseResult *result = h_parse(parser, (const uint8_t*)input, inp_len); \
     if (NULL != result) { \
       char* cres = format(result->ast); \
       g_test_message("Check failed on line %d: shouldn't have succeeded, but parsed %s", \
                      __LINE__, cres); \
       free(cres); \
       g_test_fail(); \
+      h_parse_result_free(result); \
     } \
   } while(0)
 
@@ -95,7 +96,7 @@ static char *format(const HParsedToken *p)
                      "Inefficiency: %5f%%", \
 		     stats.used, stats.wasted, \
 		     stats.wasted * 100. / (stats.used+stats.wasted)); \
-      h_delete_arena(res->arena); \
+      h_parse_result_free(res); \
     } \
   } while(0)
 

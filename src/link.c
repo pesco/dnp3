@@ -182,12 +182,14 @@ static HParser *k_frame(HAllocator *mm__, const HParsedToken *p, void *user)
         uint8_t nblocks = hdr->len / 16;
         uint8_t lastlen = hdr->len % 16;
 
+        // XXX should really consider pre-baking all of these
         HParser *udata = h_repeat_n__m(mm__, blockp[16], nblocks);
         udata = h_sequence__m(mm__, udata, blockp[lastlen], NULL);
 
         HParser *valid   = h_action__m(mm__, udata, act_udata, hdr);
-        HParser *skip    = h_ignore__m(mm__, h_uint8__m(mm__));
-        HParser *corrupt = h_right(h_repeat_n(skip, hdr->len), nulldata);
+        HParser *skipB   = h_ignore__m(mm__, h_uint8__m(mm__));
+        HParser *skip    = h_repeat_n__m(mm__, skip, hdr->len);
+        HParser *corrupt = h_right__m(mm__, skip, nulldata);
             // XXX i'd like h_skip(n) in hammer
 
         return h_choice__m(mm__, valid, corrupt, NULL);

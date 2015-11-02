@@ -49,32 +49,6 @@ static char *format(const HParsedToken *p)
     return h_write_result_unamb(p);
 }
 
-void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t length, const char* line)
-{
-    HParseResult *result = h_parse(parser, input, length);
-    if (NULL != result) {
-        char* cres = format(result->ast);
-        g_test_message("Check failed on line %d: shouldn't have succeeded, but parsed %s", line, cres);
-        free(cres);
-        g_test_fail();
-        h_parse_result_free(result);
-    }
-}
-
-#define check_numtype(fmt, typ, n1, op, n2) do {				\
-    typ _n1 = (n1);							\
-    typ _n2 = (n2);							\
-    if (!(_n1 op _n2)) {						\
-      g_test_message("Check failed on line %d: (%s): (" fmt " %s " fmt ")",	\
-		     __LINE__,				\
-		     #n1 " " #op " " #n2,				\
-		     _n1, #op, _n2);					\
-      g_test_fail();							\
-    }									\
-  } while(0)
-
-#define check_cmp_uint64(n1, op, n2) check_numtype("%" PRIu64, uint64_t, n1, op, n2)
-
 #define check_string(n1, op, n2) do {			\
     const char *_n1 = (n1);				\
     const char *_n2 = (n2);				\
@@ -87,30 +61,45 @@ void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t len
     }							\
   } while(0)
 
+void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t length, int line)
+{
+    HParseResult *result = h_parse(parser, input, length);
+    if (NULL != result) {
+        char* cres = format(result->ast);
+        g_test_message("Check failed on line %d: shouldn't have succeeded, but parsed %s", line, cres);
+        free(cres);
+        g_test_fail();
+        h_parse_result_free(result);
+    }
+}
+
+void do_check_parse(const HParser* parser, const uint8_t* input, size_t length, const char* result, int line) {
+    HParseResult *res = h_parse(parser, input, length);
+    if (!res) {
+      g_test_message("Parse failed on line %d, while expecting %s", __LINE__, result);
+      g_test_fail();
+    } else {
+      char *cres = format(res->ast);
+      check_string(cres, == , result);
+      free(cres);
+      HArenaStats stats;
+      h_allocator_stats(res->arena, &stats);
+      g_test_message("Parse used %zd bytes, wasted %zd bytes. "
+                     "Inefficiency: %5f%%",
+             stats.used, stats.wasted,
+             stats.wasted * 100. / (stats.used + stats.wasted));
+      h_parse_result_free(res);
+    }
+}
 
 #define check_parse_fail(parser, input, inp_len) do { \
-    do_check_parse_fail(parser, input, inp_len, __LINE__);
+    do_check_parse_fail(parser, (const uint8_t*)  input, inp_len, __LINE__); \
 } while(0)
 
 
 #define check_parse(parser, input, inp_len, result) do { \
-    HParseResult *res = h_parse(parser, (const uint8_t*)input, inp_len); \
-    if (!res) { \
-      g_test_message("Parse failed on line %d, while expecting %s", __LINE__, result); \
-      g_test_fail(); \
-    } else { \
-      char* cres = format(res->ast); \
-      check_string(cres, ==, result); \
-      free(cres); \
-      HArenaStats stats; \
-      h_allocator_stats(res->arena, &stats); \
-      g_test_message("Parse used %zd bytes, wasted %zd bytes. " \
-                     "Inefficiency: %5f%%", \
-		     stats.used, stats.wasted, \
-		     stats.wasted * 100. / (stats.used+stats.wasted)); \
-      h_parse_result_free(res); \
-    } \
-  } while(0)
+    do_check_parse(parser, (const uint8_t*) input, inp_len, result, __LINE__); \
+} while(0)
 
 
 /// some test cases that produce seg-faults from fuzzing ///
@@ -125,21 +114,6 @@ static void test_crash1(void)
 
 	check_parse_fail(dnp3_p_app_response, input, len);
 	// check_parse_fail(dnp3_p_app_request, input, len);
-}
-
-static void test_crash2(void)
-{
-    const char *input = "\xC0\x14\x01\x00\x39\x23\x00\x00\x4d\x39\x39\x39\x09\x00\x80\x00";
-    const size_t len = 16;
-    check_parse_fail(dnp3_p_app_request, input, len);
-}
-
-static void test_crash3(void)
-{
-    const char *input = "\xC0\x81\x00\x00\x02\x02\x02\x00\x81\x00\x02\x02\x02\x40\x81\x00\x00\x00\x00\x02\x02\x00\x00\x10\x1f\x81";
-    const size_t len = 26;
-
-    check_parse_fail(dnp3_p_app_response, input, len);
 }
 
 
@@ -999,9 +973,6 @@ int main(int argc, char *argv[])
     dnp3_p_init();
 
     g_test_add_func("/app/crash/1", test_crash1);
-    g_test_add_func("/app/crash/2", test_crash2);
-    g_test_add_func("/app/crash/3", test_crash3);
-
 
     g_test_add_func("/app/req/fail", test_req_fail);
     g_test_add_func("/app/req/ac", test_req_ac);

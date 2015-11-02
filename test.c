@@ -87,17 +87,6 @@ void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t len
     }							\
   } while(0)
 
-#define check_parse_fail(parser, input, inp_len) do { \
-    HParseResult *result = h_parse(parser, (const uint8_t*)input, inp_len); \
-    if (NULL != result) { \
-      char* cres = format(result->ast); \
-      g_test_message("Check failed on line %d: shouldn't have succeeded, but parsed %s", \
-                     __LINE__, cres); \
-      free(cres); \
-      g_test_fail(); \
-      h_parse_result_free(result); \
-    } \
-  } while(0)
 
 #define check_parse_fail(parser, input, inp_len) do { \
     do_check_parse_fail(parser, input, inp_len, __LINE__);

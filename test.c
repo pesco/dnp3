@@ -22,7 +22,10 @@ static char *format(const HParsedToken *p)
     }
 
     if(H_ISERR(p->token_type)) {
+        char *result = NULL;
         char *name = NULL;
+        char *frag = NULL;
+
         switch(p->token_type) {
         case ERR_FUNC_NOT_SUPP: name = g_strdup("FUNC_NOT_SUPP"); break;
         case ERR_OBJ_UNKNOWN:   name = g_strdup("OBJ_UNKNOWN"); break;
@@ -31,13 +34,16 @@ static char *format(const HParsedToken *p)
             name = g_strdup_printf("ERROR %d", p->token_type-TT_ERR);
         }
 
-        char *frag = NULL;
         if(p->user)
             frag = dnp3_format_fragment(p->user);
         else
             frag = g_strdup("-?-");
 
-        return g_strdup_printf("%s on %s", name, frag);
+        result = g_strdup_printf("%s on %s", name, frag);
+
+        free(name);
+        free(frag);
+        return result;
     }
 
     return h_write_result_unamb(p);
@@ -70,13 +76,14 @@ static char *format(const HParsedToken *p)
   } while(0)
 
 #define check_parse_fail(parser, input, inp_len) do { \
-    const HParseResult *result = h_parse(parser, (const uint8_t*)input, inp_len); \
+    HParseResult *result = h_parse(parser, (const uint8_t*)input, inp_len); \
     if (NULL != result) { \
       char* cres = format(result->ast); \
       g_test_message("Check failed on line %d: shouldn't have succeeded, but parsed %s", \
                      __LINE__, cres); \
       free(cres); \
       g_test_fail(); \
+      h_parse_result_free(result); \
     } \
   } while(0)
 
@@ -95,7 +102,7 @@ static char *format(const HParsedToken *p)
                      "Inefficiency: %5f%%", \
 		     stats.used, stats.wasted, \
 		     stats.wasted * 100. / (stats.used+stats.wasted)); \
-      h_delete_arena(res->arena); \
+      h_parse_result_free(res); \
     } \
   } while(0)
 

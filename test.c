@@ -49,6 +49,18 @@ static char *format(const HParsedToken *p)
     return h_write_result_unamb(p);
 }
 
+void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t length, const char* line)
+{
+    HParseResult *result = h_parse(parser, input, length);
+    if (NULL != result) {
+        char* cres = format(result->ast);
+        g_test_message("Check failed on line %d: shouldn't have succeeded, but parsed %s", line, cres);
+        free(cres);
+        g_test_fail();
+        h_parse_result_free(result);
+    }
+}
+
 #define check_numtype(fmt, typ, n1, op, n2) do {				\
     typ _n1 = (n1);							\
     typ _n2 = (n2);							\
@@ -86,6 +98,11 @@ static char *format(const HParsedToken *p)
       h_parse_result_free(result); \
     } \
   } while(0)
+
+#define check_parse_fail(parser, input, inp_len) do { \
+    do_check_parse_fail(parser, input, inp_len, __LINE__);
+} while(0)
+
 
 #define check_parse(parser, input, inp_len, result) do { \
     HParseResult *res = h_parse(parser, (const uint8_t*)input, inp_len); \

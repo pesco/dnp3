@@ -12,11 +12,7 @@ option(WERROR "Set all warnings to errors" OFF)
 FIND_PACKAGE(PkgConfig) # tell cmake to require pkg-config
 PKG_CHECK_MODULES(GLIB2 REQUIRED glib-2.0>=2.36.0)
 
-if(STATICLIBS)
-      set(LIB_TYPE STATIC)
-else()
-      set(LIB_TYPE SHARED)
-endif()
+set(LIB_TYPE STATIC)
 
 set(CMAKE_C_FLAGS "-Wall -std=c99")
 
@@ -31,7 +27,7 @@ include_directories(lib/src)
 # for the tests
 include_directories(${GLIB2_INCLUDE_DIRS})
 
-# ---- library ----
+# ---- parser library ----
 file(GLOB_RECURSE dnp3hammer_SRC lib/src/dnp3hammer/*.c)
 add_library(dnp3hammer ${LIB_TYPE} ${dnp3hammer_SRC})
 target_link_libraries(dnp3hammer hammer)
@@ -40,7 +36,11 @@ target_link_libraries(dnp3hammer hammer)
 add_executable(dnp3-tests ./test/unit/main.c)
 target_link_libraries(dnp3-tests dnp3hammer ${GLIB2_LIBRARIES})
 
-
 # ---- crc example program -----
 add_executable(crc ./examples/crc/main.c)
 target_link_libraries(crc dnp3hammer)
+
+# ---- pprint example program -----
+#add_executable(pprint ./examples/plugins/plugin_main.c ./examples/plugins/pprint.c)
+#target_link_libraries(pprint dnp3hammer)
+

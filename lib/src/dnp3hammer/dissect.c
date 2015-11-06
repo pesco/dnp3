@@ -1,11 +1,17 @@
-#include <dnp3.h>
+
+#include <dnp3hammer/dissect.h>
+
+#include <dnp3hammer/dnp3.h>
+
 #include <hammer/hammer.h>
 #include <hammer/glue.h>
-#include "src/hammer.h"
+
+#include "hammer.h"
+
 #include <string.h>
 #include <stdlib.h>
 
-#include "dissect.h"
+
 
 
 #define debug_(...) //debug(__VA_ARGS__)

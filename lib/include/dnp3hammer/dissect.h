@@ -1,5 +1,6 @@
 #include "plugin.h"
-#include <dnp3.h>
+
+#include <dnp3hammer/dnp3.h>
 
 // plugin internals
 

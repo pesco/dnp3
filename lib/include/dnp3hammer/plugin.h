@@ -1,3 +1,10 @@
+
+#ifndef PLUGIN_H_SEEN
+#define PLUGIN_H_SEEN
+
+#include <stdint.h>
+#include <stddef.h>
+
 typedef struct Plugin_ Plugin;
 struct Plugin_ {
     // input buffer, pre-allocated, may be altered by feed()
@@ -26,3 +33,6 @@ Plugin *dnp3_dissect(QueueOutputCallback output, void *env);
 // logging hooks to be provided by main program
 void error(const char *fmt, ...);
 void debug(const char *fmt, ...);
+
+#endif
+

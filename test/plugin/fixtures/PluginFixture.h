@@ -14,6 +14,8 @@ class PluginFixture
         PluginFixture();
         ~PluginFixture();
 
+        bool Parse(const std::string& hex);
+
         // the output that gets written by the plugin
         std::vector<slice_t> writes;
 

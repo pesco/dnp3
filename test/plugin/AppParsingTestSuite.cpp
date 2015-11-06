@@ -1,6 +1,7 @@
 #include <catch.hpp>
 
 #include "fixtures/PluginFixture.h"
+#include "fixtures/DNP3Helpers.h"
 
 #define SUITE(name) "Plugin - " name
 
@@ -11,6 +12,8 @@ TEST_CASE(SUITE("Construct and delete"))
 
 TEST_CASE(SUITE("rejects undersized ASDU"))
 {
-
     PluginFixture fix;
+    auto lpdu = CreateLinkFrame("C0 C0"); // payload w/ transport header + app header
+
+    REQUIRE_FALSE(fix.Parse(lpdu));
 }

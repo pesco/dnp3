@@ -4,8 +4,8 @@
 #include <inttypes.h>   // PRIu64
 #include <glib.h>
 
-#include <dnp3.h>
-#include "hammer.h" // H_ISERR
+#include <dnp3hammer/dnp3.h>
+#include <dnp3hammer/hammer.h> // H_ISERR
 
 
 /// test macros (lifted/adapted from hammer's test suite) ///
@@ -113,8 +113,7 @@ static void test_crash1(void)
 	const char* input = "\xC0\x81\x00\x00\x02\x02\x19\x19\x19\x19\x19\x19\x19\xff\x7f\xff\xff\x01\x01\x81";
 	const size_t len = 20;
 
-	check_parse_fail(dnp3_p_app_response, input, len);
-	// check_parse_fail(dnp3_p_app_request, input, len);
+	check_parse(dnp3_p_app_response, input, len, "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 }
 
 

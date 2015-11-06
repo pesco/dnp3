@@ -13,9 +13,15 @@ Sven M. Hallberg, 2014-2015
        previously-stored value. This is a stop-gap workaround until we get
        symbol scoping.
 
- * Run 'make' to build.
+ * Uses [cmake](https://cmake.org) to build. The 'build' directory is in .gitignore.
 
- * Run './test' to execute the unit tests (uses the GLib test framework).
+```sh
+> mkdir build; cd build
+> cmake ..
+> make
+```
+
+ * Run './dnp3-tests' to execute the unit tests (uses the GLib test framework).
 
  * The './pprint' utility is an example application that accepts DNP3 traffic
    (as a stream of raw link-layer frames) on stdin and prints it in human-

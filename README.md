@@ -1,19 +1,14 @@
 A DNP3 parser implementation in Hammer 
 Sven M. Hallberg, 2014-2015
 
- * Uses the Hammer parser combinator library.
-   https://github.com/UpstandingHackers/hammer
-
- * Currently requires a custom version of Hammer:
-   https://github.com/pesco/hammer/ (master branch)
-
-   This includes:
+* Uses the [Hammer](https://github.com/UpstandingHackers/hammer) parser combinator library.   
+* Currently requires a (custom version)[https://github.com/pesco/hammer] (master branch) of Hammer, including:   
      * 'h_aligned', to check for byte-alignment (from branch 'h_aligned')
      * A temporary patch to 'h_put_value' allowing it to overwrite a
        previously-stored value. This is a stop-gap workaround until we get
        symbol scoping.
 
- * Uses [cmake](https://cmake.org) to build. The 'build' directory is in .gitignore.
+* Uses [cmake](https://cmake.org) to build. The 'build' directory is in .gitignore.
 
 ```sh
 > mkdir build; cd build
@@ -21,19 +16,22 @@ Sven M. Hallberg, 2014-2015
 > make
 ```
 
- * Run './dnp3-tests' to execute the unit tests (uses the GLib test framework).
+* Run './dnp3-tests' to execute the unit tests (uses the GLib test framework).
 
- * The './pprint' utility is an example application that accepts DNP3 traffic
+* The './pprint' utility is an example application that accepts DNP3 traffic
    (as a stream of raw link-layer frames) on stdin and prints it in human-
    readable form. The 'samples/' directory contains some sample inputs in
    hexadecimal notation. Example usage:
 
-       xxd -r -p samples/read.hex | ./pprint
+```
+xxd -r -p ../samples/read.hex | ./pprint
+```
 
-   The './filter' program uses the same traffic recognizer to sanitize its
-   input. Try:
+* The './filter' program uses the same traffic recognizer to sanitize its input. Try:
 
-       cat samples/*.hex | xxd -r -p | ./filter | ./pprint
+```
+cat ../samples/*.hex | xxd -r -p | ./filter | ./pprint
+```
 
 
 NOTES:

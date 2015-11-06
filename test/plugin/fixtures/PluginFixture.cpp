@@ -17,6 +17,6 @@ void PluginFixture::QueueOutput(void *env, const uint8_t *buf, size_t n)
 
 PluginFixture::~PluginFixture()
 {
-    m_plugin->finish(m_plugin);
+    assert(m_plugin->finish(m_plugin) == 0);
 }
 

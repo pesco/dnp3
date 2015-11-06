@@ -11,7 +11,7 @@ std::string AppToLink(const std::string& asdu, bool master, uint16_t dest, uint1
     return "";
 }
 
-std::string CreateLinkFrame(const std::string& data, bool master, uint16_t dest, uint16_t src)
+std::string LPDU(const std::string& data, bool master, uint16_t dest, uint16_t src)
 {
     HexData payload(data);
     REQUIRE(payload.Size() <= 250);

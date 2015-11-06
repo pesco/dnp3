@@ -9,7 +9,7 @@
 TEST_CASE(SUITE("create link frames"))
 {
     auto expected = "05 64 0E C4 01 00 00 04 7D A4 C0 C4 02 50 01 00 07 07 00 64 11";
-    auto lpdu = CreateLinkFrame("C0 C4 02 50 01 00 07 07 00");
+    auto lpdu = LPDU("C0 C4 02 50 01 00 07 07 00");
 
     REQUIRE(lpdu == expected);
 }

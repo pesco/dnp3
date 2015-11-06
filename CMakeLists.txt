@@ -36,6 +36,10 @@ target_link_libraries(dnp3hammer hammer)
 add_executable(dnp3-tests ./test/unit/main.c)
 target_link_libraries(dnp3-tests dnp3hammer ${GLIB2_LIBRARIES})
 
+# ---- afl app layer program ----
+add_executable(afl-app ./test/afl_app_layer/main.c)
+target_link_libraries(afl-app dnp3hammer)
+
 # ---- crc example program -----
 add_executable(crc ./examples/crc/main.c)
 target_link_libraries(crc dnp3hammer)

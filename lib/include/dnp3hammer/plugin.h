@@ -2,6 +2,10 @@
 #ifndef PLUGIN_H_SEEN
 #define PLUGIN_H_SEEN
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -33,6 +37,10 @@ Plugin *dnp3_dissect(QueueOutputCallback output, void *env);
 // logging hooks to be provided by main program
 void error(const char *fmt, ...);
 void debug(const char *fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

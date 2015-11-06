@@ -3,6 +3,9 @@
 
 #include <hammer/hammer.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// TYPES ///
 
@@ -563,6 +566,10 @@ char *dnp3_format_oblock(const DNP3_ObjectBlock *ob);
 char *dnp3_format_fragment(const DNP3_Fragment *frag);
 char *dnp3_format_segment(const DNP3_Segment *seg);
 char *dnp3_format_frame(const DNP3_Frame *frame);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif // DNP3_H_SEEN

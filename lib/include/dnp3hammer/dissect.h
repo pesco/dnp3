@@ -2,6 +2,10 @@
 
 #include <dnp3hammer/dnp3.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // plugin internals
 
 #define BUFLEN 4619 // enough for 4096B over 1 frame or 355 empty segments
@@ -47,3 +51,8 @@ void hook_app_reject(DissectPlugin *self);
 void hook_app_error(DissectPlugin *self, DNP3_ParseError e);
 void hook_app_fragment(DissectPlugin *self, const DNP3_Fragment *fragment,
                        const uint8_t *buf, size_t len);
+
+#ifdef __cplusplus
+}
+#endif
+

@@ -15,6 +15,7 @@ PKG_CHECK_MODULES(GLIB2 REQUIRED glib-2.0>=2.36.0)
 set(LIB_TYPE STATIC)
 
 set(CMAKE_C_FLAGS "-Wall -std=c99")
+set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
 
 # different release and debug flags
 set(CMAKE_C_FLAGS_RELEASE "-O3")
@@ -38,7 +39,8 @@ add_executable(dnp3-tests ./test/unit/main.c)
 target_link_libraries(dnp3-tests dnp3hammer ${GLIB2_LIBRARIES})
 
 # ---- plugin test suite ----
-add_executable(plugin-tests ./test/plugin/main.cpp)
+file(GLOB_RECURSE plugintests_SRC test/plugin/*.cpp)
+add_executable(plugin-tests ${plugintests_SRC})
 target_link_libraries(plugin-tests dnp3hammer)
 
 # ---- afl app layer program ----

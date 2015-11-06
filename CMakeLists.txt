@@ -25,7 +25,8 @@ set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
   
 # include paths for all the local libraries
-include_directories(./include)
+include_directories(include)
+include_directories(src)
 
 # for the tests
 include_directories(${GLIB2_INCLUDE_DIRS})
@@ -36,7 +37,7 @@ add_library(dnp3hammer ${LIB_TYPE} ${dnp3hammer_SRC})
 target_link_libraries(dnp3hammer hammer)
 
 # ---- test suite ----
-add_executable(dnp3-tests test.c)
+add_executable(dnp3-tests ./test/unit/main.c)
 target_link_libraries(dnp3-tests dnp3hammer ${GLIB2_LIBRARIES})
 
 

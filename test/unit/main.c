@@ -3,8 +3,9 @@
 #include <string.h>
 #include <inttypes.h>   // PRIu64
 #include <glib.h>
+
 #include <dnp3.h>
-#include "src/hammer.h" // H_ISERR
+#include "hammer.h" // H_ISERR
 
 
 /// test macros (lifted/adapted from hammer's test suite) ///

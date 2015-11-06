@@ -2,7 +2,7 @@
 *.o
 .syntastic_*
 Session.vim
-/test
+#/test
 /crc
 /pprint
 /filter

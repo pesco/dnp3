@@ -13,7 +13,7 @@ TEST_CASE(SUITE("Construct and delete"))
 TEST_CASE(SUITE("rejects undersized ASDU"))
 {
     PluginFixture fix;
-    auto asdu = "C0 C0"; // payload w/ transport header + app header
+    auto payload = "C0 C0"; // payload w/ transport header + app header
 
-    REQUIRE_FALSE(fix.Parse(LPDU(asdu)));
+    REQUIRE_FALSE(fix.Parse(LPDU(payload)));
 }

@@ -32,7 +32,7 @@ include_directories(src)
 include_directories(${GLIB2_INCLUDE_DIRS})
 
 # ---- library ----
-file(GLOB_RECURSE dnp3hammer_SRC src/*.c)
+file(GLOB_RECURSE dnp3hammer_SRC lib/src/dnp3hammer/*.c)
 add_library(dnp3hammer ${LIB_TYPE} ${dnp3hammer_SRC})
 target_link_libraries(dnp3hammer hammer)
 

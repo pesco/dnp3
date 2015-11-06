@@ -28,14 +28,14 @@ int main (int argc, char *argv[])
     //try to read from stdin
     const size_t NUM_READ = fread(buffer, 1, MAX_BYTES, stdin);
 
-    printf("Processing %zu bytes", NUM_READ);
+    printf("Processing %zu bytes\n", NUM_READ);
 
     /// run every test value through both parsers
     TestParser(dnp3_p_app_request, buffer, NUM_READ);
-    printf("Invoking request parser");
+    printf("Invoking request parser\n");
 
     TestParser(dnp3_p_app_response, buffer, NUM_READ);
-    printf("Invoking response parser");
+    printf("Invoking response parser\n");
 
     return 0;
 }

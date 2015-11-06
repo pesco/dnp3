@@ -6,7 +6,6 @@ Session.vim
 #cmake
 *~
 /build
-/CMakeFiles
 
 #clion IDE
 /.idea

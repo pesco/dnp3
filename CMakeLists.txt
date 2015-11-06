@@ -22,6 +22,7 @@ set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
   
 # include paths for all the local libraries
 include_directories(lib/include)
+# TODO - only add this for the test project
 include_directories(lib/src)
 
 # for the tests
@@ -32,9 +33,13 @@ file(GLOB_RECURSE dnp3hammer_SRC lib/src/dnp3hammer/*.c)
 add_library(dnp3hammer ${LIB_TYPE} ${dnp3hammer_SRC})
 target_link_libraries(dnp3hammer hammer)
 
-# ---- test suite ----
+# ---- unit test suite ----
 add_executable(dnp3-tests ./test/unit/main.c)
 target_link_libraries(dnp3-tests dnp3hammer ${GLIB2_LIBRARIES})
+
+# ---- plugin test suite ----
+add_executable(plugin-tests ./test/plugin/main.cpp)
+target_link_libraries(plugin-tests dnp3hammer)
 
 # ---- afl app layer program ----
 add_executable(afl-app ./test/afl_app_layer/main.c)

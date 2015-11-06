@@ -1,7 +1,7 @@
 
 #define CATCH_CONFIG_RUNNER
 
-#include "../catch/catch.hpp"
+#include <catch.hpp>
 
 #include <dnp3hammer/dissect.h>
 

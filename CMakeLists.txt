@@ -12,7 +12,7 @@ option(WERROR "Set all warnings to errors" OFF)
 FIND_PACKAGE(PkgConfig) # tell cmake to require pkg-config
 PKG_CHECK_MODULES(GLIB2 REQUIRED glib-2.0>=2.36.0)
 
-set(LIB_TYPE STATIC test/plugin/mocks/ProxyFixture.h)
+set(LIB_TYPE STATIC)
 
 set(CMAKE_C_FLAGS "-Wall -std=c99")
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
@@ -23,8 +23,9 @@ set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
   
 # include paths for all the local libraries
 include_directories(lib/include)
-# TODO - only add this for the test project
+# TODO - only add these for the required test projects
 include_directories(lib/src)
+include_directories(test/catch)
 
 # for the tests
 include_directories(${GLIB2_INCLUDE_DIRS})

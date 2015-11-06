@@ -7,11 +7,11 @@
 
 typedef std::pair<const uint8_t*, size_t> slice_t;
 
-class ProxyFixture
+class PluginFixture
 {
     public:
-        ProxyFixture();
-        ~ProxyFixture();
+        PluginFixture();
+        ~PluginFixture();
 
         // the output that gets written by the plugin
         std::vector<slice_t> writes;

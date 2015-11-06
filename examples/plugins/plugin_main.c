@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "dissect.h"
+#include <dnp3hammer/dissect.h>
 
 
 /// main ///

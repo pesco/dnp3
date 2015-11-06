@@ -2,14 +2,11 @@
 *.o
 .syntastic_*
 Session.vim
-#/test
-/crc
-/pprint
-/filter
 
 #cmake
 *~
 /build
+/CMakeFiles
 
 #clion IDE
 /.idea

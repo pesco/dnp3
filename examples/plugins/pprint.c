@@ -1,11 +1,12 @@
-#include <dnp3.h>
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
 #include <errno.h>
 
-#include "dissect.h"
+#include <dnp3hammer/dnp3.h>
+#include <dnp3hammer/dissect.h>
 
 
 /// hooks ///

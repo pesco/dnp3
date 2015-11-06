@@ -4,6 +4,7 @@
 #include <dnp3hammer/plugin.h>
 #include <utility>
 #include <vector>
+#include <string>
 
 typedef std::pair<const uint8_t*, size_t> slice_t;
 

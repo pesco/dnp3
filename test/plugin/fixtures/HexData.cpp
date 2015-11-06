@@ -25,6 +25,24 @@ HexData::HexData(const std::string& hex) :
     }
 }
 
+std::string HexData::Convert(const uint8_t* buff, size_t length, bool spaced)
+{
+    std::ostringstream oss;
+    size_t last = length - 1;
+    for (size_t i = 0; i < length; i++)
+    {
+        char c = buff[i];
+        oss << ToHexChar((c & 0xf0) >> 4) << ToHexChar(c & 0xf);
+        if (spaced && i != last)oss << " ";
+    }
+    return oss.str();
+}
+
+char HexData::ToHexChar(char c)
+{
+    return (c > 9) ? ('A' + (c - 10)) : ('0' + c);
+}
+
 const uint8_t* HexData::Buffer() const
 {
     return m_buffer.get();

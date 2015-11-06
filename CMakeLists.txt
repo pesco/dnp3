@@ -41,7 +41,7 @@ target_link_libraries(dnp3-tests dnp3hammer ${GLIB2_LIBRARIES})
 
 # ---- plugin test suite ----
 file(GLOB_RECURSE plugintests_SRC test/plugin/*.cpp)
-add_executable(plugin-tests ${plugintests_SRC})
+add_executable(plugin-tests ${plugintests_SRC} test/plugin/fixtures/DNP3Helpers.h)
 target_link_libraries(plugin-tests dnp3hammer)
 
 # ---- afl app layer program ----

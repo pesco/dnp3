@@ -14,7 +14,11 @@ public:
     const uint8_t* Buffer() const;
     size_t Size() const;
 
+    static std::string Convert(const uint8_t* pBuff, size_t length, bool spaced = false);
+
 private:
+
+    static char ToHexChar(char c);
 
     static std::string RemoveSpaces(const std::string& hex);
 

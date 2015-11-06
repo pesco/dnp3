@@ -41,3 +41,6 @@ add_executable(dnp3-tests ./test/unit/main.c)
 target_link_libraries(dnp3-tests dnp3hammer ${GLIB2_LIBRARIES})
 
 
+# ---- crc example program -----
+add_executable(crc ./examples/crc/main.c)
+target_link_libraries(crc dnp3hammer)

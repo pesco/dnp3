@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <dnp3.h>
+
+#include <dnp3hammer/dnp3.h>
 
 #define BUFLEN 16
 

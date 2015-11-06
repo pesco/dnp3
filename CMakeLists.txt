@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.0)
-project (proxy)
+project (hammerdnp3)
 set(HAMMERDNP3_MAJOR_VERSION 1)
 set(HAMMERDNP3_MINOR_VERSION 0)
 set(HAMMERDNP3_MICRO_VERSION 0)
@@ -12,7 +12,7 @@ option(WERROR "Set all warnings to errors" OFF)
 FIND_PACKAGE(PkgConfig) # tell cmake to require pkg-config
 PKG_CHECK_MODULES(GLIB2 REQUIRED glib-2.0>=2.36.0)
 
-set(LIB_TYPE STATIC)
+set(LIB_TYPE STATIC test/plugin/mocks/ProxyFixture.h)
 
 set(CMAKE_C_FLAGS "-Wall -std=c99")
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11")

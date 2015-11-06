@@ -25,8 +25,8 @@ set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
   
 # include paths for all the local libraries
-include_directories(include)
-include_directories(src)
+include_directories(lib/include)
+include_directories(lib/src)
 
 # for the tests
 include_directories(${GLIB2_INCLUDE_DIRS})

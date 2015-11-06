@@ -1,4 +1,6 @@
-#include <dnp3.h>
+
+#include <dnp3hammer/dnp3.h>
+
 #include <hammer/glue.h>
 #include "g120_auth.h"
 #include "app.h"

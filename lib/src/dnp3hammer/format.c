@@ -1,4 +1,5 @@
-#include <dnp3.h>
+#include <dnp3hammer/dnp3.h>
+
 #include <stdlib.h>     // malloc
 #include <string.h>     // strlen
 #include <inttypes.h>   // PRIu32 etc.

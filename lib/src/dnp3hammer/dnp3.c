@@ -1,4 +1,6 @@
-#include <dnp3.h>
+
+#include <dnp3hammer/dnp3.h>
+
 #include "util.h"
 #include "app.h"
 #include "transport.h"

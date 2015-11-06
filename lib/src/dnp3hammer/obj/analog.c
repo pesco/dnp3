@@ -1,4 +1,5 @@
-#include <dnp3.h>
+#include <dnp3hammer/dnp3.h>
+
 #include <hammer/glue.h>
 #include "../hammer.h"
 #include "../app.h"

@@ -1,4 +1,6 @@
-#include <dnp3.h>
+
+#include <dnp3hammer/dnp3.h>
+
 #include <hammer/hammer.h>
 #include <hammer/glue.h>
 #include <stdlib.h>     // malloc

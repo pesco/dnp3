@@ -1,20 +1,69 @@
 #include "DNP3Helpers.h"
 
-#include <catch.hpp>
+
 #include "HexData.h"
 
 #include <dnp3hammer/dnp3.h>
 #include <cstring>
+#include <sstream>
 
-std::string AppToLink(const std::string& asdu, bool master, uint16_t dest, uint16_t src, uint8_t segment)
+using namespace std;
+
+std::string TPDUS(const std::string& asdu, bool master, uint16_t dest, uint16_t src, uint8_t seqStart, uint8_t segmentSize)
 {
-    return "";
+    if (segmentSize < 1 || segmentSize > 249)
+    {
+        throw std::invalid_argument("bad segment size");
+    }
+
+    if(seqStart > 63)
+    {
+        throw std::invalid_argument("bad starting sequence number");
+    }
+
+    HexData data(asdu);
+
+    ostringstream oss;
+
+    auto pos = data.Buffer();
+    auto remaining = data.Size();
+
+    uint8_t seq  = seqStart;
+    bool fir = true;
+
+    while(remaining > 0)
+    {
+        const auto num = (remaining < segmentSize) ? remaining : segmentSize;
+
+        const bool FIN = (remaining == num);
+        uint8_t header = seq | (fir ? 0x40 : 0x0) | (FIN ? 0x80 : 0);
+
+        ostringstream oss2;
+        oss2 << HexData::Convert(&header, 1); // output the header
+        oss2 << HexData::Convert(pos, num, false);
+
+        if(!fir)
+        {
+            oss << " ";
+        }
+        oss << LPDU(oss2.str());
+
+        // advance everything
+        fir = false;
+        seq = (seq+1) % 64;
+        pos += num;
+        remaining -= num;
+    }
+
+    return oss.str();
 }
 
 std::string LPDU(const std::string& data, bool master, uint16_t dest, uint16_t src)
 {
     HexData payload(data);
-    REQUIRE(payload.Size() <= 250);
+    if(payload.Size() > 250) {
+        throw std::invalid_argument("data must be <= 250 bytes in length");
+    }
 
     uint8_t lpdu[292];
 

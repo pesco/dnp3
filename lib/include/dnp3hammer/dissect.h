@@ -1,3 +1,6 @@
+#ifndef DISSECT_H_SEEN
+#define DISSECT_H_SEEN
+
 #include "plugin.h"
 
 #include <dnp3hammer/dnp3.h>
@@ -56,3 +59,4 @@ void hook_app_fragment(DissectPlugin *self, const DNP3_Fragment *fragment,
 }
 #endif
 
+#endif

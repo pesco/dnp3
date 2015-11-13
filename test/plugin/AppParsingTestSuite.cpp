@@ -3,7 +3,7 @@
 #include "fixtures/PluginFixture.h"
 #include "fixtures/DNP3Helpers.h"
 
-#define SUITE(name) "Plugin - " name
+#define SUITE(name) "PluginApp - " name
 
 TEST_CASE(SUITE("Construct and delete"))
 {
@@ -23,3 +23,4 @@ TEST_CASE(SUITE("rejects undersized ASDU"))
 
     REQUIRE_FALSE(SUCCESS);
 }
+

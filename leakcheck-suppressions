@@ -1,0 +1,9 @@
+{
+   <hammer-initialization>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   ...
+   fun:dnp3_dissect_init
+   fun:main
+}

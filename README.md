@@ -18,19 +18,19 @@ Sven M. Hallberg, 2014-2015
 
 * Run './dnp3-tests' to execute the unit tests (uses the GLib test framework).
 
-* The './pprint' utility is an example application that accepts DNP3 traffic
+* The './dissect' utility is an example application that accepts DNP3 traffic
    (as a stream of raw link-layer frames) on stdin and prints it in human-
    readable form. The 'samples/' directory contains some sample inputs in
    hexadecimal notation. Example usage:
 
 ```
-xxd -r -p ../samples/read.hex | ./pprint
+xxd -r -p ../samples/read.hex | ./dissect
 ```
 
-* The './filter' program uses the same traffic recognizer to sanitize its input. Try:
+* The '-f' option uses the same traffic recognizer to sanitize its input. Try:
 
 ```
-cat ../samples/*.hex | xxd -r -p | ./filter | ./pprint
+cat ../samples/*.hex | xxd -r -p | ./dissect -f | ./dissect
 ```
 
 

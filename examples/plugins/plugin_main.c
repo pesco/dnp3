@@ -100,16 +100,24 @@ void print_app_invalid(void *env, DNP3_ParseError e)
 /// main ///
 
 const char *usage =
-    "usage: dissect [-f]\n"
+    "usage: dissect [-TAf]\n"
+    "    -T  read a single transport segment from stdin\n"
+    "    -A  read a single app-layer fragment from stdin\n"
     "    -f  filter: pass valid traffic to stdout\n"
     ;
-    
+
+DNP3_Callbacks callbacks = {NULL};
+
+int main_app(void);
+int main_transport(void);
+int main_full(void);
+
 int main(int argc, char *argv[])
 {
-    StreamProcessor *p;
-    DNP3_Callbacks callbacks = {NULL};
+    int (*main_)(void);
 
-    // default: print mode
+    // default: full trafic, print mode
+    main_ = main_full;
     callbacks.link_frame = print_frame;
     callbacks.transport_segment = print_segment;
     callbacks.transport_payload = print_transport_payload;
@@ -119,15 +127,20 @@ int main(int argc, char *argv[])
 
     // command line
     int ch;
-    while((ch = getopt(argc, argv, "hf")) != -1) {
+    while((ch = getopt(argc, argv, "TAfh")) != -1) {
         switch(ch) {
-        case 'f':
-            // filter mode
+        case 'f': // filter mode
             callbacks.link_frame = output_ctrl_frame;
             callbacks.transport_segment = NULL;
             callbacks.transport_payload = NULL;
             callbacks.app_invalid = NULL;
             callbacks.app_fragment = output_fragment;
+            break;
+        case 'A': // app-layer only
+            main_ = main_app;
+            break;
+        case 'T': // transport-layer
+            main_ = main_transport;
             break;
         default:
             fputs(usage, stderr);
@@ -138,6 +151,12 @@ int main(int argc, char *argv[])
     argv += optind;
 
     dnp3_init();
+    return main_();
+}
+
+int main_full(void)
+{
+    StreamProcessor *p;
 
     p = dnp3_dissector(callbacks, stdout);
     if(p == NULL) {
@@ -168,5 +187,51 @@ int main(int argc, char *argv[])
     }
 
     p->finish(p);
+    return 0;
+}
+
+#define BUFLEN 4096
+#define CALLBACK(NAME, ...) \
+    do {if(callbacks.NAME) callbacks.NAME(stdout, __VA_ARGS__);} while(0)
+
+int app_layer(const uint8_t *buf, size_t n, const uint8_t *raw, size_t rawn)
+{
+    HParseResult *res = h_parse(dnp3_p_app_fragment, buf, n);
+    if(!res) {
+        CALLBACK(app_invalid, 0);
+        return 1;
+    }
+
+    if(res->ast->token_type == TT_DNP3_Fragment)
+        CALLBACK(app_fragment, res->ast->user, raw, rawn);
+    else
+        CALLBACK(app_invalid, res->ast->token_type);
+    h_parse_result_free(res);
+    return 0;
+}
+
+int main_app(void)
+{
+    uint8_t buf[BUFLEN];
+    size_t n;
+
+    n = fread(buf, 1, BUFLEN, stdin);
+    return app_layer(buf, n, buf, n);
+}
+
+int main_transport(void)
+{
+    uint8_t buf[BUFLEN];
+    size_t n;
+
+    n = fread(buf, 1, BUFLEN, stdin);
+    HParseResult *res = h_parse(dnp3_p_transport_segment, buf, n);
+    if(!res)
+        return 1;   // shouldn't happen
+
+    DNP3_Segment *segment = res->ast->user;
+    CALLBACK(transport_segment, segment);
+    if(segment->payload)
+        return app_layer(segment->payload, segment->len, buf, n);
     return 0;
 }

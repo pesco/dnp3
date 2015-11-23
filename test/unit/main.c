@@ -77,7 +77,7 @@ void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t len
 void do_check_parse(const HParser* parser, const uint8_t* input, size_t length, const char* result, int line) {
     HParseResult *res = h_parse(parser, input, length);
     if (!res) {
-      g_test_message("Parse failed on line %d, while expecting %s", __LINE__, result);
+      g_test_message("Parse failed on line %d, while expecting %s", line, result);
       g_test_fail();
     } else {
       char *cres = format(res->ast);

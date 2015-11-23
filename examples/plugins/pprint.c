@@ -1,43 +1,34 @@
-
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdarg.h>
-#include <errno.h>
 
 #include <dnp3hammer/dnp3.h>
-#include <dnp3hammer/dissect.h>
 
 
-/// hooks ///
-
-static void print(DissectPlugin *self, const char *fmt, ...)
+// helper
+static void print(void *env, const char *fmt, ...)
 {
     va_list args;
-    char buf[1024];
-    int n;
 
     va_start(args, fmt);
-    n = vsnprintf(buf, sizeof(buf), fmt, args);
+    vfprintf((FILE *)env, fmt, args);
     va_end(args);
-
-    if(n >= 0)
-        self->out(self->env, (uint8_t *)buf, n);
-    else
-        error("vsnprintf: %s", strerror(errno));
 }
 
-void hook_link_frame(DissectPlugin *self,
-                     const DNP3_Frame *frame, const uint8_t *buf, size_t len)
+void output_frame(void *env, const DNP3_Frame *frame,
+                  const uint8_t *buf, size_t len)
 {
     // always print out the packet
-    print(self, "L> %s\n", dnp3_format_frame(frame));
+    print(env, "L> %s\n", dnp3_format_frame(frame));
 }
 
-void hook_transport_reject(DissectPlugin *self)
+void output_fragment(void *env, const DNP3_Fragment *fragment,
+                     const uint8_t *buf, size_t len)
 {
-    print(self, "T: no parse\n");
+    print(env, "A> %s\n", dnp3_format_fragment(fragment));
 }
+
+
+
+#if 0
 
 void hook_transport_segment(DissectPlugin *self, const DNP3_Segment *segment)
 {
@@ -74,8 +65,4 @@ void hook_app_error(DissectPlugin *self, DNP3_ParseError e)
     print(self, "A: error %s (%d)\n", errorname(e), (int)e);
 }
 
-void hook_app_fragment(DissectPlugin *self, const DNP3_Fragment *fragment,
-                       const uint8_t *buf, size_t len)
-{
-    print(self, "A> %s\n", dnp3_format_fragment(fragment));
-}
+#endif

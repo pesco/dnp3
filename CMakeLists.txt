@@ -59,4 +59,3 @@ target_link_libraries(pprint dnp3hammer)
 # ---- filter example program -----
 add_executable(filter ./examples/plugins/plugin_main.c ./examples/plugins/filter.c)
 target_link_libraries(filter dnp3hammer)
-

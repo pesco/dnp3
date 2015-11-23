@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+
 /// TYPES ///
 
 // data link layer...
@@ -553,9 +554,44 @@ extern HParser *dnp3_p_transport_segment;
 extern HParser *dnp3_p_link_frame;
 
 
+/// HIGH-LEVEL PROTOCOL ///
+
+typedef struct StreamProcessor_ StreamProcessor;
+struct StreamProcessor_ {
+    // input buffer, pre-allocated, may be altered by feed()
+    uint8_t *buf;
+    size_t bufsize;
+
+    // return 0 on success, < 0 on error
+    int (*feed)(StreamProcessor *self, size_t n); // eats either 0 or n bytes
+    int (*finish)(StreamProcessor *self);         // invalidates (frees) self
+};
+
+typedef struct {
+    void (*link_frame)(void *env, const DNP3_Frame *frame,
+                       const uint8_t *buf, size_t len);    // raw input
+    void (*transport_segment)(void *env, const DNP3_Segment *segment);
+    void (*transport_payload)(void *env, const uint8_t *s, size_t n);
+    void (*app_invalid)(void *env, DNP3_ParseError e);
+    void (*app_fragment)(void *env, const DNP3_Fragment *fragment,
+                         const uint8_t *buf, size_t len);       // raw frames
+        // XXX Passing raw frames to app_fragment() is a temporary measure.
+        //     Those arguments should be removed when we can generate DNP3
+        //     output ourselves.
+
+    void (*log_error)(void *env, const char *fmt, ...);
+} DNP3_Callbacks;
+
+
 /// EXPORTED FUNCTIONS ///
 
-void dnp3_p_init(void);
+// global one-time init
+void dnp3_init(void);
+void dnp3_p_init(void);     // initialize just the parsers  XXX needed?
+// XXX void dnp3_free(void);
+
+// create a protocol dissector bound to the given callbacks
+StreamProcessor *dnp3_dissector(DNP3_Callbacks cb, void *env);
 
 uint16_t dnp3_crc(uint8_t *bytes, size_t len);
 
@@ -567,9 +603,8 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag);
 char *dnp3_format_segment(const DNP3_Segment *seg);
 char *dnp3_format_frame(const DNP3_Frame *frame);
 
+
 #ifdef __cplusplus
 }
 #endif
-
-
 #endif // DNP3_H_SEEN

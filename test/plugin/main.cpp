@@ -3,16 +3,13 @@
 
 #include <catch.hpp>
 
-#include <dnp3hammer/dissect.h>
+#include <dnp3hammer/dnp3.h>
 
 
 int main( int argc, char* const argv[] )
 {
   // global setup...
-  if(dnp3_dissect_init(NULL) < 0) {
-	std::cerr << "plugin init failed" << std::endl;
-        return 1;
-  }
+  dnp3_init();
 
   int result = Catch::Session().run( argc, argv );
 

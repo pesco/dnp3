@@ -17,7 +17,7 @@ TEST_CASE(SUITE("rejects undersized ASDU"))
 
     auto SUCCESS = fix.Parse(LPDU(payload));
 
-    auto expectedEvents = {Event::LINK_FRAME, Event::TRANS_SEGMENT, Event::TRANS_PAYLOAD, Event::APP_REJECT };
+    auto expectedEvents = {Event::LINK_FRAME, Event::TRANS_SEGMENT, Event::TRANS_PAYLOAD, Event::APP_INVALID};
 
     REQUIRE(fix.CheckEvents(expectedEvents));
 

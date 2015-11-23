@@ -3,49 +3,47 @@
 
 #include <assert.h>
 #include <cstring>
-#include <dnp3hammer/dissect.h>
+#include <cstdint>
 
 #include "HexData.h"
 
 
-void hook_link_frame(DissectPlugin *self, const DNP3_Frame *frame, const uint8_t *buf, size_t len)
+void cb_link_frame(void *env, const DNP3_Frame *frame, const uint8_t *buf, size_t len)
 {
-    static_cast<PluginFixture*>(self->env)->events.push_back(Event::LINK_FRAME);
+    static_cast<PluginFixture*>(env)->events.push_back(Event::LINK_FRAME);
 }
 
-void hook_transport_reject(DissectPlugin *self)
+void cb_transport_segment(void *env, const DNP3_Segment *segment)
 {
-    static_cast<PluginFixture*>(self->env)->events.push_back(Event::TRANS_REJECT);
+    static_cast<PluginFixture*>(env)->events.push_back(Event::TRANS_SEGMENT);
 }
 
-void hook_transport_segment(DissectPlugin *self, const DNP3_Segment *segment)
+void cb_transport_payload(void *env, const uint8_t *s, size_t n)
 {
-    static_cast<PluginFixture*>(self->env)->events.push_back(Event::TRANS_SEGMENT);
+    static_cast<PluginFixture*>(env)->events.push_back(Event::TRANS_PAYLOAD);
 }
 
-void hook_transport_payload(DissectPlugin *self, const uint8_t *s, size_t n)
+void cb_app_invalid(void *env, DNP3_ParseError e)
 {
-    static_cast<PluginFixture*>(self->env)->events.push_back(Event::TRANS_PAYLOAD);
+    static_cast<PluginFixture*>(env)->events.push_back(Event::APP_INVALID);
 }
 
-void hook_app_reject(DissectPlugin *self)
+void cb_app_fragment(void *env, const DNP3_Fragment *fragment, const uint8_t *buf, size_t len)
 {
-    static_cast<PluginFixture*>(self->env)->events.push_back(Event::APP_REJECT);
+    static_cast<PluginFixture*>(env)->events.push_back(Event::APP_FRAG);
 }
 
-void hook_app_error(DissectPlugin *self, DNP3_ParseError e)
+PluginFixture::PluginFixture()
 {
-    static_cast<PluginFixture*>(self->env)->events.push_back(Event::APP_ERROR);
-}
+    DNP3_Callbacks callbacks;
 
-void hook_app_fragment(DissectPlugin *self, const DNP3_Fragment *fragment, const uint8_t *buf, size_t len)
-{
-    static_cast<PluginFixture*>(self->env)->events.push_back(Event::APP_FRAG);
-}
+    callbacks.link_frame = cb_link_frame;
+    callbacks.transport_segment = cb_transport_segment;
+    callbacks.transport_payload = cb_transport_payload;
+    callbacks.app_invalid = cb_app_invalid;
+    callbacks.app_fragment = cb_app_fragment;
 
-PluginFixture::PluginFixture() :
-        m_plugin(dnp3_dissect(&QueueOutput, this))
-{
+    m_plugin = dnp3_dissector(callbacks, this);
     assert(m_plugin);
 }
 
@@ -79,12 +77,6 @@ bool PluginFixture::CheckEvents(std::initializer_list<Event> expected) const
     }
 
     return true;
-}
-
-void PluginFixture::QueueOutput(void *env, const uint8_t *buf, size_t n)
-{
-    auto fixture = static_cast<PluginFixture *>(env);
-    fixture->writes.push_back(slice_t(buf, n));
 }
 
 PluginFixture::~PluginFixture()

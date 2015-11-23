@@ -4,12 +4,12 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <dnp3hammer/dissect.h>
+#include <dnp3hammer/dnp3.h>
 
 
-/// main ///
+/// callbacks ///
 
-void error(const char *fmt, ...)
+static void error(void *env, const char *fmt, ...)
 {
     va_list args;
 
@@ -19,38 +19,34 @@ void error(const char *fmt, ...)
     va_end(args);
 }
 
-void debug(const char *fmt, ...)
-{
-    va_list args;
+void output_frame(void *env, const DNP3_Frame *frame,
+                  const uint8_t *buf, size_t len);
+void output_fragment(void *env, const DNP3_Fragment *fragment,
+                     const uint8_t *buf, size_t len);
 
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-}
 
-static void file_write(void *env, const uint8_t *buf, size_t n)
-{
-    fwrite(buf, 1, n, (FILE *)env);
-}
+/// main ///
 
 int main(int argc, char *argv[])
 {
-    Plugin *plugin;
+    StreamProcessor *p;
+    DNP3_Callbacks callbacks = {NULL};
 
-    if(dnp3_dissect_init(NULL) < 0) {
-        fprintf(stderr, "plugin init failed\n");
-        return 1;
-    }
+    dnp3_init();
 
-    plugin = dnp3_dissect(file_write, stdout);
-    if(plugin == NULL) {
-        fprintf(stderr, "plugin bind failed\n");
+    callbacks.link_frame = output_frame;
+    callbacks.app_fragment = output_fragment;
+    callbacks.log_error = error;
+
+    p = dnp3_dissector(callbacks, stdout);
+    if(p == NULL) {
+        fprintf(stderr, "protocol init failed\n");
         return 1;
     }
 
     // while stdin open, read input into buf and process
     size_t n;
-    while((n=read(0, plugin->buf, plugin->bufsize))) {
+    while((n=read(0, p->buf, p->bufsize))) {
         // handle read errors
         if(n<0) {
             if(errno == EINTR)
@@ -59,18 +55,18 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        if(plugin->feed(plugin, n) < 0) {
+        if(p->feed(p, n) < 0) {
             fprintf(stderr, "processing error\n");
             return 1;
         }
 
-        if(plugin->bufsize == 0) {
+        if(p->bufsize == 0) {
             fprintf(stderr, "input buffer exhausted\n");
             return 1;
         }
     }
 
-    plugin->finish(plugin);
+    p->finish(p);
 
     return 0;
 }

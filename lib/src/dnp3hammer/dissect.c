@@ -1,25 +1,60 @@
-
-#include <dnp3hammer/dissect.h>
-
 #include <dnp3hammer/dnp3.h>
-
 #include <hammer/hammer.h>
 #include <hammer/glue.h>
-
 #include "hammer.h"
 
 #include <string.h>
 #include <stdlib.h>
 
 
+#define BUFLEN 4619 // enough for 4096B over 1 frame or 355 empty segments
+#define CTXMAX 1024 // maximum number of connection contexts
+#define TBUFLEN (BUFLEN/13*2)   // 13 = min. size of a frame
+                                // 2  = max. number of tokens per frame
 
 
-#define debug_(...) //debug(__VA_ARGS__)
+// internal data structures
+
+struct Context {
+    struct Context *next;
+
+    uint16_t src;
+    uint16_t dst;
+
+    // transport function
+    DNP3_Segment last_segment;
+    uint8_t last_segment_payload[249];  // max size
+    HSuspendedParser *tfun;
+    size_t tfun_pos;        // number of bytes consumed so far
+
+    // raw valid frames
+    uint8_t buf[BUFLEN];
+    size_t n;
+};
+
+typedef struct {
+    StreamProcessor base;
+    uint8_t buf[BUFLEN];        // static input buffer
+    struct Context *contexts;   // linked list
+
+    // callbacks
+    DNP3_Callbacks cb;
+    void *env;
+} Dissector;
 
 
+// high-level parsers  XXX should these be exported?!
 HParser *dnp3_p_synced_frame;       // skips bytes until valid frame header
 HParser *dnp3_p_transport_function; // the transport-layer state machine
 HParser *dnp3_p_app_message;        // application request or response
+
+
+// shorthand to be used in a function foo(Dissector *self, ...)
+#define CALLBACK(NAME, ...) \
+    do {if(self->cb.NAME) self->cb.NAME(self->env, __VA_ARGS__);} while(0)
+
+#define error(...) CALLBACK(log_error, __VA_ARGS__)
+#define debug(...) //fprintf(stderr, __VA_ARGS__)
 
 
 static bool segment_equal(const DNP3_Segment *a, const DNP3_Segment *b)
@@ -116,7 +151,7 @@ static HParsedToken *act_ttok(const HParseResult *p, void *user)
     if(!p->ast)
         return NULL;
 
-    debug_("tok index %zu, ttok_pos=%zu\n", p->ast->index, ttok_pos);
+    debug("tok index %zu, ttok_pos=%zu\n", p->ast->index, ttok_pos);
     assert(p->ast->index >= ttok_pos);
     const DNP3_Segment *v = ttok_values[p->ast->index - ttok_pos];
 
@@ -168,10 +203,8 @@ static bool not_err(HParseResult *p, void *user)
 #define validate_request not_err
 #define validate_response not_err
 
-static void init(void)
+void dnp3_dissector_init(void)
 {
-    dnp3_p_init();
-
     HParser *sync = h_indirect();
     H_RULE(sync_, h_choice(dnp3_p_link_frame, h_right(h_uint8(), sync), NULL));
         // XXX is it correct to skip one byte looking for the frame start?
@@ -213,7 +246,7 @@ static void init(void)
 
 static void reset_tfun(struct Context *ctx)
 {
-    debug_("tfun reset\n");
+    debug("tfun reset\n");
     if(ctx->tfun) {
         HParseResult *r = h_parse_finish(ctx->tfun);
         assert(r != NULL);
@@ -225,7 +258,7 @@ static void reset_tfun(struct Context *ctx)
 
 static void init_tfun(struct Context *ctx)
 {
-    debug_("tfun init\n");
+    debug("tfun init\n");
     assert(ctx->tfun == NULL);
     ctx->tfun = h_parse_start(dnp3_p_transport_function);
     assert(ctx->tfun != NULL);
@@ -237,7 +270,7 @@ HParseResult *feed_tfun(struct Context *ctx, const uint8_t *buf,
                         const DNP3_Segment **tok, size_t offs, size_t n)
 {
     HParseResult *r = NULL;
-    debug_("feed_tfun(...,%zu,%zu)\n", offs, n);
+    debug("feed_tfun(...,%zu,%zu)\n", offs, n);
 
     if(!ctx->tfun)
         init_tfun(ctx);
@@ -258,7 +291,7 @@ HParseResult *feed_tfun(struct Context *ctx, const uint8_t *buf,
 
 // allocates up to CTXMAX contexts, or recycles the least recently used
 static
-struct Context *lookup_context(DissectPlugin *self, uint16_t src, uint16_t dst)
+struct Context *lookup_context(Dissector *self, uint16_t src, uint16_t dst)
 {
     struct Context **pnext;
     struct Context *ctx;
@@ -275,7 +308,7 @@ struct Context *lookup_context(DissectPlugin *self, uint16_t src, uint16_t dst)
 
         n++;
         if(n >= CTXMAX) {
-            debug_("reuse context %d\n", n);
+            debug("reuse context %d\n", n);
             break;  // don't advance pnext or ctx
         }
     }
@@ -284,7 +317,7 @@ struct Context *lookup_context(DissectPlugin *self, uint16_t src, uint16_t dst)
 
     if(!ctx) {
         // allocate a new context
-        debug_("alloc context %d\n", n+1);
+        debug("alloc context %d\n", n+1);
         ctx = calloc(1, sizeof(struct Context));
     } else {
         *pnext = ctx->next; // unlink
@@ -310,24 +343,24 @@ struct Context *lookup_context(DissectPlugin *self, uint16_t src, uint16_t dst)
 }
 
 static
-void process_transport_payload(DissectPlugin *self, struct Context *ctx,
+void process_transport_payload(Dissector *self, struct Context *ctx,
                                const uint8_t *t, size_t len)
 {
-    hook_transport_payload(self, t, len);
+    CALLBACK(transport_payload, t, len);
 
     // try to parse a message
     HParseResult *r = h_parse(dnp3_p_app_message, t, len);
     if(r) {
         assert(r->ast != NULL);
         if(H_ISERR(r->ast->token_type)) {
-            hook_app_error(self, r->ast->token_type);
+            CALLBACK(app_invalid, r->ast->token_type);
         } else {
             DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
-            hook_app_fragment(self, fragment, ctx->buf, ctx->n);
+            CALLBACK(app_fragment, fragment, ctx->buf, ctx->n);
         }
         h_parse_result_free(r);
     } else {
-        hook_app_reject(self);
+        CALLBACK(app_invalid, 0);
     }
 
     ctx->n = 0; // flush frames
@@ -343,7 +376,7 @@ static void save_last_segment(struct Context *ctx, const DNP3_Segment *segment)
 }
 
 static
-void process_transport_segment(DissectPlugin *self,
+void process_transport_segment(Dissector *self,
                                struct Context *ctx, const DNP3_Segment *segment)
 {
     uint8_t buf[2];
@@ -351,15 +384,15 @@ void process_transport_segment(DissectPlugin *self,
     size_t n;
     HParseResult *r;
 
-    hook_transport_segment(self, segment);
+    CALLBACK(transport_segment, segment);
 
     // convert to input tokens for transport function
     n = transport_tokens(segment, &ctx->last_segment, buf, tok);
     save_last_segment(ctx, segment);
-    debug_("tfun input: ");
+    debug("tfun input: ");
     for(size_t i=0; i<n; i++)
-        debug_("%c", buf[i]);
-    debug_("\n");
+        debug("%c", buf[i]);
+    debug("\n");
 
     // run transport function
     size_t m=0;
@@ -383,13 +416,13 @@ void process_transport_segment(DissectPlugin *self,
 }
 
 static
-void process_link_frame(DissectPlugin *self,
+void process_link_frame(Dissector *self,
                         const DNP3_Frame *frame, uint8_t *buf, size_t len)
 {
     struct Context *ctx;
     HParseResult *r;
 
-    hook_link_frame(self, frame, buf, len);
+    CALLBACK(link_frame, frame, buf, len);
 
     // payload handling
     switch(frame->func) {
@@ -409,7 +442,6 @@ void process_link_frame(DissectPlugin *self,
         if(!r) {
             // NB: this should only happen when frame->len = 0, which is
             //     not valid with USER_DATA as per AN2013-004b
-            hook_transport_reject(self);
             break;
         }
 
@@ -435,31 +467,9 @@ void process_link_frame(DissectPlugin *self,
     }
 }
 
-
-/// plugin API ///
-
-// XXX debug
-void *h_pprint_lr_info(FILE *f, HParser *p);
-void h_pprint_lrtable(FILE *f, void *, void *, int);
-
-int dnp3_dissect_init(const Option *opts)
+static int dissector_feed(StreamProcessor *base, size_t n)
 {
-    init();
-
-    // XXX debug
-#if 0
-    void *g = h_pprint_lr_info(stdout, dnp3_p_transport_function);
-    assert(g != NULL);
-    fprintf(stdout, "\n==== L A L R  T A B L E ====\n");
-    h_pprint_lrtable(stdout, g, dnp3_p_transport_function->backend_data, 0);
-#endif
-
-    return 0;
-}
-
-static int dnp3_dissect_feed(Plugin *base, size_t n)
-{
-    DissectPlugin *self = (DissectPlugin *)base;
+    Dissector *self = (Dissector *)base;
     HParseResult *r;
     size_t m=0;
 
@@ -486,9 +496,9 @@ static int dnp3_dissect_feed(Plugin *base, size_t n)
     return 0;
 }
 
-static int dnp3_dissect_finish(Plugin *base)
+static int dissector_finish(StreamProcessor *base)
 {
-    DissectPlugin *self = (DissectPlugin *)base;
+    Dissector *self = (Dissector *)base;
 
     // free contexts
     struct Context *p;
@@ -501,20 +511,20 @@ static int dnp3_dissect_finish(Plugin *base)
     return 0;
 }
 
-Plugin *dnp3_dissect(QueueOutputCallback output, void *env)
+StreamProcessor *dnp3_dissector(DNP3_Callbacks cb, void *env)
 {
-    DissectPlugin *plugin = malloc(sizeof(DissectPlugin));
+    Dissector *p = malloc(sizeof(Dissector));
 
-    if(plugin) {
-        plugin->base.buf     = plugin->buf;
-        plugin->base.bufsize = sizeof(plugin->buf);
-        plugin->base.feed    = dnp3_dissect_feed;
-        plugin->base.finish  = dnp3_dissect_finish;
-        plugin->contexts     = NULL;
-        plugin->out          = output;
-        plugin->env          = env;
+    if(p) {
+        p->base.buf     = p->buf;
+        p->base.bufsize = sizeof(p->buf);
+        p->base.feed    = dissector_feed;
+        p->base.finish  = dissector_finish;
+        p->contexts     = NULL;
+        p->cb           = cb;
+        p->env          = env;
     }
 
-    assert((Plugin *)plugin == &plugin->base);
-    return &plugin->base;
+    assert((StreamProcessor *)p == &p->base);
+    return &p->base;
 }

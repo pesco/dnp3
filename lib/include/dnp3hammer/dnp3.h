@@ -548,6 +548,7 @@ enum DNP3_TokenType {
 
 extern HParser *dnp3_p_app_request;
 extern HParser *dnp3_p_app_response;
+extern HParser *dnp3_p_app_fragment;    // request or response
 
 extern HParser *dnp3_p_transport_segment;
 

@@ -46,7 +46,6 @@ typedef struct {
 // high-level parsers  XXX should these be exported?!
 HParser *dnp3_p_synced_frame;       // skips bytes until valid frame header
 HParser *dnp3_p_transport_function; // the transport-layer state machine
-HParser *dnp3_p_app_message;        // application request or response
 
 
 // shorthand to be used in a function foo(Dissector *self, ...)
@@ -234,13 +233,8 @@ void dnp3_dissector_init(void)
     int tfun_compile = !h_compile(tfun, PB_LALR, NULL);
     assert(tfun_compile);
 
-    H_VRULE(request,  dnp3_p_app_request);
-    H_VRULE(response, dnp3_p_app_response);
-    H_RULE (message,  h_choice(request, response, NULL));
-
     dnp3_p_synced_frame = sync;
     dnp3_p_transport_function = tfun;
-    dnp3_p_app_message = message;
 }
 
 
@@ -348,8 +342,8 @@ void process_transport_payload(Dissector *self, struct Context *ctx,
 {
     CALLBACK(transport_payload, t, len);
 
-    // try to parse a message
-    HParseResult *r = h_parse(dnp3_p_app_message, t, len);
+    // try to parse a message fragment
+    HParseResult *r = h_parse(dnp3_p_app_fragment, t, len);
     if(r) {
         assert(r->ast != NULL);
         if(H_ISERR(r->ast->token_type)) {

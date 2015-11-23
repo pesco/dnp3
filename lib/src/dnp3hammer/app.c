@@ -20,6 +20,7 @@
 
 HParser *dnp3_p_app_request;
 HParser *dnp3_p_app_response;
+HParser *dnp3_p_app_fragment;
 
 
 /// AGGRESSIVE-MODE AUTHENTICATION ///
@@ -613,7 +614,9 @@ void dnp3_p_init_app(void)
 
     H_RULE (request,    h_bind(req_header, k_fragment, NULL));
     H_RULE (response,   h_bind(rsp_header, k_fragment, NULL));
+    H_RULE (fragment,   h_choice(request, response, NULL));
 
     dnp3_p_app_request  = little_endian(request);
     dnp3_p_app_response = little_endian(response);
+    dnp3_p_app_fragment = little_endian(fragment);
 }

@@ -39,10 +39,6 @@ file(GLOB_RECURSE plugintests_SRC test/plugin/*.cpp)
 add_executable(plugin-tests ${plugintests_SRC} test/plugin/fixtures/DNP3Helpers.h)
 target_link_libraries(plugin-tests dnp3hammer)
 
-# ---- afl app layer program ----
-add_executable(afl-app ./test/afl_app_layer/main.c)
-target_link_libraries(afl-app dnp3hammer)
-
 # ---- crc example program -----
 add_executable(crc ./examples/crc/main.c)
 target_link_libraries(crc dnp3hammer)

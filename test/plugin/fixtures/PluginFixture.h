@@ -1,7 +1,7 @@
 #ifndef PROXYFIXTURE_H
 #define PROXYFIXTURE_H
 
-#include <dnp3hammer/dnp3.h>
+#include <dnp3hammer.h>
 #include <utility>
 #include <vector>
 #include <string>

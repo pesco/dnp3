@@ -1,6 +1,6 @@
 // application layer
 
-#include <dnp3hammer/dnp3.h>
+#include <dnp3hammer.h>
 
 #include <hammer/glue.h>
 #include "hammer.h" // XXX placeholder for extensions

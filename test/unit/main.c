@@ -4,7 +4,7 @@
 #include <inttypes.h>   // PRIu64
 #include <glib.h>
 
-#include <dnp3hammer/dnp3.h>
+#include <dnp3hammer.h>
 
 #define H_ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)  // XXX
 

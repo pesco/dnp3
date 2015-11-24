@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <dnp3hammer/dnp3.h>
+#include <dnp3hammer.h>
 
 
 /// helpers ///

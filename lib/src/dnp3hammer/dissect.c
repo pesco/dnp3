@@ -195,13 +195,6 @@ static HParsedToken *act_series(const HParseResult *p, void *user)
     return H_MAKE_BYTES(t, len);
 }
 
-static bool not_err(HParseResult *p, void *user)
-{
-    return !H_ISERR(p->ast->token_type);
-}
-#define validate_request not_err
-#define validate_response not_err
-
 void dnp3_dissector_init(void)
 {
     HParser *sync = h_indirect();

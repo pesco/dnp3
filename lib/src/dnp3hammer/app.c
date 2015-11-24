@@ -550,6 +550,14 @@ static HParsedToken *act_errfc(const HParseResult *p, void *user)
 #define act_ereqfc act_errfc
 #define act_erspfc act_errfc
 
+static bool not_err(HParseResult *p, void *user)
+{
+    return !H_ISERR(p->ast->token_type);
+}
+
+#define validate_validreq not_err
+#define validate_validrsp not_err
+
 void dnp3_p_init_app(void)
 {
     // initialize object block and associated parsers/combinators
@@ -614,7 +622,10 @@ void dnp3_p_init_app(void)
 
     H_RULE (request,    h_bind(req_header, k_fragment, NULL));
     H_RULE (response,   h_bind(rsp_header, k_fragment, NULL));
-    H_RULE (fragment,   h_choice(request, response, NULL));
+
+    H_VRULE(validreq,   request);
+    H_VRULE(validrsp,   response);
+    H_RULE (fragment,   h_choice(validreq, validrsp, NULL));
 
     dnp3_p_app_request  = little_endian(request);
     dnp3_p_app_response = little_endian(response);

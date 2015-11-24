@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <dnp3hammer/dnp3.h>
 
@@ -196,17 +197,28 @@ int main_full(void)
 
 int app_layer(const uint8_t *buf, size_t n, const uint8_t *raw, size_t rawn)
 {
-    HParseResult *res = h_parse(dnp3_p_app_fragment, buf, n);
-    if(!res) {
+    // always exercise both parsers, for test coverage
+    HParseResult *request  = h_parse(dnp3_p_app_request, buf, n);
+    HParseResult *response = h_parse(dnp3_p_app_response, buf, n);
+
+    HParseResult *result;
+    if(request && request->ast->token_type == TT_DNP3_Fragment) {
+        assert(!(response && response->ast->token_type == TT_DNP3_Fragment));
+        result = request;
+    } else {
+        result = response;
+    }
+
+    if(!result) {
         CALLBACK(app_invalid, 0);
         return 1;
     }
 
-    if(res->ast->token_type == TT_DNP3_Fragment)
-        CALLBACK(app_fragment, res->ast->user, raw, rawn);
+    if(result->ast->token_type == TT_DNP3_Fragment)
+        CALLBACK(app_fragment, result->ast->user, raw, rawn);
     else
-        CALLBACK(app_invalid, res->ast->token_type);
-    h_parse_result_free(res);
+        CALLBACK(app_invalid, result->ast->token_type);
+    h_parse_result_free(result);
     return 0;
 }
 

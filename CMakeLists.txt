@@ -1,9 +1,5 @@
 cmake_minimum_required (VERSION 3.0)
-project (hammerdnp3)
-set(HAMMERDNP3_MAJOR_VERSION 1)
-set(HAMMERDNP3_MINOR_VERSION 0)
-set(HAMMERDNP3_MICRO_VERSION 0)
-set(HAMMERDNP3_VERSION ${HAMMERDNP3_MAJOR_VERSION}.${HAMMERDNP3_MINOR_VERSION}.${HAMMERDNP3_MICRO_VERSION})
+project (dnp3hammer VERSION 1.0.0)
 
 # other options off-by-default that you can enable
 option(WERROR "Set all warnings to errors" OFF)

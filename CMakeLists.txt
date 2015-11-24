@@ -40,9 +40,9 @@ add_executable(plugin-tests ${plugintests_SRC} test/plugin/fixtures/DNP3Helpers.
 target_link_libraries(plugin-tests dnp3hammer)
 
 # ---- crc example program -----
-add_executable(crc ./examples/crc/main.c)
+add_executable(crc crc.c)
 target_link_libraries(crc dnp3hammer)
 
 # ---- dissect example program -----
-add_executable(dissect ./examples/plugins/plugin_main.c)
+add_executable(dissect dissect.c)
 target_link_libraries(dissect dnp3hammer)

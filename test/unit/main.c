@@ -5,7 +5,8 @@
 #include <glib.h>
 
 #include <dnp3hammer/dnp3.h>
-#include <dnp3hammer/hammer.h> // H_ISERR
+
+#define H_ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)  // XXX
 
 
 /// test macros (lifted/adapted from hammer's test suite) ///

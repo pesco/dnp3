@@ -19,12 +19,11 @@ set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
   
 # include paths for all the local libraries
 include_directories(lib/include)
-# TODO - only add these for the required test projects
-include_directories(lib/src)
-include_directories(test/catch)
 
 # for the tests
+# TODO - only add these for the required test projects
 include_directories(${GLIB2_INCLUDE_DIRS})
+include_directories(test/catch)
 
 # ---- parser library ----
 file(GLOB_RECURSE dnp3hammer_SRC lib/src/dnp3hammer/*.c)

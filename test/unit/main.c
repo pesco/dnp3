@@ -746,6 +746,17 @@ static void test_obj_anain(void)
                                      "[0] RESPONSE {g30v6 qc=17 #1:(reference_err)1.0}");
 }
 
+static void test_range_overflow(void)
+{
+    // 2-byte max range
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x01\x00\x00\xFF\xFF", 11,
+                "PARAM_ERROR on [0] RESPONSE");
+
+    // 4-byte max range
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x02\x00\x00\x00\x00\xFF\xFF\xFF\xFF", 15,
+                "PARAM_ERROR on [0] RESPONSE");
+}
+
 static void test_obj_frozenanain(void)
 {
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x01\x17\x01\x01\x21\x12\x34\x56\x78",14,
@@ -972,6 +983,9 @@ int main(int argc, char *argv[])
 {
     g_test_init(&argc, &argv, NULL);
     dnp3_p_init();
+
+
+    g_test_add_func("/app/range/overflow", test_range_overflow);
 
     g_test_add_func("/app/crash/1", test_crash1);
 

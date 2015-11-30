@@ -44,5 +44,5 @@ add_executable(crc crc.c)
 target_link_libraries(crc dnp3hammer)
 
 # ---- dissect example program -----
-add_executable(dissect dissect.c)
-target_link_libraries(dissect dnp3hammer)
+#add_executable(dissect dissect.c)
+#target_link_libraries(dissect dnp3hammer)

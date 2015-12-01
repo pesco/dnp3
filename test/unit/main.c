@@ -119,7 +119,6 @@ static void test_crash1(void)
 
 static void test_range_overflow(void)
 {
-    /*
     // 2-byte max range
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x01\x00\x00\xFF\xFF", 11,
                 "PARAM_ERROR on [0] RESPONSE");
@@ -127,7 +126,6 @@ static void test_range_overflow(void)
     // 4-byte max range
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x02\x00\x00\x00\x00\xFF\xFF\xFF\xFF", 15,
                 "PARAM_ERROR on [0] RESPONSE");
-    */
 }
 
 static void test_count_of_zero(void)

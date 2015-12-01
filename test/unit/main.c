@@ -117,6 +117,43 @@ static void test_crash1(void)
 	check_parse(dnp3_p_app_response, input, len, "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 }
 
+static void test_range_overflow(void)
+{
+    /*
+    // 2-byte max range
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x01\x00\x00\xFF\xFF", 11,
+                "PARAM_ERROR on [0] RESPONSE");
+
+    // 4-byte max range
+    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x02\x00\x00\x00\x00\xFF\xFF\xFF\xFF", 15,
+                "PARAM_ERROR on [0] RESPONSE");
+    */
+}
+
+static void test_count_of_zero(void)
+{
+    // count and prefix headers
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x20\x02\x17\x00", 8,
+                "PARAM_ERROR on [0] (fir,fin) RESPONSE");
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x20\x02\x28\x00\x00", 9,
+                "PARAM_ERROR on [0] (fir,fin) RESPONSE");
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x20\x02\x39\x00\x00\x00\x00", 11,
+                "PARAM_ERROR on [0] (fir,fin) RESPONSE");
+
+    // TODO - test count headers (0x07, 0x08, 0x09)
+}
+
+static void test_mult_overflow(void)
+{
+    // g32v2 has a size of 3 byte. 3 + 4 bytes prefix = 7
+    // 0x24924925 * 7 = 3 in 32-bit multiplication overflow
+
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x20\x02\x39\x25\x49\x92\x24\x01\xAA\xAA", 14,
+                "PARAM_ERROR on [0] (fir,fin) RESPONSE");
+}
 
 /// test cases ///
 
@@ -746,17 +783,6 @@ static void test_obj_anain(void)
                                      "[0] RESPONSE {g30v6 qc=17 #1:(reference_err)1.0}");
 }
 
-static void test_range_overflow(void)
-{
-    // 2-byte max range
-    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x01\x00\x00\xFF\xFF", 11,
-                "PARAM_ERROR on [0] RESPONSE");
-
-    // 4-byte max range
-    check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1E\x02\x02\x00\x00\x00\x00\xFF\xFF\xFF\xFF", 15,
-                "PARAM_ERROR on [0] RESPONSE");
-}
-
 static void test_obj_frozenanain(void)
 {
     check_parse(dnp3_p_app_response, "\x00\x81\x00\x00\x1F\x01\x17\x01\x01\x21\x12\x34\x56\x78",14,
@@ -984,10 +1010,13 @@ int main(int argc, char *argv[])
     g_test_init(&argc, &argv, NULL);
     dnp3_p_init();
 
-
-    g_test_add_func("/app/range/overflow", test_range_overflow);
-
+    // tests of crashes found via AFL
     g_test_add_func("/app/crash/1", test_crash1);
+
+    // specific tests for common dnp3 vulnerabilties
+    g_test_add_func("/app/vuln/range_overflow", test_range_overflow);
+    g_test_add_func("/app/vuln/mult_overflow", test_mult_overflow);
+    g_test_add_func("/app/vuln/count_of_zero", test_count_of_zero);
 
     g_test_add_func("/app/req/fail", test_req_fail);
     g_test_add_func("/app/req/ac", test_req_ac);

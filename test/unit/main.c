@@ -94,6 +94,28 @@ void do_check_parse(const HParser* parser, const uint8_t* input, size_t length, 
     }
 }
 
+void do_check_parse_ttonly(const HParser* parser, const uint8_t* input, size_t length, HTokenType expectTT, int line) {
+    HParseResult *res = h_parse(parser, input, length);
+    if (!res) {
+        g_test_message("Parse failed on line %d", line);
+        g_test_fail();
+    } else {
+        HTokenType tt = res->ast->token_type;
+        if(tt != expectTT)
+        {
+            g_test_message("expected tt %d, but got %d on line %d", expectTT, tt, line);
+            g_test_fail();
+        }
+        HArenaStats stats;
+        h_allocator_stats(res->arena, &stats);
+        g_test_message("Parse used %zd bytes, wasted %zd bytes. "
+                               "Inefficiency: %5f%%",
+                       stats.used, stats.wasted,
+                       stats.wasted * 100. / (stats.used + stats.wasted));
+        h_parse_result_free(res);
+    }
+}
+
 #define check_parse_fail(parser, input, inp_len) do { \
     do_check_parse_fail(parser, (const uint8_t*)  input, inp_len, __LINE__); \
 } while(0)
@@ -103,6 +125,9 @@ void do_check_parse(const HParser* parser, const uint8_t* input, size_t length, 
     do_check_parse(parser, (const uint8_t*) input, inp_len, result, __LINE__); \
 } while(0)
 
+#define check_parse_ttonly(parser, input, inp_len, expectTT) do { \
+    do_check_parse_ttonly(parser, (const uint8_t*) input, inp_len, expectTT, __LINE__); \
+} while(0)
 
 /// some test cases that produce seg-faults from fuzzing ///
 
@@ -146,11 +171,34 @@ static void test_count_of_zero(void)
 
 static void test_mult_overflow(void)
 {
+    // make sure that the parser doesn't perform a multiplication overflow when parsing count and prefix fields
+
     // g32v2 has a size of 3 byte. 3 + 4 bytes prefix = 7
     // 0x24924925 * 7 = 3 in 32-bit multiplication overflow
 
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x20\x02\x39\x25\x49\x92\x24\x01\xAA\xAA", 14,
                 "PARAM_ERROR on [0] (fir,fin) RESPONSE");
+}
+
+static void test_large_packed_binary(void)
+{
+    // the purpose of this test is to see how well the parser handles a worst case message in terms
+    // of AST size.
+
+    // that means we have 2048 - 11 = 2037 bytes remaining * 8 = 16296 packed binaries
+    // so the range is 0 to 16295 == 0x3FA7
+
+    // the header w/o any packed binaries contains 11 bytes
+    uint8_t asdu[2011] = {0xC0, 0x81, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x80, 0x3E};
+
+    // w/ 2000 bytes left over for payload, we can shove in 2000*8 = 16K packed binary values, so 1 to 16000 (0x3E80) range
+
+    for(int i=11; i < 2011; ++i) // set all remaining packed bits to "true"
+    {
+        asdu[i] = 0xFF;
+    }
+
+    check_parse_ttonly(dnp3_p_app_response, asdu, 2011, TT_DNP3_Fragment);
 }
 
 /// test cases ///
@@ -1015,6 +1063,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/vuln/range_overflow", test_range_overflow);
     g_test_add_func("/app/vuln/mult_overflow", test_mult_overflow);
     g_test_add_func("/app/vuln/count_of_zero", test_count_of_zero);
+    g_test_add_func("/app/vuln/large_packed_binary", test_large_packed_binary);
 
     g_test_add_func("/app/req/fail", test_req_fail);
     g_test_add_func("/app/req/ac", test_req_ac);

@@ -10,7 +10,7 @@ PKG_CHECK_MODULES(GLIB2 REQUIRED glib-2.0>=2.36.0)
 
 set(LIB_TYPE STATIC)
 
-set(CMAKE_C_FLAGS "-Wall -std=c99")
+set(CMAKE_C_FLAGS "-Wall -std=c99 -D_POSIX_C_SOURCE=2")
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
 
 # different release and debug flags
@@ -44,5 +44,5 @@ add_executable(crc crc.c)
 target_link_libraries(crc dnp3hammer)
 
 # ---- dissect example program -----
-#add_executable(dissect dissect.c)
-#target_link_libraries(dissect dnp3hammer)
+add_executable(dissect dissect.c)
+target_link_libraries(dissect dnp3hammer)

@@ -59,8 +59,8 @@ static HParser *rsc(uint8_t x)
 static bool validate_range(HParseResult *p, void *user)
 {
     // p->ast = (start, stop)
-    uint32_t start = H_FIELD_UINT(0);
-    uint32_t stop  = H_FIELD_UINT(1);
+    uint64_t start = H_FIELD_UINT(0);
+    uint64_t stop  = H_FIELD_UINT(1);
 
     // validate that start <= stop
     // validate that count (stop - start + 1) will fit in size_t
@@ -69,8 +69,8 @@ static bool validate_range(HParseResult *p, void *user)
 static HParsedToken *act_range(const HParseResult *p, void *user)
 {
     // p->ast = (start, stop)
-    uint32_t start = H_FIELD_UINT(0);
-    uint32_t stop  = H_FIELD_UINT(1);
+    uint64_t start = H_FIELD_UINT(0);
+    uint64_t stop  = H_FIELD_UINT(1);
 
     assert(start <= stop);
     assert(stop - start < SIZE_MAX);

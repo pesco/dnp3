@@ -56,9 +56,9 @@ static char *format(const HParsedToken *p)
     const char *_n2 = (n2);				\
     if (!(strcmp(_n1, _n2) op 0)) {			\
       g_test_message("Check failed on line %d: (%s) (%s %s %s)",	\
-		     __LINE__,				\
-		     #n1 " " #op " " #n2,		\
-		     _n1, #op, _n2);			\
+             __LINE__,              \
+             #n1 " " #op " " #n2,       \
+             _n1, #op, _n2);            \
       g_test_fail();					\
     }							\
   } while(0)
@@ -129,18 +129,24 @@ void do_check_parse_ttonly(const HParser* parser, const uint8_t* input, size_t l
     do_check_parse_ttonly(parser, (const uint8_t*) input, inp_len, expectTT, __LINE__); \
 } while(0)
 
+
 /// some test cases that produce seg-faults from fuzzing ///
 
 static void test_crash1(void)
 {
-	// group 2, variation 2 w/ qualifer 0x19 == 4 octet count of objects w/ 1 byte index prefix?
-	// count = 0x19191919 (large)
-	// clearly there isn't enough trailing data
-	const char* input = "\xC0\x81\x00\x00\x02\x02\x19\x19\x19\x19\x19\x19\x19\xff\x7f\xff\xff\x01\x01\x81";
-	const size_t len = 20;
+    // caused an overlong alloc that went unchecked in Hammer
 
-	check_parse(dnp3_p_app_response, input, len, "PARAM_ERROR on [0] (fir,fin) RESPONSE");
+    // group 2, variation 2 w/ qualifer 0x19 == 4 octet count of objects w/ 1 byte index prefix?
+    // count = 0x19191919 (large)
+    // clearly there isn't enough trailing data
+    const char* input = "\xC0\x81\x00\x00\x02\x02\x19\x19\x19\x19\x19\x19\x19\xff\x7f\xff\xff\x01\x01\x81";
+    const size_t len = 20;
+
+    check_parse(dnp3_p_app_response, input, len, "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 }
+
+
+/// tests for common DNP3 vulnerabilities ///
 
 static void test_range_overflow(void)
 {
@@ -200,6 +206,7 @@ static void test_large_packed_binary(void)
 
     check_parse_ttonly(dnp3_p_app_response, asdu, 2011, TT_DNP3_Fragment);
 }
+
 
 /// test cases ///
 

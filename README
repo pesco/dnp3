@@ -27,11 +27,11 @@ Sven M. Hallberg, 2014-2015
    readable form. The 'samples/' directory contains some sample inputs in
    hexadecimal notation. Example usage:
 
-       xxd -r -p samples/read.hex | ./dissect
+       xxd -r -p ../samples/read.hex | ./dissect
 
    The '-f' option uses the same traffic recognizer to sanitize its input:
 
-       cat samples/*.hex | xxd -r -p | ./dissect -f | ./dissect
+       cat ../samples/*.hex | xxd -r -p | ./dissect -f | ./dissect
 
 
 NOTES:

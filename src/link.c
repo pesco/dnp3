@@ -233,3 +233,8 @@ void dnp3_p_init_link(void)
 
     dnp3_p_link_frame = little_endian(frame);
 }
+
+bool dnp3_link_validate_frame(DNP3_Frame *frame)
+{
+    return true;
+}

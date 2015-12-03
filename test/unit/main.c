@@ -5,6 +5,8 @@
 #include <glib.h>
 
 #include <dnp3hammer.h>
+#include <hammer/hammer.h>
+#include <hammer/glue.h>
 
 #define H_ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)  // XXX
 
@@ -1032,7 +1034,7 @@ static void test_obj_iin(void)
                                      "[0] RESPONSE {g80v1 qc=00 #0..2: 0 1 1}");
 }
 
-static void test_link(void)
+static void test_link_raw(void)
 {
     check_parse(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
                                    "primary frame from master 65519 to 1: TEST_LINK_STATES");
@@ -1049,6 +1051,24 @@ static void test_link(void)
                                    " 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F"
                                    " 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F"
                                    " 20");
+}
+
+static bool validate_frame(HParseResult *p, void *user)
+{
+    return dnp3_link_validate_frame(H_CAST(DNP3_Frame, p->ast));
+}
+static void test_link_valid(void)
+{
+    HParser *valid_frame = h_attr_bool(dnp3_p_link_frame, validate_frame, NULL);
+
+    check_parse(valid_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
+                             "primary frame from master 65519 to 1: TEST_LINK_STATES");
+    check_parse(valid_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
+                             "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: 01 02 03 04");
+    check_parse_fail(valid_frame, "\x05\x64\x05\xF3\x01\x00\xEF\xFF\xB9\x96",10); // empty payload
+    check_parse_fail(valid_frame, "\x05\x64\x05\xF4\x01\x00\xEF\xFF\xAB\x7F",10); // empty payload
+    check_parse_fail(valid_frame, "\x05\x64\x06\xF2\x01\x00\xEF\xFF\xEF\x26\x01\xA1\xC9",13); // extra payload
+    check_parse_fail(valid_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x05\xB4\x67\x58",17);   // corrupt payload
 }
 
 static void test_transport(void)
@@ -1130,7 +1150,8 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/obj/class", test_obj_class);
     g_test_add_func("/app/obj/iin", test_obj_iin);
     g_test_add_func("/transport", test_transport);
-    g_test_add_func("/link", test_link);
+    g_test_add_func("/link/raw", test_link_raw);
+    g_test_add_func("/link/valid", test_link_valid);
 
     g_test_run();
 }

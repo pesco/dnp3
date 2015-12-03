@@ -594,6 +594,10 @@ void dnp3_p_init(void);     // initialize just the parsers  XXX needed?
 // create a protocol dissector bound to the given callbacks
 StreamProcessor *dnp3_dissector(DNP3_Callbacks cb, void *env);
 
+// check a raw link-layer frame as parsed by dnp3_p_link_frame for validity
+// any frame for which this function is false should be ignored!
+bool dnp3_link_validate_frame(DNP3_Frame *frame);
+
 uint16_t dnp3_crc(uint8_t *bytes, size_t len);
 
 // formatting for human-readable output

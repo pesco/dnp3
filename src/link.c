@@ -206,15 +206,14 @@ void dnp3_p_init_link(void)
 
     H_RULE(start,   h_token("\x05\x64", 2));
     H_RULE(len,     h_int_range(h_uint8(), 5, 255));
-    // XXX len must be >5 for USER_DATA, =5 otherwise!
+    // XXX what about frames with len<5 !?
     H_RULE(func,    h_bits(4, false));
-    // XXX FCV is completely determined by function code!
-    // XXX only few function codes valid - depends on PRM!
                               /* --- fcv fcb prm dir --- */
                               /*     dfc                 */
     H_RULE(ctrl,    h_sequence(func, bit,bit,bit,bit, NULL));
     H_RULE(dest,    address);
     H_RULE(source,  h_int_range(address, 0, 0xFFEF));
+    // XXX what about invalid addresses?
     H_RULE(crc,     h_uint16());
 
     H_RULE(header_, h_sequence(start, len, ctrl, dest, source, NULL));
@@ -236,5 +235,21 @@ void dnp3_p_init_link(void)
 
 bool dnp3_link_validate_frame(DNP3_Frame *frame)
 {
+    #define REQUIRE(exp) do {if(!(exp)) return false;} while(0)
+
+    // must have payload for USER_DATA and for USER_DATA only
+    if(frame->func == DNP3_CONFIRMED_USER_DATA ||
+       frame->func == DNP3_UNCONFIRMED_USER_DATA) {
+        REQUIRE(frame->len > 0);
+        REQUIRE(frame->payload != NULL);
+    } else {
+        REQUIRE(frame->len == 0);
+        REQUIRE(frame->payload == NULL);
+    }
+
+    // XXX FCV is completely determined by function code!
+    // XXX only few function codes valid - depends on PRM!
+
+    #undef REQUIRE
     return true;
 }

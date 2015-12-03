@@ -98,31 +98,6 @@ static size_t bytecpy(uint8_t *out, const HCountedArray *a)
     return a->used;
 }
 
-// XXX the use of system_allocator for the result in k_nest is wrong. it
-//     should use the outer parser's allocator but we have no access to it.
-//     k_nest should be replaced by a proper combinator h_nest instead of
-//     being based on h_bind. or h_bind must give the continuation access
-//     to the outer allocator.
-extern HAllocator system_allocator; // XXX
-static HParser *k_nest(HAllocator *mm__, const HParsedToken *p, void *user)
-{
-    HAllocator *mres = &system_allocator;   // XXX
-    HParser *parser = user;
-    HCountedArray *a = H_CAST_SEQ(p);
-
-    uint8_t *input = mm__->alloc(mm__, a->used);
-    assert(input != NULL);
-    bytecpy(input, a);
-
-    HParseResult *res = h_parse__m(mres, parser, input, a->used);
-    mm__->free(mm__, input);
-
-    if(!res)
-        return NULL;
-    else
-        return h_unit__m(mm__, res->ast);
-}
-
 static HParsedToken *act_header(const HParseResult *p, void *user)
 {
     DNP3_Frame *frame = H_ALLOC(DNP3_Frame);
@@ -215,9 +190,7 @@ void dnp3_p_init_link(void)
     H_RULE(crc,     h_uint16());
 
     H_RULE(header_, h_sequence(start, len, ctrl, dest, source, NULL));
-    H_RULE(le_hdr_, little_endian(header_));    // k_nest resets endianness :(
-
-    H_ARULE(header, h_bind(bytes_crc(8), k_nest, le_hdr_));
+    H_ARULE(header, h_middle(h_and(bytes_crc(8)), header_, crc));
                               
     H_RULE(frame,   h_bind(header, k_frame, NULL));
 

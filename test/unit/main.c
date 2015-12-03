@@ -1090,7 +1090,7 @@ static void test_transport(void)
 int main(int argc, char *argv[])
 {
     g_test_init(&argc, &argv, NULL);
-    dnp3_p_init();
+    dnp3_init();
 
     // tests of crashes found via AFL
     g_test_add_func("/app/crash/1", test_crash1);

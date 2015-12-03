@@ -205,15 +205,13 @@ void dnp3_p_init_link(void)
     H_RULE(address, h_uint16());
 
     H_RULE(start,   h_token("\x05\x64", 2));
-    H_RULE(len,     h_int_range(h_uint8(), 5, 255));
-    // XXX what about frames with len<5 !?
+    H_RULE(len,     h_uint8());
     H_RULE(func,    h_bits(4, false));
                               /* --- fcv fcb prm dir --- */
                               /*     dfc                 */
     H_RULE(ctrl,    h_sequence(func, bit,bit,bit,bit, NULL));
     H_RULE(dest,    address);
-    H_RULE(source,  h_int_range(address, 0, 0xFFEF));
-    // XXX what about invalid addresses?
+    H_RULE(source,  address);
     H_RULE(crc,     h_uint16());
 
     H_RULE(header_, h_sequence(start, len, ctrl, dest, source, NULL));
@@ -249,6 +247,9 @@ bool dnp3_link_validate_frame(DNP3_Frame *frame)
 
     // XXX FCV is completely determined by function code!
     // XXX only few function codes valid - depends on PRM!
+
+    // valid source address range: 0 - 0xFFEF(65519)
+    REQUIRE(frame->source <= 0xFFEF);
 
     #undef REQUIRE
     return true;

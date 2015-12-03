@@ -40,7 +40,7 @@ typedef struct {
     uint16_t source;
     uint16_t destination;
 
-    uint8_t len;        // no. of bytes in payload (NOT eq. to the header field)
+    int16_t len;        // no. of bytes in payload (NOT eq. to the header field)
     uint8_t *payload;   // NULL if corrupt (CRC validation failed) or len=0
         // rationale for returning frames with corrupted payload at all:
         //   when the frame header is intact and thus the frame length is

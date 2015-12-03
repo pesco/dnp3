@@ -1038,6 +1038,8 @@ static void test_link_raw(void)
 {
     check_parse(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
                                    "primary frame from master 65519 to 1: TEST_LINK_STATES");
+    check_parse(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xF0\xFF\x62\x82",10,
+                                   "primary frame from master 65520 to 1: TEST_LINK_STATES");
     check_parse_fail(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB4",10); // crc error
     check_parse(dnp3_p_link_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x05\xB4\x67\x58",17,
                                    "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: <corrupt>");
@@ -1063,11 +1065,13 @@ static void test_link_valid(void)
 
     check_parse(valid_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
                              "primary frame from master 65519 to 1: TEST_LINK_STATES");
+    check_parse_fail(valid_frame, "\x05\x64\x05\xF2\x01\x00\xF0\xFF\x62\x82",10); // inv. source addr.
+    check_parse_fail(valid_frame, "\x05\x64\x06\xF2\x01\x00\xEF\xFF\xEF\x26\x01\xA1\xC9",13); // extra payload
+
     check_parse(valid_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
                              "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: 01 02 03 04");
     check_parse_fail(valid_frame, "\x05\x64\x05\xF3\x01\x00\xEF\xFF\xB9\x96",10); // empty payload
     check_parse_fail(valid_frame, "\x05\x64\x05\xF4\x01\x00\xEF\xFF\xAB\x7F",10); // empty payload
-    check_parse_fail(valid_frame, "\x05\x64\x06\xF2\x01\x00\xEF\xFF\xEF\x26\x01\xA1\xC9",13); // extra payload
     check_parse_fail(valid_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x05\xB4\x67\x58",17);   // corrupt payload
 }
 

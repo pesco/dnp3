@@ -5,8 +5,6 @@
 #include <glib.h>
 
 #include <dnp3hammer.h>
-#include <hammer/hammer.h>
-#include <hammer/glue.h>
 
 #define H_ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)  // XXX
 
@@ -1055,24 +1053,52 @@ static void test_link_raw(void)
                                    " 20");
 }
 
-static bool validate_frame(HParseResult *p, void *user)
+static void do_check_frame(bool valid, const uint8_t *input, size_t len, const char *result, int LINE)
 {
-    return dnp3_link_validate_frame(H_CAST(DNP3_Frame, p->ast));
+    HParseResult *res = h_parse(dnp3_p_link_frame, input, len);
+    if (!res) {
+      g_test_message("Parse failed on line %d, while expecting %s", LINE, result);
+      g_test_fail();
+    } else {
+      char *cres = format(res->ast);
+      check_string(cres, == , result);
+      free(cres);
+      if(dnp3_link_validate_frame(res->ast->user) != valid) {
+        if(valid)
+          g_test_message("Frame invalid on line %d", LINE);
+        else
+          g_test_message("Frame should not be valid on line %d, but was", LINE);
+        g_test_fail();
+      }
+      h_parse_result_free(res);
+    }
 }
+
+#define check_frame_valid(input, inp_len, result) do { \
+    do_check_frame(true, (const uint8_t*) input, inp_len, result, __LINE__); \
+} while(0)
+
+#define check_frame_invalid(input, inp_len, result) do { \
+    do_check_frame(false, (const uint8_t*) input, inp_len, result, __LINE__); \
+} while(0)
+
 static void test_link_valid(void)
 {
-    HParser *valid_frame = h_attr_bool(dnp3_p_link_frame, validate_frame, NULL);
+    check_frame_valid("\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
+                      "primary frame from master 65519 to 1: TEST_LINK_STATES");
+    check_frame_invalid("\x05\x64\x05\xF2\x01\x00\xF0\xFF\x62\x82",10,  // inv. source addr.
+                        "primary frame from master 65520 to 1: TEST_LINK_STATES");
+    check_frame_invalid("\x05\x64\x06\xF2\x01\x00\xEF\xFF\xEF\x26\x01\xA1\xC9",13,  // extra payload
+                        "primary frame from master 65519 to 1: TEST_LINK_STATES: 01");
 
-    check_parse(valid_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
-                             "primary frame from master 65519 to 1: TEST_LINK_STATES");
-    check_parse_fail(valid_frame, "\x05\x64\x05\xF2\x01\x00\xF0\xFF\x62\x82",10); // inv. source addr.
-    check_parse_fail(valid_frame, "\x05\x64\x06\xF2\x01\x00\xEF\xFF\xEF\x26\x01\xA1\xC9",13); // extra payload
-
-    check_parse(valid_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
-                             "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: 01 02 03 04");
-    check_parse_fail(valid_frame, "\x05\x64\x05\xF3\x01\x00\xEF\xFF\xB9\x96",10); // empty payload
-    check_parse_fail(valid_frame, "\x05\x64\x05\xF4\x01\x00\xEF\xFF\xAB\x7F",10); // empty payload
-    check_parse_fail(valid_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x05\xB4\x67\x58",17);   // corrupt payload
+    check_frame_valid("\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
+                      "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: 01 02 03 04");
+    check_frame_invalid("\x05\x64\x05\xF3\x01\x00\xEF\xFF\xB9\x96",10,  // empty payload
+                        "primary frame from master 65519 to 1: CONFIRMED_USER_DATA");
+    check_frame_invalid("\x05\x64\x05\xF4\x01\x00\xEF\xFF\xAB\x7F",10,  // empty payload
+                        "primary frame from master 65519 to 1: UNCONFIRMED_USER_DATA");
+    check_frame_invalid("\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x05\xB4\x67\x58",17,  // corrupt payload
+                        "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: <corrupt>");
 }
 
 static void test_transport(void)

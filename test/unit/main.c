@@ -56,29 +56,29 @@ static char *format(const HParsedToken *p)
     const char *_n2 = (n2);				\
     if (!(strcmp(_n1, _n2) op 0)) {			\
       g_test_message("Check failed on line %d: (%s) (%s %s %s)",	\
-             __LINE__,              \
+             LINE,              \
              #n1 " " #op " " #n2,       \
              _n1, #op, _n2);            \
       g_test_fail();					\
     }							\
   } while(0)
 
-void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t length, int line)
+void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t length, int LINE)
 {
     HParseResult *result = h_parse(parser, input, length);
     if (NULL != result) {
         char* cres = format(result->ast);
-        g_test_message("Check failed on line %d: shouldn't have succeeded, but parsed %s", line, cres);
+        g_test_message("Check failed on line %d: shouldn't have succeeded, but parsed %s", LINE, cres);
         free(cres);
         g_test_fail();
         h_parse_result_free(result);
     }
 }
 
-void do_check_parse(const HParser* parser, const uint8_t* input, size_t length, const char* result, int line) {
+void do_check_parse(const HParser* parser, const uint8_t* input, size_t length, const char* result, int LINE) {
     HParseResult *res = h_parse(parser, input, length);
     if (!res) {
-      g_test_message("Parse failed on line %d, while expecting %s", line, result);
+      g_test_message("Parse failed on line %d, while expecting %s", LINE, result);
       g_test_fail();
     } else {
       char *cres = format(res->ast);
@@ -94,16 +94,16 @@ void do_check_parse(const HParser* parser, const uint8_t* input, size_t length, 
     }
 }
 
-void do_check_parse_ttonly(const HParser* parser, const uint8_t* input, size_t length, HTokenType expectTT, int line) {
+void do_check_parse_ttonly(const HParser* parser, const uint8_t* input, size_t length, HTokenType expectTT, int LINE) {
     HParseResult *res = h_parse(parser, input, length);
     if (!res) {
-        g_test_message("Parse failed on line %d", line);
+        g_test_message("Parse failed on line %d", LINE);
         g_test_fail();
     } else {
         HTokenType tt = res->ast->token_type;
         if(tt != expectTT)
         {
-            g_test_message("expected tt %d, but got %d on line %d", expectTT, tt, line);
+            g_test_message("expected tt %d, but got %d on line %d", expectTT, tt, LINE);
             g_test_fail();
         }
         HArenaStats stats;

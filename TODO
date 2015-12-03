@@ -20,7 +20,6 @@ design/protocol questions:
 - should a CONFIRM message with unexpected (i.e. any) objects yield OBJ_UNKNOWN?
 - is an empty READ request valid?
 - is an empty WRITE request valid?
-- is a count of 0 valid on qc=17 etc.?
 - is it correct to silently discard unsolicited responses without the CON (confirm) flag?
 - should the relative time variants generate a PARAM_ERROR unless they are preceded by a
   Common Time-of-Occurance (CTO, group 50) object in the same message?

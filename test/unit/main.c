@@ -162,17 +162,20 @@ static void test_range_overflow(void)
 static void test_count_of_zero(void)
 {
     // count and prefix headers
-
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x20\x02\x17\x00", 8,
                 "PARAM_ERROR on [0] (fir,fin) RESPONSE");
-
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x20\x02\x28\x00\x00", 9,
                 "PARAM_ERROR on [0] (fir,fin) RESPONSE");
-
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x20\x02\x39\x00\x00\x00\x00", 11,
                 "PARAM_ERROR on [0] (fir,fin) RESPONSE");
 
-    // TODO - test count headers (0x07, 0x08, 0x09)
+    // count headers (0x07, 0x08, 0x09)
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x07\x00",6,
+                                    "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x08\x00\x00",7,
+                                    "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x09\x00\x00\x00\x00",9,
+                                    "PARAM_ERROR on [0] (fir,fin) READ");
 }
 
 static void test_mult_overflow(void)
@@ -274,12 +277,14 @@ static void test_req_read(void)
     check_parse(dnp3_p_app_request, "\xC0\x01",2, "[0] (fir,fin) READ");  // XXX null READ valid?
     check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x03\x41\x43\x42",9,
                                     "[0] (fir,fin) READ {g1v0 qc=17 #65 #67 #66}");
-    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x00",6,   // XXX is 0 a valid count?
-                                    "[0] (fir,fin) READ {g1v0 qc=17}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x00\x03\x41",7,
                                     "[0] (fir,fin) READ {g1v0 qc=00 #3..65}");
     check_parse(dnp3_p_app_request, "\xC0\x01\x02\x03\x00\x03\x41",7,
                                     "[0] (fir,fin) READ {g2v3 qc=00 #3..65}");
+
+    // 0 is not a valid count
+    check_parse(dnp3_p_app_request, "\xC0\x01\x01\x00\x17\x00",6,
+                                    "PARAM_ERROR on [0] (fir,fin) READ");
 }
 
 static void test_req_write(void)

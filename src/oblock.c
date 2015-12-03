@@ -87,9 +87,13 @@ static HParser *range(uint8_t x, HParser *p)
 }
 
 // range fields giving a count
+static bool validate_count(HParseResult *p, void *user)
+{
+    return (H_CAST_UINT(p->ast) > 0);
+}
 static HParser *count(uint8_t x, HParser *p)
 {
-    return h_right(rsc(x), p);
+    return h_right(rsc(x), h_attr_bool(p, validate_count, NULL));
 }
 
 // helper for actions below

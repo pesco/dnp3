@@ -66,6 +66,10 @@ NOTES:
        can reject only the offending object in a request containing multiple
        commands.
 
+ E) Although not explicitly disallowed by the specification, there is never a
+    case where a header with a count of 0 objects is semantically meaningful.
+    Therefore, such messages are rejected.
+
 
 LICENSE:
 

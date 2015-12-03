@@ -4,6 +4,6 @@
    match-leak-kinds: definite
    fun:malloc
    ...
-   fun:dnp3_dissect_init
+   fun:dnp3_init
    fun:main
 }

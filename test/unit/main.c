@@ -51,16 +51,29 @@ static char *format(const HParsedToken *p)
     return h_write_result_unamb(p);
 }
 
-#define check_string(n1, op, n2) do {			\
-    const char *_n1 = (n1);				\
-    const char *_n2 = (n2);				\
-    if (!(strcmp(_n1, _n2) op 0)) {			\
-      g_test_message("Check failed on line %d: (%s) (%s %s %s)",	\
-             LINE,              \
-             #n1 " " #op " " #n2,       \
-             _n1, #op, _n2);            \
-      g_test_fail();					\
-    }							\
+#define check_inttype(fmt, typ, n1, op, n2) do {                        \
+    typ _n1 = (n1);                                                     \
+    typ _n2 = (n2);                                                     \
+    if (!(_n1 op _n2)) {                                                \
+      g_test_message("Check failed on line %d: (%s): (" fmt " %s " fmt ")", \
+                     LINE, #n1 " " #op " " #n2,                         \
+                     _n1, #op, _n2);                                    \
+      g_test_fail();                                                    \
+    }                                                                   \
+  } while(0)
+
+#define check_cmp_size(n1, op, n2) check_inttype("%zu", size_t, n1, op, n2)
+
+#define check_string(n1, op, n2) do {                                   \
+    const char *_n1 = (n1);                                             \
+    const char *_n2 = (n2);                                             \
+    if (!(strcmp(_n1, _n2) op 0)) {                                     \
+      g_test_message("Check failed on line %d: (%s) (%s %s %s)",        \
+             LINE,                                                      \
+             #n1 " " #op " " #n2,                                       \
+             _n1, #op, _n2);                                            \
+      g_test_fail();                                                    \
+    }                                                                   \
   } while(0)
 
 void do_check_parse_fail(const HParser* parser, const uint8_t* input, size_t length, int LINE)
@@ -1101,6 +1114,36 @@ static void test_link_valid(void)
                         "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: <corrupt>");
 }
 
+static void do_check_frame_skip(const uint8_t *input, size_t len, size_t skip, int LINE)
+{
+    HParseResult *res = h_parse(dnp3_p_link_frame, input, len);
+    if (!res) {
+      g_test_message("Parse failed on line %d", LINE);
+      g_test_fail();
+    } else {
+      check_cmp_size(res->bit_length%8, ==, 0);
+      check_cmp_size(res->bit_length/8, ==, skip);
+      h_parse_result_free(res);
+    }
+}
+
+#define check_frame_skip(input, len, skip) \
+    do_check_frame_skip((const uint8_t *)(input), len, skip, __LINE__)
+
+static void test_link_skip(void)
+{
+    check_frame_skip("\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10, 10); // valid
+    check_frame_skip("\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5\x00\x00",12, 10); // valid
+    check_frame_skip("\x05\x64\x05\xF2\x01\x00\xF0\xFF\x62\x82\x00\x00",12, 10); // inv. source addr.
+    check_frame_skip("\x05\x64\x03\xF2\x05\x64\x05\x64\xA9\x8E\x00\x00",12, 10); // inv. length (3)
+    check_frame_skip("\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41"
+                     "\x01\x02\x03\x04\xFF\xFF",16, 16);        // wrong CRC
+    check_frame_skip("\x05\x64\x29\xF3\x01\x00\xEF\xFF\x89\xB0"
+                     "___4___8__12__16\x34\x90"
+                     "___4___8__12__16\xFF\xFF"                 // wrong CRC
+                     "\x01\x02\x03\x04\xB4\x67",52, 52);
+}
+
 static void test_transport(void)
 {
     check_parse(dnp3_p_transport_segment, "\x4A\x01\x02\x03\x04\x05\x06",7,
@@ -1182,6 +1225,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/transport", test_transport);
     g_test_add_func("/link/raw", test_link_raw);
     g_test_add_func("/link/valid", test_link_valid);
+    g_test_add_func("/link/skip", test_link_skip);
 
     g_test_run();
 }

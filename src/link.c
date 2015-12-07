@@ -285,6 +285,15 @@ bool dnp3_link_validate_frame(DNP3_Frame *frame)
     // valid source address range: 0 - 0xFFEF(65519)
     REQUIRE(frame->source <= 0xFFEF);
 
+    // reserved destination addresses: 0xFFF0-0xFFFB (cf. AN2013-004b)
+    REQUIRE(frame->destination < 0xFFF0 || frame->destination > 0xFFFB);
+
+    // broadcast addresses (0xFFFD-0xFFFF) only valid for USER_DATA
+    if(frame->destination >= 0xFFFD) {
+        REQUIRE(frame->func == DNP3_CONFIRMED_USER_DATA ||
+                frame->func == DNP3_UNCONFIRMED_USER_DATA);
+    }
+
     #undef REQUIRE
     return true;
 }

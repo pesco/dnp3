@@ -1108,6 +1108,8 @@ static void test_link_valid(void)
                       "primary frame from master 65519 to 1: (fcb=1) TEST_LINK_STATES");
     check_frame_invalid("\x05\x64\x05\xF2\x01\x00\xF0\xFF\x62\x82",10,  // inv. source addr.
                         "primary frame from master 65520 to 1: (fcb=1) TEST_LINK_STATES");
+    check_frame_invalid("\x05\x64\x05\xE2\xFB\xFF\xEF\xFF\x5B\xE2",10,
+                        "primary frame from master 65519 to 65531: TEST_LINK_STATES");
     check_frame_invalid("\x05\x64\x06\xF2\x01\x00\xEF\xFF\xEF\x26\x01\xA1\xC9",13,  // extra payload
                         "primary frame from master 65519 to 1: (fcb=1) TEST_LINK_STATES: 01");
     check_frame_invalid("\x05\x64\x05\xE1\x01\x00\xEF\xFF\x27\x7A",10,
@@ -1118,8 +1120,12 @@ static void test_link_valid(void)
                         "secondary frame from master 65519 to 1: (fcb=1,dfc) function 3 (reserved)");
     check_frame_valid("\x05\x64\x05\xA1\x01\x00\xEF\xFF\x9D\x4A",10,
                       "secondary frame from master 65519 to 1: (fcb=1) NACK");
-    check_frame_invalid("\x05\x64\x05\xE2\x01\x00\xEF\xFF\x2D\x1F",10,
+    check_frame_invalid("\x05\x64\x05\xE2\x01\x00\xEF\xFF\x2D\x1F",10,  // fcv=0
                         "primary frame from master 65519 to 1: TEST_LINK_STATES");
+    check_frame_invalid("\x05\x64\x05\xD2\xFD\xFF\xEF\xFF\x16\x44",10,  // broadcast not user-data
+                        "primary frame from master 65519 to 65533: (fcb=0) TEST_LINK_STATES");
+    check_frame_valid("\x05\x64\x07\xE4\xFD\xFF\xEF\xFF\x7A\x1A\x00\x00\xFF\xFF",14,
+                      "primary frame from master 65519 to 65533: UNCONFIRMED_USER_DATA: 00 00");
 
     check_frame_valid("\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
                       "primary frame from master 65519 to 1: (fcb=1) CONFIRMED_USER_DATA: 01 02 03 04");

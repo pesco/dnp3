@@ -602,6 +602,9 @@ bool dnp3_link_validate_frame(DNP3_Frame *frame);
 static inline
 bool dnp3_link_prm(const DNP3_Frame *frame) { return (frame->func>>4); }
 
+// return the correct value for the FCV flag in a (primary) frame
+bool dnp3_link_fcv(const DNP3_Frame *frame);
+
 uint16_t dnp3_crc(uint8_t *bytes, size_t len);
 
 // formatting for human-readable output

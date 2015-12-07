@@ -277,7 +277,7 @@ bool dnp3_link_validate_frame(DNP3_Frame *frame)
 
     if(dnp3_link_prm(frame)) {
         // FCV is completely determined by function code
-        //REQUIRE(frame->fcv == dnp3_link_fcv(frame));
+        REQUIRE(frame->fcv == dnp3_link_fcv(frame));
     }
 
     // XXX correct to ignore FCB on secondary frames?!
@@ -287,4 +287,16 @@ bool dnp3_link_validate_frame(DNP3_Frame *frame)
 
     #undef REQUIRE
     return true;
+}
+
+bool dnp3_link_fcv(const DNP3_Frame *frame)
+{
+    assert(dnp3_link_prm(frame));
+    switch(frame->func) {
+    case DNP3_TEST_LINK_STATES:
+    case DNP3_CONFIRMED_USER_DATA:
+        return 1;
+    default:
+        return 0;
+    }
 }

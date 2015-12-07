@@ -3,6 +3,7 @@
 - license
 
 design/protocol questions:
+- correct to ignore FCB on secondary frames?
 - should response syntax be dependent on the associated request function?
 - perform size sanity checks (see AN2013-004b) somehow at appropriate places?
 - set the 'online' flag in the representation of variations without flags?!

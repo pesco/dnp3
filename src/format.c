@@ -616,6 +616,22 @@ char *dnp3_format_frame(const DNP3_Frame *frame)
                              frame->source, frame->destination);
     if(x<0) goto err;
 
+    // frame count / data flow control flags
+    if(frame->prm) {
+        if(frame->fcv) {
+            x = appendf(&res, &size, "(fcb=%d) ", (int)frame->fcb);
+            if(x<0) goto err;
+        }
+    } else {
+        if(frame->dfc && frame->fcb)
+            x = appendf(&res, &size, "(fcb=1,dfc) ");
+        else if(frame->fcb)
+            x = appendf(&res, &size, "(fcb=1) ");
+        else if(frame->dfc)
+            x = appendf(&res, &size, "(dfc) ");
+        if(x<0) goto err;
+    }
+
     // function name
     const char *name = linkfuncnames[frame->func];
     if(name)

@@ -275,9 +275,12 @@ bool dnp3_link_validate_frame(DNP3_Frame *frame)
         return false;
     }
 
-    // FCV (primary frames only) is completely determined by function code
-    //if(frame->prm)
-    //    REQUIRE(frame->fcv == dnp3_link_fcv(frame->func));
+    if(frame->prm) {
+        // FCV is completely determined by function code
+        //REQUIRE(frame->fcv == dnp3_link_fcv(frame->func));
+    }
+
+    // XXX correct to ignore FCB on secondary frames?!
 
     // valid source address range: 0 - 0xFFEF(65519)
     REQUIRE(frame->source <= 0xFFEF);

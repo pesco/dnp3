@@ -1048,22 +1048,29 @@ static void test_obj_iin(void)
 static void test_link_raw(void)
 {
     check_parse(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
-                                   "primary frame from master 65519 to 1: TEST_LINK_STATES");
+                                   "primary frame from master 65519 to 1: (fcb=1) TEST_LINK_STATES");
     check_parse(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xF0\xFF\x62\x82",10,
-                                   "primary frame from master 65520 to 1: TEST_LINK_STATES");
+                                   "primary frame from master 65520 to 1: (fcb=1) TEST_LINK_STATES");
     check_parse_fail(dnp3_p_link_frame, "\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB4",10); // crc error
     check_parse(dnp3_p_link_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x05\xB4\x67\x58",17,
-                                   "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: <corrupt>");
+                                   "primary frame from master 65519 to 1: (fcb=1) CONFIRMED_USER_DATA: <corrupt>");
     check_parse(dnp3_p_link_frame, "\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
-                                   "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: 01 02 03 04");
+                                   "primary frame from master 65519 to 1: (fcb=1) CONFIRMED_USER_DATA: 01 02 03 04");
     check_parse(dnp3_p_link_frame, "\x05\x64\x26\xF3\x01\x00\xEF\xFF\x6B\xF4"
                                    "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\xEC\x10"
                                    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x27\x03"
                                    "\x20\x50\xD6",49,
-                                   "primary frame from master 65519 to 1: CONFIRMED_USER_DATA:"
+                                   "primary frame from master 65519 to 1: (fcb=1) CONFIRMED_USER_DATA:"
                                    " 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F"
                                    " 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F"
                                    " 20");
+
+    check_parse(dnp3_p_link_frame, "\x05\x64\x05\xD2\x01\x00\xEF\xFF\xE2\xAD",10,
+                                   "primary frame from master 65519 to 1: (fcb=0) TEST_LINK_STATES");
+    check_parse(dnp3_p_link_frame, "\x05\x64\x05\xC2\x01\x00\xEF\xFF\x70\x07",10,
+                                   "primary frame from master 65519 to 1: TEST_LINK_STATES");
+    check_parse(dnp3_p_link_frame, "\x05\x64\x05\x90\x01\x00\xEF\xFF\x54\xDB",10,
+                                   "secondary frame from master 65519 to 1: (dfc) ACK");
 }
 
 static void do_check_frame(bool valid, const uint8_t *input, size_t len, const char *result, int LINE)
@@ -1098,26 +1105,28 @@ static void do_check_frame(bool valid, const uint8_t *input, size_t len, const c
 static void test_link_valid(void)
 {
     check_frame_valid("\x05\x64\x05\xF2\x01\x00\xEF\xFF\xBF\xB5",10,
-                      "primary frame from master 65519 to 1: TEST_LINK_STATES");
+                      "primary frame from master 65519 to 1: (fcb=1) TEST_LINK_STATES");
     check_frame_invalid("\x05\x64\x05\xF2\x01\x00\xF0\xFF\x62\x82",10,  // inv. source addr.
-                        "primary frame from master 65520 to 1: TEST_LINK_STATES");
+                        "primary frame from master 65520 to 1: (fcb=1) TEST_LINK_STATES");
     check_frame_invalid("\x05\x64\x06\xF2\x01\x00\xEF\xFF\xEF\x26\x01\xA1\xC9",13,  // extra payload
-                        "primary frame from master 65519 to 1: TEST_LINK_STATES: 01");
+                        "primary frame from master 65519 to 1: (fcb=1) TEST_LINK_STATES: 01");
     check_frame_invalid("\x05\x64\x05\xF1\x01\x00\xEF\xFF\xB5\xD0",10,
-                        "primary frame from master 65519 to 1: function 1 (obsolete)");
+                        "primary frame from master 65519 to 1: (fcb=1) function 1 (obsolete)");
     check_frame_invalid("\x05\x64\x05\xFF\x01\x00\xEF\xFF\xE8\x4F",10,
-                        "primary frame from master 65519 to 1: function 15 (reserved)");
+                        "primary frame from master 65519 to 1: (fcb=1) function 15 (reserved)");
     check_frame_invalid("\x05\x64\x05\xB3\x01\x00\xEF\xFF\x03\xA6",10,
-                        "secondary frame from master 65519 to 1: function 3 (reserved)");
+                        "secondary frame from master 65519 to 1: (fcb=1,dfc) function 3 (reserved)");
+    check_frame_valid("\x05\x64\x05\xA1\x01\x00\xEF\xFF\x9D\x4A",10,
+                      "secondary frame from master 65519 to 1: (fcb=1) NACK");
 
     check_frame_valid("\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x04\xB4\x67\x58",17,
-                      "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: 01 02 03 04");
+                      "primary frame from master 65519 to 1: (fcb=1) CONFIRMED_USER_DATA: 01 02 03 04");
     check_frame_invalid("\x05\x64\x05\xF3\x01\x00\xEF\xFF\xB9\x96",10,  // empty payload
-                        "primary frame from master 65519 to 1: CONFIRMED_USER_DATA");
+                        "primary frame from master 65519 to 1: (fcb=1) CONFIRMED_USER_DATA");
     check_frame_invalid("\x05\x64\x05\xF4\x01\x00\xEF\xFF\xAB\x7F",10,  // empty payload
-                        "primary frame from master 65519 to 1: UNCONFIRMED_USER_DATA");
+                        "primary frame from master 65519 to 1: (fcb=1) UNCONFIRMED_USER_DATA");
     check_frame_invalid("\x05\x64\x09\xF3\x01\x00\xEF\xFF\x0B\x41\x01\x02\x03\x05\xB4\x67\x58",17,  // corrupt payload
-                        "primary frame from master 65519 to 1: CONFIRMED_USER_DATA: <corrupt>");
+                        "primary frame from master 65519 to 1: (fcb=1) CONFIRMED_USER_DATA: <corrupt>");
 }
 
 static void do_check_frame_skip(const uint8_t *input, size_t len, size_t skip, int LINE)

@@ -41,7 +41,7 @@ typedef struct {
     uint16_t destination;
 
     int16_t len;        // no. of bytes in payload (NOT eq. to the header field)
-    uint8_t *payload;   // NULL if corrupt (CRC validation failed) or len=0
+    uint8_t *payload;   // NULL if corrupt (CRC validation failed) or len<=0
         // rationale for returning frames with corrupted payload at all:
         //   when the frame header is intact and thus the frame length is
         //   known, the entire frame should be skipped. this way that behaviour

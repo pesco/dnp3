@@ -245,7 +245,7 @@ void dnp3_p_init_link(void)
     }
 }
 
-bool dnp3_link_validate_frame(DNP3_Frame *frame)
+bool dnp3_link_validate_frame(const DNP3_Frame *frame)
 {
     #define REQUIRE(exp) do {if(!(exp)) return false;} while(0)
 

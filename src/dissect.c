@@ -409,6 +409,11 @@ void process_link_frame(Dissector *self,
     struct Context *ctx;
     HParseResult *r;
 
+    if(!dnp3_link_validate_frame(frame)) {
+        CALLBACK(link_invalid, frame);
+        return;
+    }
+
     CALLBACK(link_frame, frame, buf, len);
 
     // payload handling

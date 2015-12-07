@@ -1122,6 +1122,8 @@ static void test_link_valid(void)
                       "secondary frame from master 65519 to 1: (fcb=1) NACK");
     check_frame_invalid("\x05\x64\x05\xE2\x01\x00\xEF\xFF\x2D\x1F",10,  // fcv=0
                         "primary frame from master 65519 to 1: TEST_LINK_STATES");
+    check_frame_invalid("\x05\x64\x07\xF4\x01\x00\xEF\xFF\x1C\x59\x00\x00\xFF\xFF",14, // fcv=1
+                        "primary frame from master 65519 to 1: (fcb=1) UNCONFIRMED_USER_DATA: 00 00");
     check_frame_invalid("\x05\x64\x05\xD2\xFD\xFF\xEF\xFF\x16\x44",10,  // broadcast not user-data
                         "primary frame from master 65519 to 65533: (fcb=0) TEST_LINK_STATES");
     check_frame_valid("\x05\x64\x07\xE4\xFD\xFF\xEF\xFF\x7A\x1A\x00\x00\xFF\xFF",14,

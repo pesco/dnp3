@@ -569,6 +569,7 @@ struct StreamProcessor_ {
 };
 
 typedef struct {
+    void (*link_invalid)(void *env, const DNP3_Frame *frame);
     void (*link_frame)(void *env, const DNP3_Frame *frame,
                        const uint8_t *buf, size_t len);    // raw input
     void (*transport_segment)(void *env, const DNP3_Segment *segment);
@@ -596,7 +597,7 @@ StreamProcessor *dnp3_dissector(DNP3_Callbacks cb, void *env);
 
 // check a raw link-layer frame as parsed by dnp3_p_link_frame for validity
 // any frame for which this function is false should be ignored!
-bool dnp3_link_validate_frame(DNP3_Frame *frame);
+bool dnp3_link_validate_frame(const DNP3_Frame *frame);
 
 // return the value of the PRM flag in a frame
 static inline

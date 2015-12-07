@@ -65,9 +65,14 @@ void output_fragment(void *env, const DNP3_Fragment *fragment,
 }
 
 void print_frame(void *env, const DNP3_Frame *frame,
-                const uint8_t *buf, size_t len)
+                 const uint8_t *buf, size_t len)
 {
     print(env, "L> %s\n", dnp3_format_frame(frame));
+}
+
+void print_link_invalid(void *env, const DNP3_Frame *frame)
+{
+    print(env, "L: invalid %s\n", dnp3_format_frame(frame));
 }
 
 void print_fragment(void *env, const DNP3_Fragment *fragment,
@@ -120,6 +125,7 @@ int main(int argc, char *argv[])
     // default: full trafic, print mode
     main_ = main_full;
     callbacks.link_frame = print_frame;
+    callbacks.link_invalid = print_link_invalid;
     callbacks.transport_segment = print_segment;
     callbacks.transport_payload = print_transport_payload;
     callbacks.app_invalid = print_app_invalid;

@@ -259,8 +259,25 @@ bool dnp3_link_validate_frame(DNP3_Frame *frame)
         REQUIRE(frame->payload == NULL);
     }
 
-    // XXX FCV is completely determined by function code!
-    // XXX only few function codes valid - depends on PRM!
+    // valid function codes
+    switch(frame->func) {
+    case DNP3_RESET_LINK_STATES:
+    case DNP3_TEST_LINK_STATES:
+    case DNP3_CONFIRMED_USER_DATA:
+    case DNP3_UNCONFIRMED_USER_DATA:
+    case DNP3_REQUEST_LINK_STATUS:
+    case DNP3_ACK:
+    case DNP3_NACK:
+    case DNP3_LINK_STATUS:
+    case DNP3_NOT_SUPPORTED:
+        break;
+    default:
+        return false;
+    }
+
+    // FCV (primary frames only) is completely determined by function code
+    //if(frame->prm)
+    //    REQUIRE(frame->fcv == dnp3_link_fcv(frame->func));
 
     // valid source address range: 0 - 0xFFEF(65519)
     REQUIRE(frame->source <= 0xFFEF);

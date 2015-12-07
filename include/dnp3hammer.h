@@ -12,6 +12,7 @@ extern "C" {
 
 // data link layer...
 
+// NB: primary message bit (PRM) is rolled into function code
 typedef enum {
     // used in primary frames:
     DNP3_RESET_LINK_STATES = 0x10,
@@ -30,7 +31,6 @@ typedef enum {
 
 typedef struct {
     uint8_t dir:1;      // direction: 1 = master to outstation
-    uint8_t prm:1;      // primary message bit (initiating a transaction?)
     uint8_t fcb:1;      // frame count bit
     union {
         uint8_t fcv:1;  // primary frames: frame count valid?
@@ -597,6 +597,10 @@ StreamProcessor *dnp3_dissector(DNP3_Callbacks cb, void *env);
 // check a raw link-layer frame as parsed by dnp3_p_link_frame for validity
 // any frame for which this function is false should be ignored!
 bool dnp3_link_validate_frame(DNP3_Frame *frame);
+
+// return the value of the PRM flag in a frame
+static inline
+bool dnp3_link_prm(const DNP3_Frame *frame) { return (frame->func>>4); }
 
 uint16_t dnp3_crc(uint8_t *bytes, size_t len);
 

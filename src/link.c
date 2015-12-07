@@ -107,13 +107,13 @@ static HParsedToken *act_header(const HParseResult *p, void *user)
     frame->len = H_FIELD_UINT(1) - 5;   // payload length, excl. header bytes
 
     frame->dir = H_FIELD_UINT(2,4);
-    frame->prm = H_FIELD_UINT(2,3);
+    bool prm = H_FIELD_UINT(2,3);
     frame->fcb = H_FIELD_UINT(2,2);
-    if(frame->prm)
+    if(prm)
         frame->fcv = H_FIELD_UINT(2,1);
     else
         frame->dfc = H_FIELD_UINT(2,1);
-    frame->func = (frame->prm << 4) | H_FIELD_UINT(2,0);
+    frame->func = (prm << 4) | H_FIELD_UINT(2,0);
 
     frame->destination = H_FIELD_UINT(3);
     frame->source = H_FIELD_UINT(4);
@@ -275,9 +275,9 @@ bool dnp3_link_validate_frame(DNP3_Frame *frame)
         return false;
     }
 
-    if(frame->prm) {
+    if(dnp3_link_prm(frame)) {
         // FCV is completely determined by function code
-        //REQUIRE(frame->fcv == dnp3_link_fcv(frame->func));
+        //REQUIRE(frame->fcv == dnp3_link_fcv(frame));
     }
 
     // XXX correct to ignore FCB on secondary frames?!

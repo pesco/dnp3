@@ -611,13 +611,13 @@ char *dnp3_format_frame(const DNP3_Frame *frame)
 
     // header
     x = appendf(&res, &size, "%s frame from %s %"PRIu16" to %"PRIu16": ",
-                             frame->prm? "primary" : "secondary",
+                             dnp3_link_prm(frame)? "primary" : "secondary",
                              frame->dir? "master" : "outstation",
                              frame->source, frame->destination);
     if(x<0) goto err;
 
     // frame count / data flow control flags
-    if(frame->prm) {
+    if(dnp3_link_prm(frame)) {
         if(frame->fcv) {
             x = appendf(&res, &size, "(fcb=%d) ", (int)frame->fcb);
             if(x<0) goto err;

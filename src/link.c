@@ -113,7 +113,7 @@ static HParsedToken *act_header(const HParseResult *p, void *user)
         frame->fcv = H_FIELD_UINT(2,1);
     else
         frame->dfc = H_FIELD_UINT(2,1);
-    frame->func = H_FIELD_UINT(2,0);
+    frame->func = (frame->prm << 4) | H_FIELD_UINT(2,0);
 
     frame->destination = H_FIELD_UINT(3);
     frame->source = H_FIELD_UINT(4);

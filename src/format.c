@@ -592,6 +592,17 @@ err:
     return NULL;
 }
 
+static const char *linkfuncnames[32] = {
+    // secondary (PRM=0)
+    "ACK", "NACK", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    "LINK_STATUS", NULL, NULL, "function 14 (obsolete)", "NOT_SUPPORTED",
+
+    // primary (PRM=1)
+    "RESET_LINK_STATES", "function 1 (obsolete)", "TEST_LINK_STATES",
+    "CONFIRMED_USER_DATA", "UNCONFIRMED_USER_DATA", NULL, NULL, NULL, NULL,
+    "REQUEST_LINK_STATUS", NULL, NULL, NULL, NULL, NULL, NULL
+};
+
 char *dnp3_format_frame(const DNP3_Frame *frame)
 {
     char *res = NULL;
@@ -606,26 +617,11 @@ char *dnp3_format_frame(const DNP3_Frame *frame)
     if(x<0) goto err;
 
     // function name
-    const char *names[16] = {NULL};
-    if(frame->prm) {
-        names[0] = "RESET_LINK_STATES";
-        names[1] = "function 1 (obsolete)";
-        names[2] = "TEST_LINK_STATES";
-        names[3] = "CONFIRMED_USER_DATA";
-        names[4] = "UNCONFIRMED_USER_DATA";
-        names[9] = "REQUEST_LINK_STATUS";
-    } else {
-        names[0]  = "ACK";
-        names[1]  = "NACK";
-        names[11] = "LINK_STATUS";
-        names[14] = "function 14 (obsolete)";
-        names[15] = "NOT_SUPPORTED";
-    }
-    const char *name = names[frame->func];
+    const char *name = linkfuncnames[frame->func];
     if(name)
         x = appendf(&res, &size, "%s", name);
     else
-        x = appendf(&res, &size, "function %d (reserved)", (int)frame->func);
+        x = appendf(&res, &size, "function %d (reserved)", (int)(frame->func & 0xF));
     if(x<0) goto err;
 
     // user data

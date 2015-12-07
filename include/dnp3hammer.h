@@ -14,18 +14,18 @@ extern "C" {
 
 typedef enum {
     // used in primary frames:
-    DNP3_RESET_LINK_STATES = 0,
+    DNP3_RESET_LINK_STATES = 0x10,
     // 1 obsolete
-    DNP3_TEST_LINK_STATES = 2,
-    DNP3_CONFIRMED_USER_DATA = 3,
-    DNP3_UNCONFIRMED_USER_DATA = 4,
-    DNP3_REQUEST_LINK_STATUS = 9,
+    DNP3_TEST_LINK_STATES = 0x12,
+    DNP3_CONFIRMED_USER_DATA = 0x13,
+    DNP3_UNCONFIRMED_USER_DATA = 0x14,
+    DNP3_REQUEST_LINK_STATUS = 0x19,
 
     // used in secondary frames:
-    DNP3_ACK = 0,
-    DNP3_NACK = 1,
-    DNP3_LINK_STATUS = 11,
-    DNP3_NOT_SUPPORTED = 15
+    DNP3_ACK = 0x00,
+    DNP3_NACK = 0x01,
+    DNP3_LINK_STATUS = 0x0B,
+    DNP3_NOT_SUPPORTED = 0x0F
 } DNP3_LinkLayerFunctionCode;
 
 typedef struct {
@@ -36,7 +36,7 @@ typedef struct {
         uint8_t fcv:1;  // primary frames: frame count valid?
         uint8_t dfc:1;  // secondary frames: data flow control: 1 = busy
     };
-    uint8_t func:4;     // link layer function code
+    uint8_t func:5;     // link layer function code
     uint16_t source;
     uint16_t destination;
 

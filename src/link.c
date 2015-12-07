@@ -57,7 +57,7 @@ uint16_t dnp3_crc(uint8_t *bytes, size_t len)
     return crc;
 }
 
-static bool validate_bytes_crc(HParseResult *p, void *user)
+static bool validate_crc(HParseResult *p, void *user)
 {
     uint8_t buf[16];
 
@@ -78,16 +78,17 @@ static bool validate_bytes_crc(HParseResult *p, void *user)
     return (crc == compcrc);
 }
 
-#define act_bytes_crc h_act_first
+#define act_valid_crc h_act_first
 
-static HParser *bytes_crc(size_t n)
+static HParser *bytes_crc_(size_t n)
 {
     H_RULE(byte,    h_uint8());
     H_RULE(crc,     h_uint16());
 
-    H_AVRULE(bytes_crc, h_sequence(h_repeat_n(byte, n), crc, NULL));
+    H_RULE (bytes_crc, h_sequence(h_repeat_n(byte, n), crc, NULL));
+    H_ARULE(valid_crc, h_attr_bool(bytes_crc, validate_crc, NULL));
 
-    return bytes_crc;
+    return h_choice(valid_crc, h_ignore(bytes_crc), NULL);
 }
 
 // helper to copy bytes from an HSequence into an array
@@ -120,21 +121,67 @@ static HParsedToken *act_header(const HParseResult *p, void *user)
     return H_MAKE(DNP3_Frame, frame);
 }
 
-static HParsedToken *act_udata(const HParseResult *p, void *user)
+static HParsedToken *attach_payload(const HParseResult *p, void *user)
 {
     DNP3_Frame *hdr = user;
     DNP3_Frame *frame = H_ALLOC(DNP3_Frame);
 
     *frame = *hdr;
-    frame->payload = h_arena_malloc(p->arena, hdr->len);
+    if(p->ast) {
+        HBytes b = H_CAST_BYTES(p->ast);
+        assert(b.len == hdr->len);
+        frame->payload = (uint8_t *)b.token;
+    } else {
+        frame->payload = NULL;
+    }
 
+    return H_MAKE(DNP3_Frame, frame);
+}
+
+// prebaked parsers for every size of payload
+static HParser *payload[256] = {NULL};
+
+static HParser *k_frame(HAllocator *mm__, const HParsedToken *p, void *user)
+{
+    DNP3_Frame *hdr = H_CAST(DNP3_Frame, p);
+    size_t n;
+
+    if(hdr->len > 0) {
+        assert(hdr->len <= 255);
+        n = hdr->len;
+    } else {
+        n = 0;
+    }
+
+    return h_action__m(mm__, payload[n], attach_payload, hdr);
+}
+
+static bool validate_blocks(HParseResult *p, void *user)
+{
+    HCountedArray *blocks = H_FIELD_SEQ(0);
+    int q = (intptr_t)user;
+
+    // last block present (=valid)?
+    if(H_CAST_SEQ(p->ast)->used < 2)
+        return false;
+
+    // all 16-byte blocks present (=valid)?
+    return (blocks->used == q);
+}
+
+static HParsedToken *act_assemble(const HParseResult *p, void *user)
+{
     // p = ((block...), block)
     HCountedArray *blocks = H_FIELD_SEQ(0);
     HCountedArray *last = H_FIELD_SEQ(1);
 
-    // assemble user data
-    assert(blocks->used * 16 + last->used == hdr->len);
-    uint8_t *out = frame->payload;
+    size_t len = blocks->used * 16 + last->used;
+    if(len == 0)
+        return NULL;
+
+    // assemble data
+    uint8_t *buf = h_arena_malloc(p->arena, len);
+    uint8_t *out = buf;
     for(size_t i=0; i<blocks->used; i++) {
         HCountedArray *a = H_CAST_SEQ(blocks->elements[i]);
         assert(a->used == 16);
@@ -142,41 +189,22 @@ static HParsedToken *act_udata(const HParseResult *p, void *user)
     }
     bytecpy(out, last);
 
-    return H_MAKE(DNP3_Frame, frame);
+    return H_MAKE_BYTES(buf, len);
 }
 
-// prebaked parsers for every size of user data block
-static HParser *blockp[17] = {NULL};
-
-static HParser *k_frame(HAllocator *mm__, const HParsedToken *p, void *user)
+static bool not_null(HParseResult *p, void *user)
 {
-    DNP3_Frame *hdr = H_CAST(DNP3_Frame, p);
-
-    HParser *nulldata = h_unit__m(mm__, p);
-
-    if(hdr->len > 0) {
-        uint8_t nblocks = hdr->len / 16;
-        uint8_t lastlen = hdr->len % 16;
-        size_t nbytes = hdr->len + nblocks*2 + (lastlen? 2 : 0);
-
-        // XXX should really consider pre-baking all of these
-        HParser *udata = h_repeat_n__m(mm__, blockp[16], nblocks);
-        udata = h_sequence__m(mm__, udata, blockp[lastlen], NULL);
-
-        HParser *valid   = h_action__m(mm__, udata, act_udata, hdr);
-        HParser *skipB   = h_ignore__m(mm__, h_uint8__m(mm__));
-        HParser *skip    = h_repeat_n__m(mm__, skipB, nbytes);
-        HParser *corrupt = h_right__m(mm__, skip, nulldata);
-            // XXX i'd like h_skip(n) in hammer
-
-        return h_choice__m(mm__, valid, corrupt, NULL);
-    } else {
-        return nulldata;
-    }
+    return (p->ast != NULL);
 }
 
 void dnp3_p_init_link(void)
 {
+    // bake basic parsers for CRC-ed data blocks
+    HParser *bytes_crc[17];          // yield bytes if CRC valid, NULL otherwise
+    bytes_crc[0] = h_sequence(NULL); // empty sequence - no crc
+    for(int i=1; i<=16; i++)
+        bytes_crc[i] = bytes_crc_(i);
+
     H_RULE(bit,     h_bits(1, false));
     H_RULE(address, h_uint16());
 
@@ -191,18 +219,30 @@ void dnp3_p_init_link(void)
     H_RULE(crc,     h_uint16());
 
     H_RULE(header_, h_sequence(start, len, ctrl, dest, source, NULL));
-    H_ARULE(header, h_middle(h_and(bytes_crc(8)), header_, crc));
+    H_RULE(hdr_crc, h_attr_bool(bytes_crc[8], not_null, NULL));
+    H_ARULE(header, h_middle(h_and(hdr_crc), header_, crc));
                               
     H_RULE(frame,   h_bind(header, k_frame, NULL));
 
-    // bake parsers for user data blocks so they don't have to be created
-    // anew on every call to k_frame.
-    blockp[0] = h_sequence(NULL);    // empty sequence - no crc!
-    for(int i=1; i<=16; i++) {
-        blockp[i] = bytes_crc(i);
-    }
-
     dnp3_p_link_frame = little_endian(frame);
+
+    // bake parsers for data payloads so they don't have to be created on every
+    // call to k_frame...
+    for(int q=0; q<16; q++) {
+        H_RULE(fullblocks, h_repeat_n(bytes_crc[16], q));
+
+        for(int r=0; r<16; r++) {
+            int n = q*16 + r;
+            intptr_t qp = q;
+
+            H_RULE (lastblock, bytes_crc[r]);
+            H_RULE (blocks,    h_sequence(fullblocks, lastblock, NULL));
+            H_ARULE(assemble,  h_attr_bool(blocks, validate_blocks, (void*)qp));
+            H_RULE (skip,      h_ignore(blocks));
+
+            payload[n] = h_choice(assemble, skip, NULL);
+        }
+    }
 }
 
 bool dnp3_link_validate_frame(DNP3_Frame *frame)

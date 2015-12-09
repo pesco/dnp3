@@ -393,8 +393,10 @@ void process_transport_segment(Dissector *self,
             HBytes b = H_CAST_BYTES(r->ast);
             process_transport_payload(self, ctx, b.token, b.len);
             h_parse_result_free(r);
+        } else {
+            CALLBACK(transport_discard, ctx->n);
         }
-        ctx->n = 0; // flush frames (XXX => drop invalid series - OK?)
+        ctx->n = 0; // flush frames
 
         m += consumed;
     }

@@ -1,3 +1,10 @@
+- dissector callbacks for invalid/abnormal segment series
+  - needs h_parse_start__p() with extra data (void *)!!
+  - discarded partial sequence (unexpected seqno, missing fin flag)
+  - duplicate frames?
+    - duplicates inside a series
+    - duplicate start frames (with fir flag)?
+  - extra frames outside a series (before the fir flag)?
 - credits
 - license
 
@@ -36,7 +43,6 @@ missing features:
 - other object groups > 80
 
 implementation details:
-- the use of system_allocator for the result in k_nest is wrong. hammer probably needs h_nest.
 - revisit the ugly DNP3_Object structure
   - move the 'state' field out of the DNP3_Flags struct?
 - clean up header guards and includes
@@ -58,6 +64,9 @@ spec issues:
   - CONFIRM can include g120v3,g120v9 (cf. IEEE 1815-2012 7.5.1.4 Figure 7-16)
   - event-generating point types are not listed as allowed with fc 20/21 (ENABLE/DISABLE_UNSOLICITED)
   - can FREEZE_AT_TIME_NR include g30v0 (analog input) - just like FREEZE_AT_TIME?
-- parsing pseudocode in AN2012-004b does not work for READ requests, i.e. requests
+- parsing pseudocode in AN2013-004b does not work for READ requests, i.e. requests
   that take bare object headers?
 - should the status on analog output objects be 8 bits (though 7 bits everywhere else)?
+- "as long as the start bytes and CRCs check out, the frame is technically a
+  frame and should be skipped as a whole" not clearly stated
+  cf. https://github.com/pesco/dnp3/issues/11

@@ -573,6 +573,7 @@ typedef struct {
     void (*link_frame)(void *env, const DNP3_Frame *frame,
                        const uint8_t *buf, size_t len);    // raw input
     void (*transport_segment)(void *env, const DNP3_Segment *segment);
+    //void (*transport_discard)(void *env, size_t n);
     void (*transport_payload)(void *env, const uint8_t *s, size_t n);
     void (*app_invalid)(void *env, DNP3_ParseError e);
     void (*app_fragment)(void *env, const DNP3_Fragment *fragment,

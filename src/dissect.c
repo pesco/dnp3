@@ -390,12 +390,12 @@ void process_transport_segment(Dissector *self,
         if(r->ast) {
             HBytes b = H_CAST_BYTES(r->ast);
             process_transport_payload(self, ctx, b.token, b.len);
-            h_parse_result_free(r);
         } else {
             CALLBACK(transport_discard, ctx->n);
         }
         ctx->n = 0; // flush frames
 
+        h_parse_result_free(r);
         m += consumed;
     }
 

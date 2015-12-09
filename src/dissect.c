@@ -53,7 +53,7 @@ HParser *dnp3_p_transport_function; // the transport-layer state machine
     do {if(self->cb.NAME) self->cb.NAME(self->env, __VA_ARGS__);} while(0)
 
 #define error(...) CALLBACK(log_error, __VA_ARGS__)
-#define debug(...) //fprintf(stderr, __VA_ARGS__)
+#define debug(...) fprintf(stderr, __VA_ARGS__)
 
 
 static bool segment_equal(const DNP3_Segment *a, const DNP3_Segment *b)
@@ -87,7 +87,7 @@ static bool segment_equal(const DNP3_Segment *a, const DNP3_Segment *b)
 //
 // We will use an unambiguous variant:
 //
-//      (A+[+=]*(Z|[^AZ+=]|$)|[^A])*
+//      (A+[+=]*(Z|[^AZ+=]+|$)|[^A]+)*
 //
 
 // convert an incoming transport segment into appropriate input tokens
@@ -208,12 +208,12 @@ void dnp3_dissector_init(void)
     H_RULE (pls,    ttok(h_ch('+')));
     H_RULE (equ,    h_ch('='));
 
-    H_RULE (notAZpe, h_not_in("AZ+=",4));
-    H_RULE (notA,    h_not_in("A",1));
+    H_RULE (notAZpe, h_many1(h_not_in("AZ+=",4)));
+    H_RULE (notA,    h_many1(h_not_in("A",1)));
 
     // single-step transport function (call repeatedly):
     //
-    //     A+[+=]*(Z|[^AZ+=]|$)|[^A]
+    //     A+[+=]*(Z|[^AZ+=]+|$)|[^A]+
     //
     H_RULE (pe,      h_many(h_choice(pls, h_ignore(equ), NULL)));
     H_RULE (eof,     h_end_p());

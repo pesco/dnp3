@@ -226,6 +226,23 @@ static void test_large_packed_binary(void)
 
 /// test cases ///
 
+static void test_app_fragment(void)
+{
+    check_parse_fail(dnp3_p_app_fragment, "",0);
+    check_parse_fail(dnp3_p_app_fragment, "\xC0",1);
+
+    check_parse(dnp3_p_app_fragment, "\xC2\x00",2, "[2] (fir,fin) CONFIRM");
+    check_parse(dnp3_p_app_fragment, "\xC0\x02\x02\x02\x06",5, "OBJ_UNKNOWN on [0] (fir,fin) WRITE");
+    check_parse(dnp3_p_app_fragment, "\xC2\x81\x00\x00",4, "[2] (fir,fin) RESPONSE");
+
+    check_parse(dnp3_p_app_fragment, "\xC0\xFF",2, "FUNC_NOT_SUPP on [0] (fir,fin) 0xFF");
+    check_parse(dnp3_p_app_fragment, "\xC0\xFF\x00\x00",4, "FUNC_NOT_SUPP on [0] (fir,fin) 0xFF");
+    check_parse(dnp3_p_app_fragment, "\xC0\x01\x01",3, "PARAM_ERROR on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_fragment, "\xC0\x01\x32\x00\x06",5, "OBJ_UNKNOWN on [0] (fir,fin) READ");
+    check_parse(dnp3_p_app_fragment, "\xC0\x81\x00\x00\x02\x01\x17\x01\x03\xC3",10,
+                                     "PARAM_ERROR on [0] (fir,fin) RESPONSE");
+}
+
 static void test_req_fail(void)
 {
     check_parse_fail(dnp3_p_app_request, "",0);
@@ -1195,6 +1212,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/vuln/count_of_zero", test_count_of_zero);
     g_test_add_func("/app/vuln/large_packed_binary", test_large_packed_binary);
 
+    g_test_add_func("/app/fragment", test_app_fragment);
     g_test_add_func("/app/req/fail", test_req_fail);
     g_test_add_func("/app/req/ac", test_req_ac);
     g_test_add_func("/app/req/ohdr", test_req_ohdr);

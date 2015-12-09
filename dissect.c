@@ -86,6 +86,10 @@ void print_segment(void *env, const DNP3_Segment *segment)
     print(env, "T> %s\n", dnp3_format_segment(segment));
 }
 
+void print_transport_discard(void *env, size_t n)
+{
+    print(env, "T: discarding invalid data (%u bytes)\n", (unsigned int)n);
+}
 void print_transport_payload(void *env, const uint8_t *s, size_t n)
 {
     print(env, "T: reassembled payload:");
@@ -127,6 +131,7 @@ int main(int argc, char *argv[])
     callbacks.link_frame = print_frame;
     callbacks.link_invalid = print_link_invalid;
     callbacks.transport_segment = print_segment;
+    callbacks.transport_discard = print_transport_discard;
     callbacks.transport_payload = print_transport_payload;
     callbacks.app_invalid = print_app_invalid;
     callbacks.app_fragment = print_fragment;
@@ -138,7 +143,9 @@ int main(int argc, char *argv[])
         switch(ch) {
         case 'f': // filter mode
             callbacks.link_frame = output_ctrl_frame;
+            callbacks.link_invalid = NULL;
             callbacks.transport_segment = NULL;
+            callbacks.transport_discard = NULL;
             callbacks.transport_payload = NULL;
             callbacks.app_invalid = NULL;
             callbacks.app_fragment = output_fragment;

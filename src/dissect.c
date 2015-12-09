@@ -349,8 +349,6 @@ void process_transport_payload(Dissector *self, struct Context *ctx,
     } else {
         CALLBACK(app_invalid, 0);
     }
-
-    ctx->n = 0; // flush frames
 }
 
 // helper

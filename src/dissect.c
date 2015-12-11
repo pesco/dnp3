@@ -34,7 +34,8 @@ struct Context {
 
 typedef struct {
     StreamProcessor base;
-    uint8_t buf[BUFLEN];        // static input buffer
+    uint8_t *buf;               // input buffer
+    size_t bufsize;
     struct Context *contexts;   // linked list
 
     // callbacks
@@ -503,20 +504,42 @@ static int dissector_finish(StreamProcessor *base)
     return 0;
 }
 
-StreamProcessor *dnp3_dissector(DNP3_Callbacks cb, void *env)
+static int dissector_finish_ownbuf(StreamProcessor *base)
+{
+    Dissector *self = (Dissector *)base;
+
+    free(self->buf);
+    return dissector_finish(base);
+}
+
+StreamProcessor *dnp3_dissector__b(uint8_t *buf, size_t len,
+                                   DNP3_Callbacks cb, void *env)
 {
     Dissector *p = malloc(sizeof(Dissector));
+    if(!p) return NULL;
 
-    if(p) {
-        p->base.buf     = p->buf;
-        p->base.bufsize = sizeof(p->buf);
-        p->base.feed    = dissector_feed;
-        p->base.finish  = dissector_finish;
-        p->contexts     = NULL;
-        p->cb           = cb;
-        p->env          = env;
-    }
+    p->base.buf     = buf;
+    p->base.bufsize = len;
+    p->base.feed    = dissector_feed;
+    p->base.finish  = dissector_finish;
+    p->buf          = buf;
+    p->bufsize      = len;
+    p->contexts     = NULL;
+    p->cb           = cb;
+    p->env          = env;
 
     assert((StreamProcessor *)p == &p->base);
     return &p->base;
+}
+
+StreamProcessor *dnp3_dissector(DNP3_Callbacks cb, void *env)
+{
+    uint8_t *buf = malloc(BUFLEN);
+    if(!buf) return NULL;
+
+    StreamProcessor *p = dnp3_dissector__b(buf,BUFLEN, cb, env);
+    if(!p) return NULL;
+
+    p->finish = dissector_finish_ownbuf;
+    return p;
 }

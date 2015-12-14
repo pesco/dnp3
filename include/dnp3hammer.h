@@ -619,6 +619,13 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag);
 char *dnp3_format_segment(const DNP3_Segment *seg);
 char *dnp3_format_frame(const DNP3_Frame *frame);
 
+// print fragment and object headers, omit object data
+char *dnp3_format_fragment_ohdrs(const DNP3_Fragment *frag);
+
+char *dnp3_format_fragment_header(const DNP3_Fragment *frag);
+char *dnp3_format_segment_header(const DNP3_Segment *seg);
+char *dnp3_format_frame_header(const DNP3_Frame *frame);
+
 
 #ifdef __cplusplus
 }

@@ -407,7 +407,7 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     return res;
 }
 
-char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
+char *dnp3_format_oblock_(const DNP3_ObjectBlock *ob, bool do_data)
 {
     size_t size;
     char *res = NULL;
@@ -419,6 +419,8 @@ char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
                 (int)ob->group, (int)ob->variation,
                 (unsigned int)ob->prefixcode, (unsigned int)ob->rangespec);
     if(x<0) goto err;
+
+    if(!do_data) return res;
 
     // range
     if(ob->rangespec < 6) {
@@ -466,7 +468,10 @@ err:
     return NULL;
 }
 
-char *dnp3_format_fragment(const DNP3_Fragment *frag)
+char *dnp3_format_oblock(const DNP3_ObjectBlock *ob)
+{ return dnp3_format_oblock_(ob, true); }
+
+char *dnp3_format_fragment_(const DNP3_Fragment *frag, bool do_objects, bool do_data)
 {
     char *res = NULL;
     size_t size;
@@ -526,13 +531,15 @@ char *dnp3_format_fragment(const DNP3_Fragment *frag)
     }
 
     // add object data
-    for(size_t i=0; i<frag->nblocks; i++) {
-        char *blk = dnp3_format_oblock(frag->odata[i]);
-        if(!blk) goto err;
+    if(do_objects) {
+        for(size_t i=0; i<frag->nblocks; i++) {
+            char *blk = dnp3_format_oblock_(frag->odata[i], do_data);
+            if(!blk) goto err;
 
-        x = appendf(&res, &size, " {%s}", blk);
-        free(blk);
-        if(x<0) goto err;
+            x = appendf(&res, &size, " {%s}", blk);
+            free(blk);
+            if(x<0) goto err;
+        }
     }
 
     // add authdata
@@ -547,6 +554,15 @@ err:
     if(res) free(res);
     return NULL;
 }
+
+char *dnp3_format_fragment(const DNP3_Fragment *frag)
+{ return dnp3_format_fragment_(frag, true, true); }
+
+char *dnp3_format_fragment_ohdrs(const DNP3_Fragment *frag)
+{ return dnp3_format_fragment_(frag, false, true); }
+
+char *dnp3_format_fragment_header(const DNP3_Fragment *frag)
+{ return dnp3_format_fragment_(frag, false, false); }
 
 int append_payload(char **res, size_t *size, uint8_t *bytes, size_t len)
 {
@@ -568,7 +584,7 @@ int append_payload(char **res, size_t *size, uint8_t *bytes, size_t len)
     }
 }
 
-char *dnp3_format_segment(const DNP3_Segment *seg)
+char *dnp3_format_segment_(const DNP3_Segment *seg, bool do_payload)
 {
     char *res = NULL;
     size_t size;
@@ -582,8 +598,10 @@ char *dnp3_format_segment(const DNP3_Segment *seg)
     x = appendf(&res, &size, "%ssegment %"PRIu8, flags, seg->seq);
     if(x<0) goto err;
 
-    x = append_payload(&res, &size, seg->payload, seg->len);
-    if(x<0) goto err;
+    if(do_payload) {
+        x = append_payload(&res, &size, seg->payload, seg->len);
+        if(x<0) goto err;
+    }
 
     return res;
 
@@ -591,6 +609,12 @@ err:
     if(res) free(res);
     return NULL;
 }
+
+char *dnp3_format_segment(const DNP3_Segment *seg)
+{ return dnp3_format_segment_(seg, true); }
+
+char *dnp3_format_segment_header(const DNP3_Segment *seg)
+{ return dnp3_format_segment_(seg, false); }
 
 static const char *linkfuncnames[32] = {
     // secondary (PRM=0)
@@ -603,7 +627,7 @@ static const char *linkfuncnames[32] = {
     "REQUEST_LINK_STATUS", NULL, NULL, NULL, NULL, NULL, NULL
 };
 
-char *dnp3_format_frame(const DNP3_Frame *frame)
+char *dnp3_format_frame_(const DNP3_Frame *frame, bool do_payload)
 {
     char *res = NULL;
     size_t size;
@@ -641,7 +665,7 @@ char *dnp3_format_frame(const DNP3_Frame *frame)
     if(x<0) goto err;
 
     // user data
-    if(frame->len > 0) {
+    if(do_payload && frame->len > 0) {
         if(frame->payload)
             x = append_payload(&res, &size, frame->payload, frame->len);
         else
@@ -655,3 +679,9 @@ err:
     if(res) free(res);
     return NULL;
 }
+
+char *dnp3_format_frame(const DNP3_Frame *frame)
+{ return dnp3_format_frame_(frame, true); }
+
+char *dnp3_format_frame_header(const DNP3_Frame *frame)
+{ return dnp3_format_frame_(frame, false); }

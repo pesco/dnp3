@@ -8,9 +8,10 @@
 #include "HexData.h"
 
 
-void cb_link_frame(void *env, const DNP3_Frame *frame, const uint8_t *buf, size_t len)
+int cb_link_frame(void *env, const DNP3_Frame *frame, const uint8_t *buf, size_t len)
 {
     static_cast<PluginFixture*>(env)->events.push_back(Event::LINK_FRAME);
+    return 0;
 }
 
 void cb_transport_segment(void *env, const DNP3_Segment *segment)

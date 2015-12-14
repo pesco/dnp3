@@ -47,15 +47,17 @@ static void error(void *env, const char *fmt, ...)
     va_end(args);
 }
 
-void output_ctrl_frame(void *env, const DNP3_Frame *frame,
-                       const uint8_t *buf, size_t len)
+int output_ctrl_frame(void *env, const DNP3_Frame *frame,
+                      const uint8_t *buf, size_t len)
 {
     if(frame->func == DNP3_UNCONFIRMED_USER_DATA ||
        frame->func == DNP3_CONFIRMED_USER_DATA) {
-        return;
+        return 0;
     }
 
     output(env, buf, len);
+
+    return 0;
 }
 
 void output_fragment(void *env, const DNP3_Fragment *fragment,
@@ -64,10 +66,11 @@ void output_fragment(void *env, const DNP3_Fragment *fragment,
     output(env, buf, len);
 }
 
-void print_frame(void *env, const DNP3_Frame *frame,
-                 const uint8_t *buf, size_t len)
+int print_frame(void *env, const DNP3_Frame *frame,
+                const uint8_t *buf, size_t len)
 {
     print(env, "L> %s\n", dnp3_format_frame(frame));
+    return 0;
 }
 
 void print_link_invalid(void *env, const DNP3_Frame *frame)

@@ -8,7 +8,7 @@
 
 
 // plugin callbacks - use these to drive events with the fixture
-void cb_link_frame(void *env, const DNP3_Frame *frame, const uint8_t *buf, size_t len);
+int  cb_link_frame(void *env, const DNP3_Frame *frame, const uint8_t *buf, size_t len);
 void cb_transport_segment(void *env, const DNP3_Segment *segment);
 void cb_transport_payload(void *env, const uint8_t *s, size_t n);
 void cb_app_invalid(void *env, DNP3_ParseError e);

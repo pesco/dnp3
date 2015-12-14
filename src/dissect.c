@@ -51,7 +51,7 @@ HParser *dnp3_p_transport_function; // the transport-layer state machine
 
 // shorthand to be used in a function foo(Dissector *self, ...)
 #define CALLBACK(NAME, ...) \
-    do {if(self->cb.NAME) self->cb.NAME(self->env, __VA_ARGS__);} while(0)
+    (self->cb.NAME ? (self->cb.NAME(self->env, __VA_ARGS__)) : 0)
 
 #define error(...) CALLBACK(log_error, __VA_ARGS__)
 #define debug(...) //fprintf(stderr, __VA_ARGS__)
@@ -415,7 +415,8 @@ void process_link_frame(Dissector *self,
         return;
     }
 
-    CALLBACK(link_frame, frame, buf, len);
+    if(CALLBACK(link_frame, frame, buf, len) != 0)
+        return;
 
     // payload handling
     switch(frame->func) {

@@ -570,7 +570,7 @@ struct StreamProcessor_ {
 
 typedef struct {
     void (*link_invalid)(void *env, const DNP3_Frame *frame);
-    void (*link_frame)(void *env, const DNP3_Frame *frame,
+    int  (*link_frame)(void *env, const DNP3_Frame *frame,
                        const uint8_t *buf, size_t len); // raw input
     void (*transport_segment)(void *env, const DNP3_Segment *segment);
     void (*transport_discard)(void *env, size_t n);     // n = number of bytes

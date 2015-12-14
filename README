@@ -38,6 +38,13 @@ NOTES:
 
  Z) A couple of bigger and a lot of smaller things are still TODO.
 
+    THREAD-SAFETY WARNING:
+
+    The implementation of the transport function that is used by the protocol
+    dissector is currently NOT thread-safe. This is a temporary rather than an
+    architectural issue but it depends on an addition to Hammer that has not
+    been made so far.
+
  A) This implementation is based on IEEE Std. 1815-2012 and notably
     AN2013-004b.
 

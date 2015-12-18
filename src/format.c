@@ -271,7 +271,7 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(CTR, 16BIT_NOFLAG):
     case GV(FROZENCTR, 32BIT_NOFLAG):
     case GV(FROZENCTR, 16BIT_NOFLAG):
-        appendf(&res, &size, "%"PRIu64, o.ctr.value);
+        appendf(&res, &size, "%"PRIu32, o.ctr.value);
         break;
     case GV(CTREV, 16BIT_TIME):
     case GV(CTREV, 32BIT_TIME):
@@ -280,7 +280,7 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
     case GV(FROZENCTREV, 32BIT_TIME):
     case GV(FROZENCTREV, 16BIT_TIME):
         append_flags(&res, &size, o.timed.ctr.flags);
-        appendf(&res, &size, "%"PRIu64, o.timed.ctr.value);
+        appendf(&res, &size, "%"PRIu32, o.timed.ctr.value);
         append_abstime(&res, &size, o.timed.abstime);
         break;
     case GV(ANAIN, 32BIT):

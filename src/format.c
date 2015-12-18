@@ -204,7 +204,6 @@ char *dnp3_format_object(DNP3_Group g, DNP3_Variation v, const DNP3_Object o)
 {
     size_t size;
     char *res = NULL;
-    size_t fsize;
 
     switch(g << 8 | v) {
     case GV(BININ, PACKED):

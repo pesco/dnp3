@@ -383,6 +383,23 @@ static void test_req_select(void)
                                      "PARAM_ERROR on [3] (fir,fin) SELECT");
 }
 
+
+static void test_req_select_float(void)
+{
+    // 0x0000A03F is a little endian representation of 1.25 in IEEE-754 float
+    check_parse(dnp3_p_app_request,  "\xC0\x03\x29\x03\x17\x01\x02\x00\x00\xA0\x3F\x00", 12,
+                "[0] (fir,fin) SELECT {g41v3 qc=17 #2:1.2}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x29\x03\x17\x01\x02\x00\x00\xA0\x3F\x00", 14,
+                "[0] (fir,fin) RESPONSE {g41v3 qc=17 #2:1.2}");
+
+    // 0x000000000000F43F is a little endian representation of 1.25 in IEEE-754 double
+    check_parse(dnp3_p_app_request,  "\xC0\x03\x29\x04\x17\x01\x02\x00\x00\x00\x00\x00\x00\xF4\x3F\x00", 16,
+                "[0] (fir,fin) SELECT {g41v4 qc=17 #2:1.2}");
+    check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x29\x04\x17\x01\x02\x00\x00\x00\x00\x00\x00\xF4\x3F\x00", 18,
+                "[0] (fir,fin) RESPONSE {g41v4 qc=17 #2:1.2}");
+
+}
+
 static void test_req_operate(void)
 {
     // examples given in IEEE 1815-2012 (subclause 4.4.4.4)
@@ -1220,6 +1237,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/req/read", test_req_read);
     g_test_add_func("/app/req/write", test_req_write);
     g_test_add_func("/app/req/select", test_req_select);
+    g_test_add_func("/app/req/select_float", test_req_select_float);
     g_test_add_func("/app/req/operate", test_req_operate);
     g_test_add_func("/app/req/direct_operate", test_req_direct_operate);
     g_test_add_func("/app/req/direct_operate_nr", test_req_direct_operate_nr);

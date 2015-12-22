@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.0)
 project (dnp3hammer VERSION 1.0.0)
 
 # other options off-by-default that you can enable
-option(WERROR "Set all warnings to errors" OFF)
+option(COVERAGE "Builds the libraries with coverage info for gcov" OFF)
 
 # PkgConfig
 FIND_PACKAGE(PkgConfig) # tell cmake to require pkg-config
@@ -13,10 +13,15 @@ set(LIB_TYPE STATIC)
 set(CMAKE_C_FLAGS "-Wall -std=c99 -D_POSIX_C_SOURCE=2")
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
 
+if(COVERAGE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
+endif()
+
 # different release and debug flags
 set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
-  
+set(CMAKE_C_FLAGS_DEBUG "-g -O0")
+
 # include paths for all the local libraries
 include_directories(include)
 

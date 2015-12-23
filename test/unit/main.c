@@ -386,13 +386,13 @@ static void test_req_select(void)
 
 static void test_req_select_float(void)
 {
-    // 0x0000A03F is a little endian representation of 1.25 in IEEE-754 float
+    // 00 00 A0 3F is a little-endian representation of 1.25 in IEEE-754 float
     check_parse(dnp3_p_app_request,  "\xC0\x03\x29\x03\x17\x01\x02\x00\x00\xA0\x3F\x00", 12,
                 "[0] (fir,fin) SELECT {g41v3 qc=17 #2:1.2}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x29\x03\x17\x01\x02\x00\x00\xA0\x3F\x00", 14,
                 "[0] (fir,fin) RESPONSE {g41v3 qc=17 #2:1.2}");
 
-    // 0x000000000000F43F is a little endian representation of 1.25 in IEEE-754 double
+    // 00 .. 00 F4 3F is a little-endian representation of 1.25 in IEEE-754 double
     check_parse(dnp3_p_app_request,  "\xC0\x03\x29\x04\x17\x01\x02\x00\x00\x00\x00\x00\x00\xF4\x3F\x00", 16,
                 "[0] (fir,fin) SELECT {g41v4 qc=17 #2:1.2}");
     check_parse(dnp3_p_app_response, "\xC0\x81\x00\x00\x29\x04\x17\x01\x02\x00\x00\x00\x00\x00\x00\xF4\x3F\x00", 18,

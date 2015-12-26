@@ -4,6 +4,7 @@
 #include <inttypes.h>   // PRIu64
 #include <glib.h>
 
+#include "../../src/sloballoc.h"
 #include <dnp3hammer.h>
 
 #define H_ISERR(tt) ((tt) >= TT_ERR && (tt) < TT_USER)  // XXX
@@ -62,7 +63,13 @@ static char *format(const HParsedToken *p)
     }                                                                   \
   } while(0)
 
-#define check_cmp_size(n1, op, n2) check_inttype("%zu", size_t, n1, op, n2)
+#define check_cmp_size(n1, op, n2) \
+    check_inttype("%zu", size_t, n1, op, n2)
+
+#define check_cmp_ptr(p, op, q) do {                                    \
+    int LINE = __LINE__;                                                \
+    check_inttype("%p", void *, p, op, q);                              \
+  } while(0)
 
 #define check_string(n1, op, n2) do {                                   \
     const char *_n1 = (n1);                                             \
@@ -1211,6 +1218,59 @@ static void test_transport(void)
     check_parse_fail(dnp3_p_transport_segment, "",0);
 }
 
+static void test_sloballoc(void)
+{
+    #define N 1024
+    static uint8_t mem[N] = {0x58};
+    void *p, *q, *r;
+
+    SLOB *slob = slobinit(mem, N);
+    size_t max = N - 2*sizeof(size_t) - sizeof(void *);
+
+    p = sloballoc(slob, max);
+    check_cmp_ptr(p, ==, mem+N - max);
+    slobfree(slob, p);
+
+    p = sloballoc(slob, N);
+    check_cmp_ptr(p, ==, NULL);
+
+    p = sloballoc(slob, max+1);
+    check_cmp_ptr(p, ==, NULL);
+
+    p = sloballoc(slob, 100);
+    check_cmp_ptr(p, ==, mem+N - 100);
+    slobfree(slob, p);
+
+    p = sloballoc(slob, max);
+    check_cmp_ptr(p, ==, mem+N - max);
+    slobfree(slob, p);
+
+    p = sloballoc(slob, 100);
+    check_cmp_ptr(p, ==, mem+N - 100);
+    q = sloballoc(slob, 100);
+    check_cmp_ptr(q, ==, mem+N - 200 - sizeof(size_t));
+    slobfree(slob, p);
+    p = sloballoc(slob, 50);
+    check_cmp_ptr(p, ==, mem+N - 50);
+    r = sloballoc(slob, 100);
+    check_cmp_ptr(r, ==, mem+N - 300 - 2*sizeof(size_t));
+    slobfree(slob, q);
+    q = sloballoc(slob, 150);
+    check_cmp_ptr(q, ==, mem+N - 200 - sizeof(size_t));
+    slobfree(slob, p);
+    slobfree(slob, r);
+    slobfree(slob, q);  // merge left and right
+
+    p = sloballoc(slob, max+1);
+    check_cmp_ptr(p, ==, NULL);
+
+    p = sloballoc(slob, max);
+    check_cmp_ptr(p, ==, mem+N - max);
+    slobfree(slob, p);
+
+    #undef N
+}
+
 
 
 /// ...
@@ -1287,6 +1347,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/link/raw", test_link_raw);
     g_test_add_func("/link/valid", test_link_valid);
     g_test_add_func("/link/skip", test_link_skip);
+    g_test_add_func("/sloballoc", test_sloballoc);
 
     g_test_run();
 }

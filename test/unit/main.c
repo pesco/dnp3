@@ -1240,74 +1240,80 @@ static void test_transport(void)
     check_cmp_ptr(p, ==, NULL);         \
   } while(0)
 
+#define check_slobfree(P) do {      \
+    check_sloballoc_invariants();   \
+    slobfree(slob, P);              \
+  } while(0)
+
 #define N 1024
+
+#define SLOBALLOC_FIXTURE                                                   \
+    static uint8_t mem[N] = {0x58};                                         \
+    SLOB *slob = slobinit(mem, N);                                          \
+    size_t max = N - 2*sizeof(size_t) - sizeof(void *);                     \
+    (void)max;  /* silence warning */                                       \
+    if(!slob) {                                                             \
+        g_test_message("SLOB allocator init failed on line %d", __LINE__);  \
+        g_test_fail();                                                      \
+    }
 
 static void test_sloballoc_size(void)
 {
-    static uint8_t mem[N] = {0x58};
+    SLOBALLOC_FIXTURE
     void *p;
 
-    SLOB *slob = slobinit(mem, N);
-    size_t max = N - 2*sizeof(size_t) - sizeof(void *);
-
     check_sloballoc(p, max, N-max);
-    slobfree(slob, p);
+    check_slobfree(p);
 
     check_sloballoc_fail(N);
     check_sloballoc_fail(max+1);
 
     check_sloballoc(p, max, N-max);
-    slobfree(slob, p);
+    check_slobfree(p);
 
     check_sloballoc_invariants();
 }
 
 static void test_sloballoc_merge(void)
 {
-    static uint8_t mem[N] = {0x58};
+    SLOBALLOC_FIXTURE
     void *p, *q, *r;
 
-    SLOB *slob = slobinit(mem, N);
-    size_t max = N - 2*sizeof(size_t) - sizeof(void *);
-
     check_sloballoc(p, 100, N-100);
-    slobfree(slob, p);
+    check_slobfree(p);
     check_sloballoc(p, max, N-max);
-    slobfree(slob, p);
+    check_slobfree(p);
 
     check_sloballoc(p, 100, N-100);
     check_sloballoc(q, 100, N-200-sizeof(size_t));
-    slobfree(slob, p);
+    check_slobfree(p);
     check_sloballoc(p,  50, N-50);
     check_sloballoc(r, 100, N-300-2*sizeof(size_t));
-    slobfree(slob, q);
+    check_slobfree(q);
     check_sloballoc(q, 150, N-200-sizeof(size_t));
-    slobfree(slob, p);
-    slobfree(slob, r);
-    slobfree(slob, q);  // merge left and right
+    check_slobfree(p);
+    check_slobfree(r);
+    check_slobfree(q);  // merge left and right
 
     check_sloballoc_fail(max+1);
     check_sloballoc(p, max, N-max);
-    slobfree(slob, p);
+    check_slobfree(p);
 
     check_sloballoc_invariants();
 }
 
 static void test_sloballoc_small(void)
 {
-    static uint8_t mem[N] = {0x58};
+    SLOBALLOC_FIXTURE
     void *p, *q, *r;
-
-    SLOB *slob = slobinit(mem, N);
-    size_t max = N - 2*sizeof(size_t) - sizeof(void *);
 
     check_sloballoc(p, 100, N-100);
     check_sloballoc(q,   1, N-100-sizeof(size_t)-sizeof(void *));
     check_sloballoc(r, 100, N-200-2*sizeof(size_t)-sizeof(void *));
-    slobfree(slob, q);
+    check_slobfree(q);
     check_sloballoc(q,   1, N-100-sizeof(size_t)-sizeof(void *));
-    slobfree(slob, p);
-    slobfree(slob, r);
+    check_slobfree(p);
+    check_slobfree(r);
 
     check_sloballoc_invariants();
 }

@@ -1219,58 +1219,100 @@ static void test_transport(void)
     check_parse_fail(dnp3_p_transport_segment, "",0);
 }
 
-static void test_sloballoc(void)
+#define check_sloballoc_invariants() do {                                   \
+    int err = slobcheck(slob);                                              \
+    if(err) {                                                               \
+      g_test_message("SLOB invariant check failed on line %d, returned %d", \
+                     __LINE__, err);                                        \
+      g_test_fail();                                                        \
+    }                                                                       \
+  } while(0)
+
+#define check_sloballoc(VAR, SIZE, OFFSET) do { \
+    check_sloballoc_invariants();               \
+    VAR = sloballoc(slob, (SIZE));              \
+    check_cmp_ptr(VAR, ==, mem + (OFFSET));     \
+  } while(0)
+
+#define check_sloballoc_fail(SIZE) do { \
+    check_sloballoc_invariants();       \
+    void *p = sloballoc(slob, (SIZE));  \
+    check_cmp_ptr(p, ==, NULL);         \
+  } while(0)
+
+#define N 1024
+
+static void test_sloballoc_size(void)
 {
-    #define N 1024
+    static uint8_t mem[N] = {0x58};
+    void *p;
+
+    SLOB *slob = slobinit(mem, N);
+    size_t max = N - 2*sizeof(size_t) - sizeof(void *);
+
+    check_sloballoc(p, max, N-max);
+    slobfree(slob, p);
+
+    check_sloballoc_fail(N);
+    check_sloballoc_fail(max+1);
+
+    check_sloballoc(p, max, N-max);
+    slobfree(slob, p);
+
+    check_sloballoc_invariants();
+}
+
+static void test_sloballoc_merge(void)
+{
     static uint8_t mem[N] = {0x58};
     void *p, *q, *r;
 
     SLOB *slob = slobinit(mem, N);
     size_t max = N - 2*sizeof(size_t) - sizeof(void *);
 
-    p = sloballoc(slob, max);
-    check_cmp_ptr(p, ==, mem+N - max);
+    check_sloballoc(p, 100, N-100);
+    slobfree(slob, p);
+    check_sloballoc(p, max, N-max);
     slobfree(slob, p);
 
-    p = sloballoc(slob, N);
-    check_cmp_ptr(p, ==, NULL);
-
-    p = sloballoc(slob, max+1);
-    check_cmp_ptr(p, ==, NULL);
-
-    p = sloballoc(slob, 100);
-    check_cmp_ptr(p, ==, mem+N - 100);
+    check_sloballoc(p, 100, N-100);
+    check_sloballoc(q, 100, N-200-sizeof(size_t));
     slobfree(slob, p);
-
-    p = sloballoc(slob, max);
-    check_cmp_ptr(p, ==, mem+N - max);
-    slobfree(slob, p);
-
-    p = sloballoc(slob, 100);
-    check_cmp_ptr(p, ==, mem+N - 100);
-    q = sloballoc(slob, 100);
-    check_cmp_ptr(q, ==, mem+N - 200 - sizeof(size_t));
-    slobfree(slob, p);
-    p = sloballoc(slob, 50);
-    check_cmp_ptr(p, ==, mem+N - 50);
-    r = sloballoc(slob, 100);
-    check_cmp_ptr(r, ==, mem+N - 300 - 2*sizeof(size_t));
+    check_sloballoc(p,  50, N-50);
+    check_sloballoc(r, 100, N-300-2*sizeof(size_t));
     slobfree(slob, q);
-    q = sloballoc(slob, 150);
-    check_cmp_ptr(q, ==, mem+N - 200 - sizeof(size_t));
+    check_sloballoc(q, 150, N-200-sizeof(size_t));
     slobfree(slob, p);
     slobfree(slob, r);
     slobfree(slob, q);  // merge left and right
 
-    p = sloballoc(slob, max+1);
-    check_cmp_ptr(p, ==, NULL);
-
-    p = sloballoc(slob, max);
-    check_cmp_ptr(p, ==, mem+N - max);
+    check_sloballoc_fail(max+1);
+    check_sloballoc(p, max, N-max);
     slobfree(slob, p);
 
-    #undef N
+    check_sloballoc_invariants();
 }
+
+static void test_sloballoc_small(void)
+{
+    static uint8_t mem[N] = {0x58};
+    void *p, *q, *r;
+
+    SLOB *slob = slobinit(mem, N);
+    size_t max = N - 2*sizeof(size_t) - sizeof(void *);
+
+    check_sloballoc(p, 100, N-100);
+    check_sloballoc(q,   1, N-101-sizeof(size_t));
+    check_sloballoc(r, 100, N-200-2*sizeof(size_t)-sizeof(void *));
+    slobfree(slob, q);
+    check_sloballoc(q,   1, N-101-sizeof(size_t));
+    slobfree(slob, p);
+    slobfree(slob, r);
+
+    check_sloballoc_invariants();
+}
+
+#undef N
 
 
 
@@ -1349,7 +1391,9 @@ int main(int argc, char *argv[])
     g_test_add_func("/link/raw", test_link_raw);
     g_test_add_func("/link/valid", test_link_valid);
     g_test_add_func("/link/skip", test_link_skip);
-    g_test_add_func("/sloballoc", test_sloballoc);
+    g_test_add_func("/sloballoc/size", test_sloballoc_size);
+    g_test_add_func("/sloballoc/merge", test_sloballoc_merge);
+    g_test_add_func("/sloballoc/small", test_sloballoc_small);
 
     g_test_run();
 }

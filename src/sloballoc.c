@@ -105,3 +105,63 @@ void slobfree(SLOB *slob, void *a_)
         b->next = slob->head; slob->head = b;
     }
 }
+
+int slobcheck(SLOB *slob)
+{
+    // invariants:
+    // 1. memory area is divided seamlessly and exactly into n blocks
+    // 2. every block is large enough to hold a 'struct block'.
+    // 3. free list has at most n elements.
+    // 4. every element of the free list is one of the valid blocks.
+    // 5. every block appears at most once in the free list.
+
+    void *p;
+    size_t nblocks=0, nfree=0;
+
+    #define FORBLOCKS \
+        for(p = slob->data; \
+            p != slob->data + slob->size; \
+            p += sizeof(struct alloc) + ((struct alloc *)p)->size)
+
+    // 1. memory area is divided seamlessly and exactly into n blocks
+    FORBLOCKS {
+        if(p < (void *)slob->data)
+            return 1;
+        if(p > (void *)slob->data + slob->size)
+            return 2;
+        nblocks++;
+
+        struct alloc *a = p;
+        if(a->size > UINTPTR_MAX - (uintptr_t)p)
+            return 3;
+
+        // 2. every block is large enough to hold a 'struct block'.
+        if(a->size + sizeof(struct alloc) < sizeof(struct block))
+            return 4;
+    }
+
+    // 3. free list has at most n elements.
+    for(struct block *b=slob->head; b; b=b->next) {
+        nfree++;
+        if(nfree > nblocks)
+            return 5;
+
+        // 4. every element of the free list is one of the valid blocks.
+        FORBLOCKS
+            if(p == b) break;
+        if(!p)
+            return 6;
+    }
+
+    // 5. every block appears at most once in the free list.
+    FORBLOCKS {
+        size_t count=0;
+        for(struct block *b=slob->head; b; b=b->next)
+            if(p == b) count++;
+        if(count > 1)
+            return 7;
+    }
+
+    #undef FORBLOCKS
+    return 0;
+}

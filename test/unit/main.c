@@ -4,6 +4,8 @@
 #include <inttypes.h>   // PRIu64
 #include <glib.h>
 
+#include <hammer/hammer.h>
+#include "../../src/hammer.h"
 #include "../../src/sloballoc.h"
 #include <dnp3hammer.h>
 
@@ -1318,6 +1320,40 @@ static void test_sloballoc_small(void)
     check_sloballoc_invariants();
 }
 
+#define check_h_sloballoc(VAR, SIZE, OFFSET) do {   \
+    check_sloballoc_invariants();                   \
+    VAR = mm->alloc(mm, (SIZE));                    \
+    check_cmp_ptr(VAR, ==, mem + (OFFSET));         \
+  } while(0)
+
+#define check_h_slobfree(P) do {    \
+    check_sloballoc_invariants();   \
+    mm->free(mm, P);                \
+  } while(0)
+
+static void test_sloballoc_hammer(void)
+{
+    static uint8_t mem[N] = {0x58};
+    HAllocator *mm = h_sloballoc(mem, N); int line = __LINE__;
+    SLOB *slob = ((void *)mm) + sizeof(HAllocator);
+    void *p, *q, *r;
+
+    if(!mm) {
+        g_test_message("h_sloballoc() failed on line %d", line);
+        g_test_fail();
+    }
+
+    check_h_sloballoc(p, 100, N-100);
+    check_h_sloballoc(q,   1, N-100-sizeof(size_t)-sizeof(void *));
+    check_h_sloballoc(r, 100, N-200-2*sizeof(size_t)-sizeof(void *));
+    check_h_slobfree(q);
+    check_h_sloballoc(q,   1, N-100-sizeof(size_t)-sizeof(void *));
+    check_h_slobfree(p);
+    check_h_slobfree(r);
+
+    check_sloballoc_invariants();
+}
+
 #undef N
 
 
@@ -1400,6 +1436,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/sloballoc/size", test_sloballoc_size);
     g_test_add_func("/sloballoc/merge", test_sloballoc_merge);
     g_test_add_func("/sloballoc/small", test_sloballoc_small);
+    g_test_add_func("/sloballoc/hammer", test_sloballoc_hammer);
 
     g_test_run();
 }

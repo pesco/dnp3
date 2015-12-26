@@ -2,6 +2,7 @@
 #include <hammer/glue.h>
 #include <assert.h>
 #include "hammer.h"
+#include "sloballoc.h"
 
 static HParsedToken *act_unit(const HParseResult *p, void *tok_)
 {
@@ -79,4 +80,42 @@ HParser *h_float32(void)
 HParser *h_float64(void)
 {
     return h_action(h_uint64(), act_double, NULL);
+}
+
+static void *h_slob_alloc(HAllocator *mm, size_t size)
+{
+    SLOB *slob = (SLOB *)(mm+1);
+    return sloballoc(slob, size);
+}
+
+static void h_slob_free(HAllocator *mm, void *p)
+{
+    SLOB *slob = (SLOB *)(mm+1);
+    slobfree(slob, p);
+}
+
+static void *h_slob_realloc(HAllocator *mm, void *p, size_t size)
+{
+    SLOB *slob = (SLOB *)(mm+1);
+
+    assert(((void)"XXX need realloc for SLOB allocator", 0));
+    return NULL;
+}
+
+HAllocator *h_sloballoc(void *mem, size_t size)
+{
+    if(size < sizeof(HAllocator))
+        return NULL;
+
+    HAllocator *mm = mem;
+    SLOB *slob = slobinit(mem + sizeof(HAllocator), size - sizeof(HAllocator));
+    if(!slob)
+        return NULL;
+    assert(slob == (SLOB *)(mm+1));
+
+    mm->alloc = h_slob_alloc;
+    mm->realloc = h_slob_realloc;
+    mm->free = h_slob_free;
+
+    return mm;
 }

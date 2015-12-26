@@ -26,3 +26,6 @@ HParser *h_float64(void);
 #define H_CAST_FLOAT(TOK) (H_ASSERT_FLOAT(TOK)->dbl)
 #define H_INDEX_FLOAT(SEQ, ...) H_CAST_FLOAT(H_INDEX_TOKEN(SEQ, __VA_ARGS__))
 #define H_FIELD_FLOAT(...) H_INDEX_FLOAT(p->ast, __VA_ARGS__)
+
+// make an allocator that draws from the given memory area
+HAllocator *h_sloballoc(void *mem, size_t size);

@@ -40,13 +40,19 @@ SLOB *slobinit(void *mem, size_t size)
 void *sloballoc(SLOB *slob, size_t size)
 {
     struct block *b, **p;
-    size_t fitblock = size + sizeof(struct block);
+    size_t fitblock, remblock;
 
-    if(fitblock < size) return NULL;    // overflow
+    // size must be enough to extend to a struct block in case of free
+    fitblock = sizeof(struct block) - sizeof(struct alloc);
+    if(size < fitblock) size = fitblock;
+
+    // need this much to fit another block in the remaining space
+    remblock = size + sizeof(struct block);
+    if(remblock < size) return NULL;    // overflow
 
     // scan list for the first block of sufficient size
     for(p=&slob->head; (b=*p); p=&b->next) {
-        if(b->alloc.size >= fitblock) {
+        if(b->alloc.size >= remblock) {
             // cut from the end of the block
             b->alloc.size -= sizeof(struct alloc) + size;
             struct alloc *a = (void *)b->alloc.data + b->alloc.size;

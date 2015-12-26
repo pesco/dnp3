@@ -1302,10 +1302,10 @@ static void test_sloballoc_small(void)
     size_t max = N - 2*sizeof(size_t) - sizeof(void *);
 
     check_sloballoc(p, 100, N-100);
-    check_sloballoc(q,   1, N-101-sizeof(size_t));
+    check_sloballoc(q,   1, N-100-sizeof(size_t)-sizeof(void *));
     check_sloballoc(r, 100, N-200-2*sizeof(size_t)-sizeof(void *));
     slobfree(slob, q);
-    check_sloballoc(q,   1, N-101-sizeof(size_t));
+    check_sloballoc(q,   1, N-100-sizeof(size_t)-sizeof(void *));
     slobfree(slob, p);
     slobfree(slob, r);
 

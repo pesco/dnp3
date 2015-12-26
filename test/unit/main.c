@@ -150,11 +150,12 @@ void do_check_parse_ttonly(const HParser* parser, const uint8_t* input, size_t l
 } while(0)
 
 
-/// some test cases that produce seg-faults from fuzzing ///
+/// regression tests ///
 
-static void test_crash1(void)
+static void test_regress1(void)
 {
-    // caused an overlong alloc that went unchecked in Hammer
+    // a seg-fault found by fuzzing
+    // caused by an overlong alloc that went unchecked in Hammer
 
     // group 2, variation 2 w/ qualifer 0x19 == 4 octet count of objects w/ 1 byte index prefix?
     // count = 0x19191919 (large)
@@ -166,7 +167,7 @@ static void test_crash1(void)
 }
 
 
-/// tests for common DNP3 vulnerabilities ///
+/// some common DNP3 vulnerabilities ///
 
 static void test_range_overflow(void)
 {
@@ -231,7 +232,7 @@ static void test_large_packed_binary(void)
 }
 
 
-/// test cases ///
+/// unit test cases ///
 
 static void test_app_fragment(void)
 {
@@ -1280,8 +1281,8 @@ int main(int argc, char *argv[])
     g_test_init(&argc, &argv, NULL);
     dnp3_init();
 
-    // tests of crashes found via AFL
-    g_test_add_func("/app/crash/1", test_crash1);
+    // regression tests
+    g_test_add_func("/regress/1", test_regress1);
 
     // specific tests for common dnp3 vulnerabilties
     g_test_add_func("/app/vuln/range_overflow", test_range_overflow);
@@ -1289,6 +1290,7 @@ int main(int argc, char *argv[])
     g_test_add_func("/app/vuln/count_of_zero", test_count_of_zero);
     g_test_add_func("/app/vuln/large_packed_binary", test_large_packed_binary);
 
+    // unit tests
     g_test_add_func("/app/fragment", test_app_fragment);
     g_test_add_func("/app/req/fail", test_req_fail);
     g_test_add_func("/app/req/ac", test_req_ac);

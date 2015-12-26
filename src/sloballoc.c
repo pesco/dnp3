@@ -45,7 +45,7 @@ void *sloballoc(SLOB *slob, size_t size)
     if(fitblock < size) return NULL;    // overflow
 
     // scan list for the first block of sufficient size
-    for(p=&slob->head; b=*p; p=&b->next) {
+    for(p=&slob->head; (b=*p); p=&b->next) {
         if(b->alloc.size >= fitblock) {
             // cut from the end of the block
             b->alloc.size -= sizeof(struct alloc) + size;
@@ -72,7 +72,7 @@ void slobfree(SLOB *slob, void *a_)
     assert((void *)a->data + a->size <= (void *)slob->data + slob->size);
 
     // scan list for blocks adjacent to a
-    for(p=&slob->head; b=*p; p=&b->next) {
+    for(p=&slob->head; (b=*p); p=&b->next) {
         if((void *)a == b->alloc.data + b->alloc.size) {
             assert(!left);
             left = b;

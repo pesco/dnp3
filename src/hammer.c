@@ -119,3 +119,6 @@ HAllocator *h_sloballoc(void *mem, size_t size)
 
     return mm;
 }
+
+extern HAllocator system_allocator;
+HAllocator *h_system_allocator = &system_allocator;

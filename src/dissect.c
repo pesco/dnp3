@@ -41,6 +41,12 @@ typedef struct {
     // callbacks
     DNP3_Callbacks cb;
     void *env;
+
+    // memory allocators
+    HAllocator *mm_input;
+    HAllocator *mm_parse;
+    HAllocator *mm_context;
+    HAllocator *mm_results;
 } Dissector;
 
 
@@ -244,24 +250,25 @@ static void reset_tfun(struct Context *ctx)
     }
 }
 
-static void init_tfun(struct Context *ctx)
+static void init_tfun(Dissector *self, struct Context *ctx)
 {
     debug("tfun init\n");
     assert(ctx->tfun == NULL);
-    ctx->tfun = h_parse_start(dnp3_p_transport_function);
+    ctx->tfun = h_parse_start__m(self->mm_parse, dnp3_p_transport_function);
     assert(ctx->tfun != NULL);
     ctx->tfun_pos = 0;
 }
 
 static
-HParseResult *feed_tfun(struct Context *ctx, const uint8_t *buf,
+HParseResult *feed_tfun(Dissector *self,
+                        struct Context *ctx, const uint8_t *buf,
                         const DNP3_Segment **tok, size_t offs, size_t n)
 {
     HParseResult *r = NULL;
     debug("feed_tfun(...,%zu,%zu)\n", offs, n);
 
     if(!ctx->tfun)
-        init_tfun(ctx);
+        init_tfun(self, ctx);
 
     ttok_values = tok + offs;
     ttok_pos = ctx->tfun_pos + offs;
@@ -306,7 +313,9 @@ struct Context *lookup_context(Dissector *self, uint16_t src, uint16_t dst)
     if(!ctx) {
         // allocate a new context
         debug("alloc context %d\n", n+1);
-        ctx = calloc(1, sizeof(struct Context));
+        ctx = self->mm_context->alloc(self->mm_context, sizeof(struct Context));
+        if(ctx)
+            memset(ctx, 0, sizeof(struct Context));
     } else {
         *pnext = ctx->next; // unlink
     }
@@ -337,13 +346,13 @@ void process_transport_payload(Dissector *self, struct Context *ctx,
     CALLBACK(transport_payload, t, len);
 
     // try to parse a message fragment
-    HParseResult *r = h_parse(dnp3_p_app_fragment, t, len);
+    HParseResult *r = h_parse__m(self->mm_parse, dnp3_p_app_fragment, t, len);
     if(r) {
         assert(r->ast != NULL);
         if(H_ISERR(r->ast->token_type)) {
             CALLBACK(app_invalid, r->ast->token_type);
         } else {
-            DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);
+            DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);    // XXX copy to result mem
             CALLBACK(app_fragment, fragment, ctx->buf, ctx->n);
         }
         h_parse_result_free(r);
@@ -382,7 +391,7 @@ void process_transport_segment(Dissector *self,
 
     // run transport function
     size_t m=0;
-    while(m<n && (r = feed_tfun(ctx, buf, tok, m, n))) {
+    while(m<n && (r = feed_tfun(self, ctx, buf, tok, m, n))) {
         assert(r->bit_length%8 == 0);
         size_t consumed = r->bit_length/8 - ctx->tfun_pos;
         assert(consumed > 0);
@@ -432,7 +441,8 @@ void process_link_frame(Dissector *self,
         }
 
         // parse and process payload as transport segment
-        r = h_parse(dnp3_p_transport_segment, frame->payload, frame->len);
+        r = h_parse__m(self->mm_parse, dnp3_p_transport_segment,
+                       frame->payload, frame->len);
         if(!r) {
             // NB: this should only happen when frame->len = 0, which is
             //     not valid with USER_DATA as per AN2013-004b
@@ -449,7 +459,7 @@ void process_link_frame(Dissector *self,
         }
 
         assert(r->ast);
-        process_transport_segment(self, ctx, H_CAST(DNP3_Segment, r->ast));
+        process_transport_segment(self, ctx, H_CAST(DNP3_Segment, r->ast)); // XXX copy to result mem
         h_parse_result_free(r);
         break;
     case DNP3_CONFIRMED_USER_DATA:
@@ -468,13 +478,14 @@ static int dissector_feed(StreamProcessor *base, size_t n)
     size_t m=0;
 
     // parse and process link layer frames
-    while((r = h_parse(dnp3_p_synced_frame, base->buf+m, n-m))) {
+    HAllocator *mm = self->mm_parse;
+    while((r = h_parse__m(mm, dnp3_p_synced_frame, base->buf+m, n-m))) {
         size_t consumed = r->bit_length/8;
         assert(r->bit_length%8 == 0);
         assert(consumed > 0);
         assert(r->ast);
 
-        process_link_frame(self, H_CAST(DNP3_Frame, r->ast),
+        process_link_frame(self, H_CAST(DNP3_Frame, r->ast),    // XXX copy to result mem
                            base->buf+m, consumed);
         h_parse_result_free(r);
 
@@ -498,36 +509,41 @@ static int dissector_finish(StreamProcessor *base)
     struct Context *p;
     while((p = self->contexts)) {
         self->contexts = p->next;
-        free(p);
+        self->mm_context->free(self->mm_context, p);
     }
+
+    // free input buffer
+    self->mm_input->free(self->mm_input, self->buf);
 
     free(self);
     return 0;
 }
 
-static int dissector_finish_ownbuf(StreamProcessor *base)
-{
-    Dissector *self = (Dissector *)base;
-
-    free(self->buf);
-    return dissector_finish(base);
-}
-
-StreamProcessor *dnp3_dissector__b(uint8_t *buf, size_t len,
+StreamProcessor *dnp3_dissector__m(HAllocator *mm_input,
+                                   HAllocator *mm_parse,
+                                   HAllocator *mm_context,
+                                   HAllocator *mm_results,
                                    DNP3_Callbacks cb, void *env)
 {
     Dissector *p = malloc(sizeof(Dissector));
     if(!p) return NULL;
 
+    uint8_t *buf = mm_input->alloc(mm_input, BUFLEN);
+    if(!buf) return NULL;
+
     p->base.buf     = buf;
-    p->base.bufsize = len;
+    p->base.bufsize = BUFLEN;
     p->base.feed    = dissector_feed;
     p->base.finish  = dissector_finish;
     p->buf          = buf;
-    p->bufsize      = len;
+    p->bufsize      = BUFLEN;
     p->contexts     = NULL;
     p->cb           = cb;
     p->env          = env;
+    p->mm_input     = mm_input;
+    p->mm_parse     = mm_parse;
+    p->mm_context   = mm_context;
+    p->mm_results   = mm_results;
 
     assert((StreamProcessor *)p == &p->base);
     return &p->base;
@@ -535,12 +551,9 @@ StreamProcessor *dnp3_dissector__b(uint8_t *buf, size_t len,
 
 StreamProcessor *dnp3_dissector(DNP3_Callbacks cb, void *env)
 {
-    uint8_t *buf = malloc(BUFLEN);
-    if(!buf) return NULL;
-
-    StreamProcessor *p = dnp3_dissector__b(buf,BUFLEN, cb, env);
-    if(!p) return NULL;
-
-    p->finish = dissector_finish_ownbuf;
-    return p;
+    return dnp3_dissector__m(h_system_allocator,
+                             h_system_allocator,
+                             h_system_allocator,
+                             h_system_allocator,
+                             cb, env);
 }

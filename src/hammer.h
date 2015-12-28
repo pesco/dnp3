@@ -29,3 +29,6 @@ HParser *h_float64(void);
 
 // make an allocator that draws from the given memory area
 HAllocator *h_sloballoc(void *mem, size_t size);
+
+// the system default allocator (-> malloc)
+extern HAllocator *h_system_allocator;

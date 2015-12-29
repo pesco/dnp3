@@ -631,6 +631,9 @@ char *dnp3_format_segment_header(const DNP3_Segment *seg);
 char *dnp3_format_frame_header(const DNP3_Frame *frame);
 
 
+// make an allocator that draws from the given memory area  XXX move to hammer
+HAllocator *h_sloballoc(void *mem, size_t size);
+
 #ifdef __cplusplus
 }
 #endif

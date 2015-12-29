@@ -97,36 +97,48 @@ static bool segment_equal(const DNP3_Segment *a, const DNP3_Segment *b)
 //      (A+[+=]*(Z|[^AZ+=]|$)|[^A])*
 //
 
-// convert an incoming transport segment into appropriate input tokens
-// precondition: p and t point to buffers of size >=2
-// returns: number of tokens generated
-static size_t transport_tokens(const DNP3_Segment *seg, const DNP3_Segment *last,
-                               uint8_t *p, const DNP3_Segment **t)
+static uint8_t *store_ptr(uint8_t *p, uintptr_t ptr)
 {
-    size_t n = 0;
+    // NB: hammer is big-endian by default
+    int n = 8 * sizeof(DNP3_Segment *);
+    while(n>0) {
+        n -= 8;
+        *p++ = (ptr >> n) & 0xFF;
+    }
+    return p;
+}
+
+// convert an incoming transport segment into appropriate input tokens
+// precondition: p points to a buffer of size >= 2 * (1+sizeof(void *))
+// returns: number of bytes written
+static
+size_t transport_tokens(const DNP3_Segment *seg, const DNP3_Segment *last,
+                        uint8_t *buf)
+{
+    uint8_t *p = buf;
 
     // first token
     if(seg->fir) {
-        p[n] = 'A';
+        *p++ = 'A';
     } else if(last) {
         if(segment_equal(seg, last))
-            p[n] = '=';
+            *p++ = '=';
         else if(seg->seq == (last->seq + 1)%64)
-            p[n] = '+';
+            *p++ = '+';
         else
-            p[n] = '!';
+            *p++ = '!';
     } else {
-        p[n] = '_';
+        *p++ = '_';
     }
-    t[n] = seg;
-    n++;
+    p = store_ptr(p, (uintptr_t)seg);
 
     // second token
-    t[n] = NULL;
-    if(seg->fin)
-        p[n++] = 'Z';
+    if(seg->fin) {
+        *p++ = 'Z';
+        p = store_ptr(p, 0);
+    }
 
-    return n;
+    return (p-buf);
 }
 
 
@@ -145,27 +157,6 @@ static DNP3_Segment *copy_segment(HArena *arena, const DNP3_Segment *segment)
     memcpy(copy->payload, segment->payload, copy->len);
 
     return copy;
-}
-
-// XXX NOT THREAD-SAFE
-static const DNP3_Segment **ttok_values;
-static size_t ttok_pos = 0;
-static HParsedToken *act_ttok(const HParseResult *p, void *user)
-{
-    assert(ttok_values != NULL);
-
-    if(!p->ast)
-        return NULL;
-
-    debug("tok index %zu, ttok_pos=%zu\n", p->ast->index, ttok_pos);
-    assert(p->ast->index >= ttok_pos);
-    const DNP3_Segment *v = ttok_values[p->ast->index - ttok_pos];
-
-    return H_MAKE(DNP3_Segment, copy_segment(p->arena, v));
-}
-static HParser *ttok(const HParser *p)
-{
-    return h_action(p, act_ttok, NULL);
 }
 
 // re-assemble a transport-layer segment series
@@ -202,6 +193,20 @@ static HParsedToken *act_series(const HParseResult *p, void *user)
     return H_MAKE_BYTES(t, len);
 }
 
+static HParser *p_ptr = NULL;
+
+static HParsedToken *act_ptr(const HParseResult *p, void *user)
+{
+    assert(p->ast != NULL);
+    const DNP3_Segment *v = (DNP3_Segment *)H_CAST_UINT(p->ast);
+    return H_MAKE(DNP3_Segment, copy_segment(p->arena, v));
+}
+static HParser *ttok(const HParser *p)
+{
+    assert(p_ptr != NULL);
+    return h_right(p, p_ptr);
+}
+
 void dnp3_dissector_init(void)
 {
     HParser *sync = h_indirect();
@@ -209,14 +214,17 @@ void dnp3_dissector_init(void)
         // XXX is it correct to skip one byte looking for the frame start?
     h_bind_indirect(sync, sync_);
 
+    H_ARULE(ptr,    h_bits(sizeof(void *) * 8, false));
+    p_ptr = ptr;
+
     // transport-layer input tokens
     H_RULE (A,      ttok(h_ch('A')));
-    H_RULE (Z,      h_ch('Z'));
+    H_RULE (Z,      ttok(h_ch('Z')));
     H_RULE (pls,    ttok(h_ch('+')));
-    H_RULE (equ,    h_ch('='));
+    H_RULE (equ,    ttok(h_ch('=')));
 
-    H_RULE (notAZpe, h_not_in("AZ+=",4));
-    H_RULE (notA,    h_not_in("A",1));
+    H_RULE (notAZpe, ttok(h_not_in("AZ+=",4)));
+    H_RULE (notA,    ttok(h_not_in("A",1)));
 
     // single-step transport function (call repeatedly):
     //
@@ -261,19 +269,14 @@ static void init_tfun(Dissector *self, struct Context *ctx)
 
 static
 HParseResult *feed_tfun(Dissector *self,
-                        struct Context *ctx, const uint8_t *buf,
-                        const DNP3_Segment **tok, size_t offs, size_t n)
+                        struct Context *ctx, const uint8_t *buf, size_t n)
 {
     HParseResult *r = NULL;
-    debug("feed_tfun(...,%zu,%zu)\n", offs, n);
 
     if(!ctx->tfun)
         init_tfun(self, ctx);
 
-    ttok_values = tok + offs;
-    ttok_pos = ctx->tfun_pos + offs;
-    bool done = h_parse_chunk(ctx->tfun, buf + offs, n - offs);
-    ttok_values = NULL;
+    bool done = h_parse_chunk(ctx->tfun, buf, n);
 
     if(done) {
         r = h_parse_finish(ctx->tfun);
@@ -374,24 +377,26 @@ static
 void process_transport_segment(Dissector *self,
                                struct Context *ctx, const DNP3_Segment *segment)
 {
-    uint8_t buf[2];
-    const DNP3_Segment *tok[2];
+    uint8_t buf[2 * (1 + sizeof(DNP3_Segment *))];
     size_t n;
     HParseResult *r;
 
     CALLBACK(transport_segment, segment);
 
     // convert to input tokens for transport function
-    n = transport_tokens(segment, &ctx->last_segment, buf, tok);
+    n = transport_tokens(segment, &ctx->last_segment, buf);
     save_last_segment(ctx, segment);
-    debug("tfun input: ");
-    for(size_t i=0; i<n; i++)
-        debug("%c", buf[i]);
+    debug("tfun input:");
+    for(size_t i=0; i<n; i++) {
+        debug("  %c 0x", buf[i]);
+        for(int j=0; j<sizeof(DNP3_Segment *); j++)
+            debug("%.2x", buf[++i]);
+    }
     debug("\n");
 
     // run transport function
     size_t m=0;
-    while(m<n && (r = feed_tfun(self, ctx, buf, tok, m, n))) {
+    while(m<n && (r = feed_tfun(self, ctx, buf+m, n-m))) {
         assert(r->bit_length%8 == 0);
         size_t consumed = r->bit_length/8 - ctx->tfun_pos;
         assert(consumed > 0);

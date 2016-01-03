@@ -342,6 +342,13 @@ struct Context *lookup_context(Dissector *self, uint16_t src, uint16_t dst)
     return ctx;
 }
 
+#define COPY_DNP3_Frame    dnp3_copy_frame
+#define COPY_DNP3_Segment  dnp3_copy_segment
+#define COPY_DNP3_Fragment dnp3_copy_fragment
+
+// cast a parse result to the given type and copy it to the result heap
+#define COPYCAST(TYP, AST) COPY_##TYP(self->mm_results, H_CAST(TYP, AST))
+
 static
 void process_transport_payload(Dissector *self, struct Context *ctx,
                                const uint8_t *t, size_t len)
@@ -354,11 +361,13 @@ void process_transport_payload(Dissector *self, struct Context *ctx,
         assert(r->ast != NULL);
         if(H_ISERR(r->ast->token_type)) {
             CALLBACK(app_invalid, r->ast->token_type);
+            h_parse_result_free(r);
         } else {
-            DNP3_Fragment *fragment = H_CAST(DNP3_Fragment, r->ast);    // XXX copy to result mem
+            DNP3_Fragment *fragment = COPYCAST(DNP3_Fragment, r->ast);
+            h_parse_result_free(r);
             CALLBACK(app_fragment, fragment, ctx->buf, ctx->n);
+            dnp3_free_fragment(self->mm_results, fragment);
         }
-        h_parse_result_free(r);
     } else {
         CALLBACK(app_invalid, 0);
     }
@@ -464,8 +473,10 @@ void process_link_frame(Dissector *self,
         }
 
         assert(r->ast);
-        process_transport_segment(self, ctx, H_CAST(DNP3_Segment, r->ast)); // XXX copy to result mem
+        DNP3_Segment *segment = COPYCAST(DNP3_Segment, r->ast);
         h_parse_result_free(r);
+        process_transport_segment(self, ctx, segment);
+        dnp3_free_segment(self->mm_results, segment);
         break;
     case DNP3_CONFIRMED_USER_DATA:
         if(!frame->payload) // CRC error
@@ -490,9 +501,11 @@ static int dissector_feed(StreamProcessor *base, size_t n)
         assert(consumed > 0);
         assert(r->ast);
 
-        process_link_frame(self, H_CAST(DNP3_Frame, r->ast),    // XXX copy to result mem
-                           base->buf+m, consumed);
+        DNP3_Frame *frame = COPYCAST(DNP3_Frame, r->ast);
         h_parse_result_free(r);
+        process_link_frame(self, frame,
+                           base->buf+m, consumed);
+        dnp3_free_frame(self->mm_results, frame);
 
         m += consumed;
     }

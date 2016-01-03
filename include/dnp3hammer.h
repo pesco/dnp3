@@ -601,6 +601,13 @@ StreamProcessor *dnp3_dissector__m(HAllocator *mm_input,
                                    HAllocator *mm_results,
                                    DNP3_Callbacks cb, void *env);
 
+// deep-copy parse results to a given heap (allocator)
+DNP3_Frame *dnp3_copy_frame(HAllocator *mm, const DNP3_Frame *frame);
+DNP3_Segment *dnp3_copy_segment(HAllocator *mm, const DNP3_Segment *segment);
+DNP3_Fragment *dnp3_copy_fragment(HAllocator *mm, const DNP3_Fragment *fragment);
+void dnp3_free_frame(HAllocator *mm, DNP3_Frame *frame);
+void dnp3_free_segment(HAllocator *mm, DNP3_Segment *segment);
+void dnp3_free_fragment(HAllocator *mm, DNP3_Fragment *fragment);
 
 // check a raw link-layer frame as parsed by dnp3_p_link_frame for validity
 // any frame for which this function is false should be ignored!

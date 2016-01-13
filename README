@@ -20,7 +20,7 @@ Sven M. Hallberg, 2014-2015
        cmake ..
        make
 
- * Run './test' to execute the unit tests (uses the GLib test framework).
+ * Run './dnp3-tests' to execute the unit tests (uses the GLib test framework).
 
  * The './dissect' utility is an example application that accepts DNP3 traffic
    (as a stream of raw link-layer frames) on stdin and prints it in human-

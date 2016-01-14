@@ -1,5 +1,4 @@
 A DNP3 parser implementation in Hammer 
-Sven M. Hallberg, 2014-2015
 
  * Uses the Hammer parser combinator library.
    https://github.com/UpstandingHackers/hammer
@@ -80,7 +79,7 @@ NOTES:
 
 LICENSE:
 
- Copyright (c) 2014, 2015 Sven M. Hallberg <pesco@khjk.org>
+ Copyright (c) 2014-2016 Sven M. Hallberg and contributors
 
  Permission to use, copy, modify, and/or distribute this software for any
  purpose with or without fee is hereby granted, provided that the above

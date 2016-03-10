@@ -284,7 +284,7 @@ static void init_odata(void)
     H_RULE(select_pcb,      dnp3_p_seq(pcb, dnp3_p_many1(pcm)));
     H_RULE(select_oblock,   dnp3_p_objchoice(select_pcb,
                                              dnp3_p_g12v1_binoutcmd_crob_oblock,
-                                             dnp3_p_anaout_oblock,
+                                             dnp3_p_anaout_oblock,  // XXX or _sblock?!
                                              NULL));
     H_ARULE(select,         dnp3_p_many(select_oblock));
         // XXX empty select requests valid?

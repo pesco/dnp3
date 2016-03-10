@@ -33,6 +33,8 @@ design/protocol questions:
 - is qc=17 (index prefixes) valid for bit-packed variations? which encoding is correct?
 - is it valid to include multiple time (g50v1/3/4) blocks in a WRITE request?
 - is it a good idea to return corrupted link-layer frames with payload=NULL?
+- should a non-zero status byte in analog output (g40) requests be ignored or rejected?
+  (i.e. use dnp3_p_anaout_oblock or dnp3_p_anaout_sblock)
 
 missing features:
 - device attributes
